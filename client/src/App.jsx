@@ -1,0 +1,158 @@
+import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { BarbershopProvider, useBarbershop } from './context/BarbershopContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { Landing } from './pages/Landing';
+import { Dashboard } from './pages/Dashboard';
+import { ReceptionQueue } from './pages/ReceptionQueue';
+import { CashClosure } from './pages/CashClosure';
+import { Inventory } from './pages/Inventory';
+import { ClientsCRM } from './pages/ClientsCRM';
+import { BarberPortal } from './pages/BarberPortal';
+import { Analytics } from './pages/Analytics';
+import { NotificationsHub } from './pages/NotificationsHub';
+import { SubscriptionSettings } from './pages/SubscriptionSettings';
+import { SuperAdminConsole } from './pages/SuperAdminConsole';
+import { SuperAdminLayout } from './pages/SuperAdminLayout';
+import { OnboardingWizard } from './pages/OnboardingWizard';
+import { LoginScreen } from './pages/LoginScreen';
+
+const AppContent = () => {
+  const { isAuthenticated, isSuperAdmin, login } = useAuth();
+  const { availableTenants, switchTenant } = useBarbershop();
+  const [activeTab, setActiveTab] = useState('reception');
+
+  // Detectar si la URL trae un parámetro público (ej: ?slug=black-gold o ?view=landing o ruta /citas)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPublicUrl = urlParams.has('slug') || urlParams.get('view') === 'landing';
+  const [isLandingMode, setIsLandingMode] = useState(isPublicUrl);
+
+  // Modo público directo para clientes (sin requerir login)
+  if (isLandingMode) {
+    return <Landing onEnterAdmin={() => setIsLandingMode(false)} />;
+  }
+
+  // Si no está autenticado, mostramos la pantalla de login con roles
+  if (!isAuthenticated) {
+    return (
+      <LoginScreen
+        onLogin={(userData) => {
+          login(userData);
+          if (userData.tenantId) {
+            const target = availableTenants.find(t => t.id === userData.tenantId);
+            if (target) switchTenant(target);
+          }
+        }}
+      />
+    );
+  }
+
+  // Vista exclusiva e independiente para SuperAdmin (Casa Nodriza)
+  if (isSuperAdmin && activeTab === 'superadmin') {
+    return <SuperAdminLayout onExitSuperAdmin={() => setActiveTab('dashboard')} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16 md:pb-0 transition-colors duration-200">
+      <Navbar
+        onOpenOnboarding={() => setActiveTab('onboarding')}
+        onOpenSuperAdmin={() => setActiveTab('superadmin')}
+      />
+
+      <div className="flex flex-1">
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            if (tab === 'landing') {
+              setIsLandingMode(true);
+            } else {
+              setActiveTab(tab);
+            }
+          }}
+        />
+
+        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+          {activeTab === 'onboarding' && (
+            <OnboardingWizard
+              onComplete={() => setActiveTab('reception')}
+              onCancel={() => setActiveTab('reception')}
+            />
+          )}
+          {activeTab === 'reception' && <ReceptionQueue />}
+          {activeTab === 'barber-portal' && <BarberPortal />}
+          {activeTab === 'cash' && <CashClosure />}
+          {activeTab === 'clients' && <ClientsCRM />}
+          {activeTab === 'inventory' && <Inventory />}
+          {activeTab === 'subscription' && <SubscriptionSettings />}
+        </main>
+      </div>
+
+      {/* Barra de Navegación Inferior Móvil (Mobile Bottom Bar) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-noir-900/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 z-50 flex items-center justify-around px-2 shadow-sm transition-colors">
+        <button
+          onClick={() => setActiveTab('reception')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
+            activeTab === 'reception' ? 'text-amber-600 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'
+          }`}
+        >
+          <span className="text-base">📅</span>
+          <span>Salón</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('barber-portal')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
+            activeTab === 'barber-portal' ? 'text-amber-600 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'
+          }`}
+        >
+          <span className="text-base">✂️</span>
+          <span>Barbero</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('cash')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
+            activeTab === 'cash' ? 'text-amber-600 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'
+          }`}
+        >
+          <span className="text-base">💵</span>
+          <span>Caja</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('clients')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
+            activeTab === 'clients' ? 'text-amber-600 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'
+          }`}
+        >
+          <span className="text-base">👥</span>
+          <span>Clientes</span>
+        </button>
+
+        <button
+          onClick={() => setIsLandingMode(true)}
+          className="flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] text-slate-500 dark:text-industrial-400 hover:text-amber-600 dark:hover:text-gold-400 font-semibold transition-colors"
+        >
+          <span className="text-base">🌐</span>
+          <span>Web</span>
+        </button>
+      </nav>
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <BarbershopProvider>
+          <AppContent />
+        </BarbershopProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
+
+

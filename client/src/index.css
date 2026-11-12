@@ -1,0 +1,192 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-noir-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-gold-500 selection:text-black transition-colors duration-200;
+  }
+
+  /* Modo Claro Elegante & Armonioso (Executive Ivory & Slate) */
+  html.light body {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+  }
+
+  /* Fondo principal y contenedores */
+  html.light .bg-noir-950,
+  html.light .bg-noir-950\/80,
+  html.light .bg-noir-950\/40 {
+    background-color: #f1f5f9 !important;
+  }
+
+  html.light .bg-noir-900,
+  html.light .bg-noir-900\/95,
+  html.light .bg-noir-900\/90,
+  html.light .bg-noir-900\/80,
+  html.light .bg-noir-900\/60,
+  html.light .bg-noir-900\/40,
+  html.light .bg-noir-900\/30 {
+    background-color: #ffffff !important;
+  }
+
+  html.light .bg-noir-850,
+  html.light .bg-noir-800,
+  html.light .bg-noir-800\/80,
+  html.light .bg-noir-800\/60,
+  html.light .bg-noir-800\/50,
+  html.light .bg-noir-800\/40 {
+    background-color: #f8fafc !important;
+  }
+
+  /* Bordes suaves y limpios */
+  html.light .border-industrial-800,
+  html.light .border-industrial-800\/90,
+  html.light .border-industrial-800\/80,
+  html.light .border-industrial-800\/60,
+  html.light .border-industrial-800\/50,
+  html.light .border-industrial-800\/40,
+  html.light .border-industrial-700,
+  html.light .border-industrial-700\/80 {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* Tipografías de alto contraste y legibilidad */
+  html.light .text-white {
+    color: #0f172a !important;
+  }
+
+  html.light .text-slate-100,
+  html.light .text-slate-200,
+  html.light .text-slate-300 {
+    color: #334155 !important;
+  }
+
+  html.light .text-industrial-400,
+  html.light .text-industrial-500,
+  html.light .text-industrial-600 {
+    color: #64748b !important;
+  }
+
+  /* El selector de sucursal en el header */
+  html.light header .bg-noir-950\/80 {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Botón de cambio de sucursal texto */
+  html.light header .text-white {
+    color: #0f172a !important;
+  }
+
+  /* Badges y botones verdes en modo claro */
+  html.light .bg-emerald-500 {
+    background-color: #059669 !important;
+    color: #ffffff !important;
+  }
+
+  html.light .text-emerald-400 {
+    color: #059669 !important;
+  }
+
+  html.light .bg-emerald-500\/10,
+  html.light .bg-emerald-500\/15,
+  html.light .bg-emerald-500\/20 {
+    background-color: #ecfdf5 !important;
+    color: #047857 !important;
+    border-color: #a7f3d0 !important;
+  }
+
+  /* Badges ámbar en modo claro */
+  html.light .bg-amber-500 {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+  }
+
+  html.light .text-amber-300,
+  html.light .text-amber-400 {
+    color: #b45309 !important;
+  }
+
+  html.light .bg-amber-500\/10,
+  html.light .bg-amber-500\/15,
+  html.light .bg-amber-500\/20 {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border-color: #fde68a !important;
+  }
+
+  /* Badges azules en modo claro */
+  html.light .bg-blue-500 {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  html.light .text-blue-400 {
+    color: #1d4ed8 !important;
+  }
+
+  html.light .bg-blue-500\/10,
+  html.light .bg-blue-500\/15,
+  html.light .bg-blue-500\/20 {
+    background-color: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border-color: #bfdbfe !important;
+  }
+
+  /* Oro y ámbar equilibrado */
+  html.light .text-gold-400,
+  html.light .text-gold-300 {
+    color: #b45309 !important;
+  }
+
+  /* Barra inferior móvil en modo claro */
+  html.light nav.fixed.bottom-0 {
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Sombras y profundidad en modo claro */
+  html.light .shadow-lg,
+  html.light .shadow-xl,
+  html.light .shadow-2xl {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0e1013;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #262930;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #e5ab27;
+  }
+
+  html.light ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  html.light ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+  }
+}
+
+.barber-pole-border {
+  background: repeating-linear-gradient(
+    -45deg,
+    #dc2626,
+    #dc2626 10px,
+    #f8fafc 10px,
+    #f8fafc 20px,
+    #2563eb 20px,
+    #2563eb 30px,
+    #f8fafc 30px,
+    #f8fafc 40px
+  );
+}
+
