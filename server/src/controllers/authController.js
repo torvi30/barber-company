@@ -1,159 +1,216 @@
-import { mockStore, isMock } from '../config/firebase.js';
+import { mockStore, isMock, db } from '../config/firebase.js';
+
+export const SUPERADMIN_EMAILS = [
+  'victortamayopine@gmail.com',
+  'victortamayopinc@gmail.com',
+  'danielb.alzate1@gmail.com'
+];
+
+export const isSuperadminEmail = (email) => {
+  if (!email) return false;
+  return SUPERADMIN_EMAILS.includes(email.toLowerCase().trim());
+};
 
 /**
- * Iniciar sesión con validación de roles y asignación de barbería aislada
+ * Sincroniza un usuario autenticado con Firebase Auth (Google o Email)
+ * STRICT RULE (ADR 003): Si no es SuperAdmin, inicia con companyId: null (Cuarentena).
  */
-export const login = async (req, res) => {
+export const syncUser = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { uid, email, displayName, avatarUrl } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email y contraseña requeridos' });
+    if (!uid || !email) {
+      return res.status(400).json({ success: false, error: 'UID y Email requeridos' });
     }
 
-    // 1. Verificación de SuperAdmin
-    if (role === 'SUPERADMIN' || email === 'superadmin@barberpulse.io') {
-      if (password === 'SuperAdmin2026') {
-        return res.json({
-          success: true,
-          user: {
-            id: 'usr-superadmin',
-            name: 'SuperAdmin Central',
-            email: 'superadmin@barberpulse.io',
-            role: 'SUPERADMIN',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-          }
-        });
-      } else {
-        return res.status(401).json({ success: false, error: 'Credenciales de SuperAdmin inválidas' });
+    const cleanEmail = email.toLowerCase().trim();
+    const isSA = isSuperadminEmail(cleanEmail);
+
+    if (!mockStore.users) mockStore.users = [];
+
+    let user = mockStore.users.find(u => u.uid === uid || u.email === cleanEmail);
+
+    if (user) {
+      // Si el email está en la lista blanca de superadmins, forzar rol superadmin
+      if (isSA && user.role !== 'superadmin') {
+        user.role = 'superadmin';
+      }
+      user.displayName = displayName || user.displayName;
+      user.avatarUrl = avatarUrl || user.avatarUrl;
+    } else {
+      user = {
+        uid,
+        email: cleanEmail,
+        displayName: displayName || cleanEmail.split('@')[0],
+        avatarUrl: avatarUrl || null,
+        role: isSA ? 'superadmin' : 'user',
+        companyId: null, // Default: sin asignar
+        createdAt: new Date().toISOString()
+      };
+      mockStore.users.push(user);
+    }
+
+    // Persistir en Firestore si está conectado
+    if (!isMock && db) {
+      try {
+        await db.collection('users').doc(uid).set({
+          uid,
+          email: cleanEmail,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          role: user.role,
+          companyId: user.companyId,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (fsErr) {
+        console.warn('Backend firestore sync notice:', fsErr.message);
       }
     }
 
-    // 2. Verificación de Dueño / Administrador de Barbería
-    const user = (mockStore.users || []).find(
-      u => u.email.toLowerCase() === email.toLowerCase().trim() && u.password === password
-    );
+    return res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('Error al sincronizar usuario:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Listar todos los usuarios de la plataforma (Superadmin only)
+ */
+export const listPlatformUsers = async (req, res) => {
+  try {
+    if (!mockStore.users) mockStore.users = [];
+
+    // Si Firestore real está habilitado, traer de Firestore y sincronizar
+    if (!isMock && db) {
+      try {
+        const snap = await db.collection('users').get();
+        const firestoreUsers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+        for (const fu of firestoreUsers) {
+          const idx = mockStore.users.findIndex(u => u.uid === fu.uid || (fu.email && u.email === fu.email.toLowerCase().trim()));
+          if (idx >= 0) {
+            mockStore.users[idx] = { ...mockStore.users[idx], ...fu };
+          } else {
+            mockStore.users.push(fu);
+          }
+        }
+      } catch (fsErr) {
+        console.warn('Backend firestore list users notice:', fsErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      count: mockStore.users.length,
+      data: mockStore.users
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Asignar usuario a una empresa y definir rol (Superadmin only)
+ * Soporta UPSERT: si el usuario aún no estaba en memoria, se crea y asigna de inmediato.
+ */
+export const assignUserCompany = async (req, res) => {
+  try {
+    const { uid, companyId, role, email, displayName, avatarUrl } = req.body;
+
+    if (!uid) {
+      return res.status(400).json({ success: false, error: 'UID de usuario requerido' });
+    }
+
+    if (!mockStore.users) mockStore.users = [];
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
+
+    let user = mockStore.users.find(u => u.uid === uid || (cleanEmail && u.email === cleanEmail));
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Credenciales inválidas. Verifica tu correo y contraseña.'
-      });
+      // Upsert: Si el usuario inició sesión por Firebase y la instancia en memoria no lo tenía
+      user = {
+        uid,
+        email: cleanEmail,
+        displayName: displayName || (cleanEmail ? cleanEmail.split('@')[0] : 'Usuario'),
+        avatarUrl: avatarUrl || null,
+        companyId: companyId || null,
+        role: role || (companyId ? 'admin' : 'user'),
+        createdAt: new Date().toISOString()
+      };
+      mockStore.users.push(user);
+    } else {
+      user.companyId = companyId || null;
+      user.role = role || (companyId ? 'admin' : 'user');
+      if (cleanEmail) user.email = cleanEmail;
+      if (displayName) user.displayName = displayName;
+      if (avatarUrl) user.avatarUrl = avatarUrl;
+      user.updatedAt = new Date().toISOString();
     }
 
-    const barbershop = mockStore.barbershops?.[user.tenantId] || { name: 'Mi Barbería', id: user.tenantId };
-
-    return res.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role || 'OWNER',
-        tenantId: user.tenantId,
-        barbershopName: barbershop.name,
-        avatar: user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150&q=80'
+    // Si Firestore real está habilitado en backend
+    if (!isMock && db) {
+      try {
+        await db.collection('users').doc(uid).set({
+          uid,
+          email: user.email,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          companyId: user.companyId,
+          role: user.role,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (fsErr) {
+        console.warn('Backend firestore update notice:', fsErr.message);
       }
-    });
-  } catch (error) {
-    console.error('Error en login:', error);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-};
-
-/**
- * Invitar o crear credenciales para un Administrador de Barbería
- */
-export const inviteAdmin = async (req, res) => {
-  try {
-    const { barbershopId, name, email, password, phone } = req.body;
-
-    if (!barbershopId || !email || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Parámetros requeridos: barbershopId, name, email'
-      });
     }
 
-    const barbershop = mockStore.barbershops?.[barbershopId];
-    if (!barbershop) {
-      return res.status(404).json({ success: false, error: 'Barbería no encontrada' });
-    }
-
-    const autoPassword = password || `Barber${Math.floor(1000 + Math.random() * 9000)}!`;
-    const cleanEmail = email.toLowerCase().trim();
-
-    // Comprobar si ya existe
-    const existingIndex = (mockStore.users || []).findIndex(u => u.email.toLowerCase() === cleanEmail);
-    const newUser = {
-      id: `usr-${Date.now()}`,
-      name: name.trim(),
-      email: cleanEmail,
-      password: autoPassword,
-      role: 'OWNER',
-      tenantId: barbershopId,
-      phone: phone || barbershop.whatsapp,
-      active: true,
-      invitedAt: new Date().toISOString()
+    const company = companyId ? mockStore.barbershops?.[companyId] : null;
+    const userWithCompany = {
+      ...user,
+      companyName: company?.name || (companyId ? 'Barbería Asignada' : null)
     };
 
-    if (existingIndex >= 0) {
-      mockStore.users[existingIndex] = { ...mockStore.users[existingIndex], ...newUser };
-    } else {
-      if (!mockStore.users) mockStore.users = [];
-      mockStore.users.push(newUser);
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('user:assigned', userWithCompany);
     }
 
-    // Generar enlace directo de login con pre-rellenado
-    const clientHost = req.headers.origin || 'http://localhost:5173';
-    const invitationLink = `${clientHost}/?tenant=${barbershopId}&email=${encodeURIComponent(cleanEmail)}`;
-
-    // Generar mensaje para WhatsApp
-    const rawPhone = (phone || barbershop.whatsapp || '').replace(/[^\d]/g, '');
-    const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
-    const whatsappText = encodeURIComponent(
-      `¡Hola ${name}! 💈 Bienvenido a BarberPulse OS.\n\n` +
-      `Tu panel privado para gestionar *${barbershop.name}* está listo:\n\n` +
-      `🔑 *Tus Accesos Exclusivos:*\n` +
-      `• Panel Web: ${invitationLink}\n` +
-      `• Usuario: ${cleanEmail}\n` +
-      `• Clave Temporal: ${autoPassword}\n\n` +
-      `Solo tú y tu equipo tendrán acceso a las métricas, caja y turnos de tu barbería.`
-    );
-    const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${whatsappText}` : null;
-
-    return res.status(201).json({
-      success: true,
-      message: `Invitación generada para ${name} (${barbershop.name})`,
-      user: newUser,
-      invitationLink,
-      whatsappUrl,
-      whatsappMessage: decodeURIComponent(whatsappText)
-    });
-  } catch (error) {
-    console.error('Error al invitar administrador:', error);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-};
-
-/**
- * Listar administradores registrados de una barbería
- */
-export const getAdminsByBarbershop = async (req, res) => {
-  try {
-    const { barbershopId } = req.params;
-    const users = (mockStore.users || []).filter(u => u.tenantId === barbershopId);
     return res.json({
       success: true,
-      count: users.length,
-      data: users.map(u => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        tenantId: u.tenantId,
-        invitedAt: u.invitedAt || u.createdAt
-      }))
+      message: `Usuario asignado exitosamente a ${company?.name || companyId || 'ninguna (desvinculado)'}`,
+      user: userWithCompany
+    });
+  } catch (error) {
+    console.error('Error al asignar usuario:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Eliminar usuario de la plataforma (Superadmin only)
+ */
+export const deleteUser = async (req, res) => {
+  try {
+    const { uid } = req.params;
+    if (!mockStore.users) mockStore.users = [];
+
+    const initialLen = mockStore.users.length;
+    mockStore.users = mockStore.users.filter(u => u.uid !== uid);
+
+    if (!isMock && db) {
+      try {
+        await db.collection('users').doc(uid).delete();
+      } catch (fsErr) {
+        console.warn('Backend firestore delete notice:', fsErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      deleted: initialLen > mockStore.users.length
     });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
@@ -161,14 +218,14 @@ export const getAdminsByBarbershop = async (req, res) => {
 };
 
 /**
- * Actualizar configuración de la barbería (ej. Módulo Tienda Boutique)
+ * Actualizar configuración de la barbería
  */
 export const updateBarbershopSettings = async (req, res) => {
   try {
     const { barbershopId } = req.params;
     const { storeEnabled, name, address, whatsapp } = req.body;
 
-    const barbershop = mockStore.barbershops[barbershopId];
+    const barbershop = mockStore.barbershops?.[barbershopId];
     if (!barbershop) {
       return res.status(404).json({ success: false, error: 'Barbería no encontrada' });
     }
@@ -195,3 +252,41 @@ export const updateBarbershopSettings = async (req, res) => {
   }
 };
 
+/**
+ * Consultar estado de asignación en tiempo real para un usuario
+ */
+export const getUserStatus = async (req, res) => {
+  try {
+    const { uid } = req.params;
+    if (!uid) return res.status(400).json({ success: false, error: 'UID requerido' });
+
+    if (!mockStore.users) mockStore.users = [];
+    const cleanUid = String(uid).trim();
+    const user = mockStore.users.find(u => u.uid === cleanUid || (cleanUid.includes('@') && u.email === cleanUid.toLowerCase()));
+
+    if (!user) {
+      return res.json({
+        success: true,
+        assigned: false,
+        user: null
+      });
+    }
+
+    const company = user.companyId ? mockStore.barbershops?.[user.companyId] : null;
+
+    return res.json({
+      success: true,
+      assigned: Boolean(user.companyId),
+      user: {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        companyId: user.companyId || null,
+        role: user.role || 'user',
+        companyName: company?.name || null
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};

@@ -28,8 +28,22 @@ export const Analytics = () => {
   const [rankingData, setRankingData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const defaultRevenue = {
+    kpis: { grossRevenue: 0, netMargin: 0, totalServices: 0, averageTicket: 0 },
+    timeline: [],
+    paymentMethods: { CASH: 0, CARD: 0, TRANSFER: 0 }
+  };
+  const defaultHeatmap = { days: [], hours: [], matrix: [] };
+
   useEffect(() => {
     const fetchData = async () => {
+      if (!tenantId) {
+        setRevenueData(defaultRevenue);
+        setHeatmapData(defaultHeatmap);
+        setRankingData([]);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const [revRes, heatRes, rankRes] = await Promise.all([
@@ -38,11 +52,19 @@ export const Analytics = () => {
           api.getBarberPerformanceRanking(tenantId)
         ]);
 
-        if (revRes.success) setRevenueData(revRes);
-        if (heatRes.success) setHeatmapData(heatRes);
-        if (rankRes.success) setRankingData(rankRes.rankings || []);
+        if (revRes && revRes.success) setRevenueData(revRes);
+        else setRevenueData(defaultRevenue);
+
+        if (heatRes && heatRes.success) setHeatmapData(heatRes);
+        else setHeatmapData(defaultHeatmap);
+
+        if (rankRes && rankRes.success) setRankingData(rankRes.rankings || []);
+        else setRankingData([]);
       } catch (err) {
         console.error('Error al cargar analíticas:', err);
+        setRevenueData(defaultRevenue);
+        setHeatmapData(defaultHeatmap);
+        setRankingData([]);
       } finally {
         setLoading(false);
       }

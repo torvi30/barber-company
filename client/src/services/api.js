@@ -4,7 +4,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
  * Cliente API HTTP para BarberPulse OS
  * Incluye inyección automática del tenant header (x-barbershop-id)
  */
-export const apiClient = async (endpoint, options = {}, tenantId = 'demo-barbershop-01') => {
+export const apiClient = async (endpoint, options = {}, tenantId = null) => {
   const config = {
     ...options,
     headers: {
@@ -46,10 +46,12 @@ export const api = {
   createAppointment: (tenantId, appointmentData) => apiClient('/appointments', { method: 'POST', body: appointmentData }, tenantId),
   updateAppointmentStatus: (tenantId, id, payload) => apiClient(`/appointments/${id}/status`, { method: 'PATCH', body: payload }, tenantId),
 
-  // --- Autenticación & Gestión de Roles / Invitaciones ---
-  loginUser: (credentials) => apiClient('/auth/login', { method: 'POST', body: credentials }, null),
-  inviteAdmin: (invitationData) => apiClient('/auth/invite-admin', { method: 'POST', body: invitationData }, null),
-  getAdminsByBarbershop: (tenantId) => apiClient(`/auth/admins/${tenantId}`, { method: 'GET' }, tenantId),
+  // --- Autenticación & Gestión de Roles / Multi-Tenant ---
+  syncUser: (userData) => apiClient('/auth/sync', { method: 'POST', body: userData }, null),
+  getUserStatus: (uid) => apiClient(`/auth/status/${uid}`, { method: 'GET' }, null),
+  getPlatformUsers: () => apiClient('/auth/users', { method: 'GET', headers: { 'x-role': 'SUPERADMIN', 'x-admin-key': 'superadmin-secret-nodriza-2026' } }, null),
+  assignUserCompany: (assignment) => apiClient('/auth/users/assign', { method: 'POST', body: assignment, headers: { 'x-role': 'SUPERADMIN', 'x-admin-key': 'superadmin-secret-nodriza-2026' } }, null),
+  deletePlatformUser: (uid) => apiClient(`/auth/users/${uid}`, { method: 'DELETE', headers: { 'x-role': 'SUPERADMIN', 'x-admin-key': 'superadmin-secret-nodriza-2026' } }, null),
   updateBarbershopSettings: (tenantId, settings) => apiClient(`/auth/barbershops/${tenantId}/settings`, { method: 'PATCH', body: settings }, tenantId),
 
   // --- Barberos, Portal Staff & Horarios (Rostering & CRUD) ---

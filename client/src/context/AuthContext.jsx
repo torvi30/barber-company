@@ -1,69 +1,264 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
+  signOut
+} from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db, googleProvider } from '../lib/firebase';
+import { isPlatformSuperadminEmail } from '../lib/constants';
+import { getOrCreateUserProfile, USERS_COLLECTION } from '../services/userService';
+import { api } from '../services/api';
+import { initSocket } from '../services/socket';
 
 const AuthContext = createContext();
 
-const STORAGE_KEY = 'barberpulse_auth_user';
-
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error('Error recuperando sesión:', e);
-    }
-    // Estado inicial: SuperAdmin demo para acceso completo
-    return {
-      id: 'usr-superadmin',
-      name: 'SuperAdmin Central',
-      email: 'superadmin@barberpulse.io',
-      role: 'SUPERADMIN', // 'SUPERADMIN' | 'OWNER'
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-    };
-  });
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return !!saved || true;
-  });
+  // Determinar si el usuario actual es SuperAdmin
+  const isSuperAdmin = Boolean(
+    currentUser?.role === 'superadmin' ||
+    isPlatformSuperadminEmail(firebaseUser?.email || currentUser?.email)
+  );
 
+  // Si no es superadmin y no tiene empresa asignada -> Cuarentena (ADR 003)
+  const isUnassigned = Boolean(
+    currentUser &&
+    !isSuperAdmin &&
+    !currentUser.companyId
+  );
+
+  // Escuchar el estado de autenticación de Firebase
   useEffect(() => {
-    try {
-      if (currentUser && isAuthenticated) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser));
+    let unsubscribeUserDoc = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
+      setAuthError(null);
+
+      if (user) {
+        setFirebaseUser(user);
+        const isSA = isPlatformSuperadminEmail(user.email);
+
+        try {
+          // 1. Obtener o inicializar perfil en Firestore
+          const profile = await getOrCreateUserProfile(user);
+
+          // 2. Sincronizar en el backend multi-tenant
+          try {
+            await api.syncUser({
+              uid: user.uid,
+              email: user.email,
+              displayName: profile?.displayName || user.displayName || user.email?.split('@')[0],
+              avatarUrl: user.photoURL || profile?.avatarUrl || null
+            });
+          } catch (syncErr) {
+            console.warn('Backend user sync notice:', syncErr.message);
+          }
+
+          const userState = {
+            uid: user.uid,
+            id: user.uid,
+            email: user.email,
+            name: profile?.displayName || user.displayName || user.email?.split('@')[0],
+            displayName: profile?.displayName || user.displayName || user.email?.split('@')[0],
+            avatar: user.photoURL || profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+            avatarUrl: user.photoURL || profile?.avatarUrl || null,
+            role: isSA ? 'superadmin' : (profile?.role || 'user'),
+            companyId: isSA ? null : (profile?.companyId || null),
+            tenantId: isSA ? null : (profile?.companyId || null)
+          };
+
+          setCurrentUser(userState);
+
+          // 3. Listener en tiempo real al documento del usuario en Firestore (para desbloqueo instantáneo al ser asignado)
+          const userDocRef = doc(db, USERS_COLLECTION, user.uid);
+          unsubscribeUserDoc = onSnapshot(userDocRef, (snap) => {
+            if (snap.exists()) {
+              const liveData = snap.data();
+              setCurrentUser(prev => {
+                if (!prev) return null;
+                return {
+                  ...prev,
+                  role: isSA ? 'superadmin' : (liveData.role || prev.role),
+                  companyId: isSA ? null : (liveData.companyId || null),
+                  tenantId: isSA ? null : (liveData.companyId || null)
+                };
+              });
+            }
+          }, (err) => {
+            console.warn('Firestore onSnapshot notice:', err.message);
+          });
+
+        } catch (err) {
+          console.error('Error al resolver perfil de usuario:', err);
+          setCurrentUser({
+            uid: user.uid,
+            id: user.uid,
+            email: user.email,
+            name: user.displayName || user.email?.split('@')[0],
+            displayName: user.displayName || user.email?.split('@')[0],
+            avatar: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+            role: isSA ? 'superadmin' : 'user',
+            companyId: null,
+            tenantId: null
+          });
+        }
       } else {
-        localStorage.removeItem(STORAGE_KEY);
+        setFirebaseUser(null);
+        setCurrentUser(null);
+        if (unsubscribeUserDoc) unsubscribeUserDoc();
       }
-    } catch (e) {
-      console.error('Error guardando sesión:', e);
+
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUserDoc) unsubscribeUserDoc();
+    };
+  }, []);
+
+  // Escuchar asignación en tiempo real vía Socket.io para desbloqueo instantáneo
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const socket = initSocket('nodriza-global');
+
+    const handleLiveAssigned = (data) => {
+      if (!data) return;
+      const cleanMyEmail = currentUser?.email ? currentUser.email.toLowerCase().trim() : '';
+      const cleanAssignedEmail = data.email ? data.email.toLowerCase().trim() : '';
+      const isMe = data.uid === currentUser.uid || (cleanMyEmail && cleanMyEmail === cleanAssignedEmail);
+
+      if (isMe && data.companyId) {
+        console.log('⚡ [Live Socket] ¡Asignación detectada en vivo!', data);
+        setCurrentUser(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            companyId: data.companyId,
+            tenantId: data.companyId,
+            role: data.role || prev.role,
+            companyName: data.companyName || prev.companyName || null
+          };
+        });
+      }
+    };
+
+    socket.on('user:assigned', handleLiveAssigned);
+
+    return () => {
+      socket.off('user:assigned', handleLiveAssigned);
+    };
+  }, [currentUser?.uid, currentUser?.email]);
+
+  const applyUserAssignment = (assignedData) => {
+    if (!assignedData?.companyId) return;
+    setCurrentUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        companyId: assignedData.companyId,
+        tenantId: assignedData.companyId,
+        role: assignedData.role || prev.role,
+        companyName: assignedData.companyName || prev.companyName || null
+      };
+    });
+  };
+
+  // Iniciar Sesión con Google (Gmail)
+  const loginWithGoogle = async () => {
+    setAuthError(null);
+    setIsLoading(true);
+    try {
+      const res = await signInWithPopup(auth, googleProvider);
+      return res.user;
+    } catch (err) {
+      setAuthError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-  }, [currentUser, isAuthenticated]);
-
-  const login = (userData) => {
-    setCurrentUser(prev => ({
-      ...prev,
-      ...userData,
-      avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-    }));
-    setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem(STORAGE_KEY);
+  // Iniciar Sesión con Correo y Contraseña
+  const loginWithEmail = async (email, password) => {
+    setAuthError(null);
+    setIsLoading(true);
+    try {
+      const res = await signInWithEmailAndPassword(auth, email.trim(), password);
+      return res.user;
+    } catch (err) {
+      setAuthError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const toggleSuperAdmin = () => {
-    setCurrentUser(prev => ({
-      ...prev,
-      role: prev?.role === 'SUPERADMIN' ? 'OWNER' : 'SUPERADMIN'
-    }));
+  // Registrar nuevo usuario con Correo y Contraseña
+  const registerWithEmail = async (email, password, displayName) => {
+    setAuthError(null);
+    setIsLoading(true);
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      if (displayName && res.user) {
+        await updateProfile(res.user, { displayName: displayName.trim() });
+      }
+      return res.user;
+    } catch (err) {
+      setAuthError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const isSuperAdmin = currentUser?.role === 'SUPERADMIN';
+  // Restablecer Contraseña por Correo
+  const resetPassword = async (email) => {
+    setAuthError(null);
+    return sendPasswordResetEmail(auth, email.trim());
+  };
+
+  // Cerrar Sesión
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+      setFirebaseUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ currentUser, isAuthenticated, login, logout, toggleSuperAdmin, isSuperAdmin }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        firebaseUser,
+        isAuthenticated: Boolean(currentUser),
+        isSuperAdmin,
+        isUnassigned,
+        isLoading,
+        authError,
+        applyUserAssignment,
+        loginWithGoogle,
+        loginWithEmail,
+        registerWithEmail,
+        resetPassword,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

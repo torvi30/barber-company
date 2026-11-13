@@ -38,18 +38,18 @@ export const SubscriptionSettings = () => {
     try {
       setLoading(true);
       const [statusRes, plansRes] = await Promise.all([
-        api.getSubscriptionStatus(tenantId),
+        tenantId ? api.getSubscriptionStatus(tenantId) : Promise.resolve({ success: false }),
         api.getSubscriptionPlans()
       ]);
 
-      if (statusRes.success) {
+      if (statusRes && statusRes.success) {
         setSubscription(statusRes.data);
       }
-      if (plansRes.success) {
+      if (plansRes && plansRes.success) {
         setPlans(plansRes.data);
       }
     } catch (error) {
-      console.error('Error cargando datos de suscripción:', error);
+      console.warn('Error cargando datos de suscripción:', error);
       setStatusMessage({
         type: 'error',
         text: error.message || 'No se pudo cargar la información de facturación.'

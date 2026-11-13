@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { Modal } from '../components/Modal';
+import { isPlatformSuperadminEmail } from '../lib/constants';
+import {
+  fetchAllPlatformUsers,
+  updateUserTenantAndRole,
+  deletePlatformUser
+} from '../services/userService';
+import {
+  showSuccessAlert,
+  showErrorAlert,
+  showConfirmDialog
+} from '../lib/swal';
 import {
   ShieldAlert,
   Crown,
@@ -24,16 +36,50 @@ import {
   Mail,
   Copy,
   Key,
-  ShoppingBag
+  ShoppingBag,
+  User,
+  UserCheck,
+  UserX,
+  Plus
 } from 'lucide-react';
 
-export const SuperAdminConsole = () => {
+export const SuperAdminConsole = ({
+  activeTab: propActiveTab,
+  showCreateCompanyModal: propShowModal,
+  setShowCreateCompanyModal: propSetShowModal,
+  onCountsChange,
+  refreshTrigger
+}) => {
   const { switchTenant } = useBarbershop();
   const { currentUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState(null);
   const [tenants, setTenants] = useState([]);
+  
+  const [internalTab, setInternalTab] = useState('companies');
+  const activeTab = propActiveTab || internalTab;
+
+  // Gestión de Usuarios Registrados en Plataforma
+  const [platformUsers, setPlatformUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [selectedUserForAssign, setSelectedUserForAssign] = useState(null);
+  const [targetCompanyId, setTargetCompanyId] = useState('');
+  const [targetRole, setTargetRole] = useState('admin');
+
+  // Modal Crear Nueva Empresa / Barbería (Superadmin Only)
+  const [internalShowModal, setInternalShowModal] = useState(false);
+  const showCreateCompanyModal = propShowModal !== undefined ? propShowModal : internalShowModal;
+  const setShowCreateCompanyModal = propSetShowModal || setInternalShowModal;
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyMunicipality, setNewCompanyMunicipality] = useState('Rionegro');
+  const [newCompanyAddress, setNewCompanyAddress] = useState('');
+  const [newCompanyWhatsapp, setNewCompanyWhatsapp] = useState('');
+  const [newCompanyOwner, setNewCompanyOwner] = useState('');
+  const [newCompanyOwnerEmail, setNewCompanyOwnerEmail] = useState('');
+  const [newCompanyCurrency, setNewCompanyCurrency] = useState('COP');
+  const [newCompanyStoreEnabled, setNewCompanyStoreEnabled] = useState(true);
+  const [creatingCompany, setCreatingCompany] = useState(false);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,9 +132,10 @@ export const SuperAdminConsole = () => {
       });
       if (res.success) {
         setInviteResult(res);
+        await showSuccessAlert('¡Invitación Generada!', `Credenciales de acceso creadas para "${inviteEmail}".`);
       }
     } catch (err) {
-      alert('Error al generar invitación: ' + err.message);
+      await showErrorAlert('Error al generar invitación', err.message);
     } finally {
       setInviteLoading(false);
     }
@@ -116,9 +163,214 @@ export const SuperAdminConsole = () => {
     }
   };
 
+  const loadPlatformUsers = async () => {
+    try {
+      setUsersLoading(true);
+      let users = await fetchAllPlatformUsers();
+      if (!users || users.length === 0) {
+        const res = await api.getPlatformUsers();
+        if (res.success && res.data) {
+          users = res.data;
+        }
+      }
+      setPlatformUsers(users || []);
+    } catch (err) {
+      console.warn('Error al cargar usuarios:', err.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleCreateCompany = async (e) => {
+    e.preventDefault();
+    if (!newCompanyName.trim()) return;
+
+    try {
+      setCreatingCompany(true);
+      const res = await api.registerNewBusiness({
+        name: newCompanyName.trim(),
+        municipality: newCompanyMunicipality.trim(),
+        department: 'Antioquia',
+        address: newCompanyAddress.trim() || 'Dirección por registrar',
+        whatsapp: newCompanyWhatsapp.trim() || '+573000000000',
+        ownerName: newCompanyOwner.trim() || 'Administrador',
+        ownerEmail: newCompanyOwnerEmail.trim() || `contacto@${newCompanyName.toLowerCase().replace(/\s+/g, '-')}.com`,
+        currency: newCompanyCurrency,
+        storeEnabled: newCompanyStoreEnabled
+      });
+
+      if (res.success) {
+        const createdName = res.data?.tenant?.name || newCompanyName;
+        setShowCreateCompanyModal(false);
+        setNewCompanyName('');
+        setNewCompanyAddress('');
+        setNewCompanyWhatsapp('');
+        setNewCompanyOwner('');
+        setNewCompanyOwnerEmail('');
+        setFeedbackMessage({
+          type: 'success',
+          text: `¡Barbería "${createdName}" creada exitosamente!`
+        });
+        await loadMasterData();
+        await showSuccessAlert(
+          '¡Barbería Registrada!',
+          `La empresa "${createdName}" ha sido creada exitosamente en la plataforma.`
+        );
+      }
+    } catch (err) {
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Error al crear barbería: ' + err.message
+      });
+      await showErrorAlert('Error al Crear Barbería', err.message);
+    } finally {
+      setCreatingCompany(false);
+    }
+  };
+
+  const handleAssignUserSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedUserForAssign || !targetCompanyId) return;
+
+    try {
+      setActionLoading(true);
+      try {
+        await updateUserTenantAndRole(selectedUserForAssign.uid, targetCompanyId, targetRole);
+      } catch (fsErr) {
+        console.warn('Firestore update notice (falling back to API):', fsErr.message);
+      }
+
+      await api.assignUserCompany({
+        uid: selectedUserForAssign.uid,
+        email: selectedUserForAssign.email,
+        displayName: selectedUserForAssign.displayName,
+        avatarUrl: selectedUserForAssign.avatarUrl,
+        companyId: targetCompanyId,
+        role: targetRole
+      });
+
+      const userEmail = selectedUserForAssign.email;
+      const roleText = targetRole === 'admin' ? 'Administrador / Dueño de Barbería' : 'Barbero / Personal';
+      setSelectedUserForAssign(null);
+      setFeedbackMessage({
+        type: 'success',
+        text: `Usuario "${userEmail}" asignado exitosamente como ${roleText}.`
+      });
+      await loadPlatformUsers();
+      await showSuccessAlert(
+        '¡Usuario Asignado!',
+        `El usuario "${userEmail}" ahora tiene acceso a su negocio como ${roleText}.`
+      );
+    } catch (err) {
+      console.error('Error al asignar usuario:', err);
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Error al asignar usuario: ' + err.message
+      });
+      await showErrorAlert('Error al Asignar', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnassignUser = async (user) => {
+    const confirmResult = await showConfirmDialog({
+      title: '¿Desvincular Usuario?',
+      text: `¿Deseas desvincular a "${user.email}" de su empresa? Volverá al estado de cuarentena sin acceso.`,
+      confirmText: 'Sí, desvincular',
+      cancelText: 'Cancelar'
+    });
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+      setActionLoading(true);
+      try {
+        await updateUserTenantAndRole(user.uid, null, 'user');
+      } catch (fsErr) {
+        console.warn('Firestore update notice:', fsErr.message);
+      }
+      await api.assignUserCompany({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        companyId: null,
+        role: 'user'
+      });
+      setFeedbackMessage({
+        type: 'success',
+        text: `Usuario "${user.email}" desvinculado de la empresa.`
+      });
+      await loadPlatformUsers();
+      await showSuccessAlert('Usuario Desvinculado', `"${user.email}" fue devuelto a estado no asignado.`);
+    } catch (err) {
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Error al desvincular usuario: ' + err.message
+      });
+      await showErrorAlert('Error al Desvincular', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    const confirmResult = await showConfirmDialog({
+      title: '¿Eliminar Usuario?',
+      text: `¿Eliminar permanentemente a "${user.email}" de la plataforma? Esta acción no se puede deshacer.`,
+      confirmText: 'Sí, eliminar',
+      cancelText: 'Cancelar',
+      icon: 'warning'
+    });
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+      setActionLoading(true);
+      try {
+        await deletePlatformUser(user.uid);
+      } catch (fsErr) {
+        console.warn('Firestore delete notice:', fsErr.message);
+      }
+      await api.deletePlatformUser(user.uid);
+      setFeedbackMessage({
+        type: 'success',
+        text: `Usuario "${user.email}" eliminado.`
+      });
+      await loadPlatformUsers();
+      await showSuccessAlert('Usuario Eliminado', `El usuario "${user.email}" ha sido eliminado del sistema.`);
+    } catch (err) {
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Error al eliminar usuario: ' + err.message
+      });
+      await showErrorAlert('Error al Eliminar', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadMasterData();
+    loadPlatformUsers();
   }, []);
+
+  // Notificar al layout superior los conteos para las pestañas
+  useEffect(() => {
+    if (onCountsChange) {
+      onCountsChange({
+        tenantsCount: tenants.length,
+        usersCount: platformUsers.length
+      });
+    }
+  }, [tenants.length, platformUsers.length, onCountsChange]);
+
+  // Recargar datos cuando se active el botón de refrescar del header principal
+  useEffect(() => {
+    if (refreshTrigger) {
+      loadMasterData();
+      loadPlatformUsers();
+    }
+  }, [refreshTrigger]);
 
   // Generar preview de WhatsApp al abrir el modal o cambiar el tipo de alerta
   const handleOpenWhatsAppModal = async (tenant, defaultType = 'expiring_soon') => {
@@ -169,12 +421,14 @@ export const SuperAdminConsole = () => {
         });
         setSelectedTenantForExtend(null);
         await loadMasterData();
+        await showSuccessAlert('Suscripción Extendida', `Se agregaron +${days} días con éxito.`);
       }
     } catch (err) {
       setFeedbackMessage({
         type: 'error',
         text: 'Error al extender suscripción: ' + err.message
       });
+      await showErrorAlert('Error al Extender Suscripción', err.message);
     } finally {
       setActionLoading(false);
     }
@@ -182,10 +436,13 @@ export const SuperAdminConsole = () => {
 
   const handleToggleSuspendTenant = async (tenant) => {
     const newStatus = tenant.subscriptionStatus === 'suspended' ? 'active' : 'suspended';
-    const confirmAction = window.confirm(
-      `¿Estás seguro de ${newStatus === 'suspended' ? 'SUSPENDER' : 'REACTIVAR'} a "${tenant.name}"?`
-    );
-    if (!confirmAction) return;
+    const confirmResult = await showConfirmDialog({
+      title: newStatus === 'suspended' ? '¿Suspender Barbería?' : '¿Reactivar Barbería?',
+      text: `¿Estás seguro de ${newStatus === 'suspended' ? 'SUSPENDER' : 'REACTIVAR'} a "${tenant.name}"?`,
+      confirmText: newStatus === 'suspended' ? 'Sí, suspender' : 'Sí, reactivar',
+      icon: newStatus === 'suspended' ? 'warning' : 'question'
+    });
+    if (!confirmResult.isConfirmed) return;
 
     try {
       setActionLoading(true);
@@ -199,12 +456,14 @@ export const SuperAdminConsole = () => {
           text: `Estado de "${tenant.name}" actualizado a ${newStatus.toUpperCase()}`
         });
         await loadMasterData();
+        await showSuccessAlert('Estado Actualizado', `"${tenant.name}" ahora está ${newStatus === 'suspended' ? 'SUSPENDIDA' : 'ACTIVA'}.`);
       }
     } catch (err) {
       setFeedbackMessage({
         type: 'error',
         text: 'Error al cambiar estado: ' + err.message
       });
+      await showErrorAlert('Error al Cambiar Estado', err.message);
     } finally {
       setActionLoading(false);
     }
@@ -222,12 +481,17 @@ export const SuperAdminConsole = () => {
           type: 'success',
           text: `Tienda Boutique ${nextStatus ? 'activada' : 'desactivada'} para "${tenant.name}".`
         });
+        await showSuccessAlert(
+          'Tienda Boutique',
+          `Tienda Boutique ${nextStatus ? 'activada' : 'desactivada'} para "${tenant.name}".`
+        );
       }
     } catch (err) {
       setFeedbackMessage({
         type: 'error',
         text: 'Error al cambiar estado de tienda: ' + err.message
       });
+      await showErrorAlert('Error en Tienda Boutique', err.message);
     } finally {
       setActionLoading(false);
     }
@@ -261,45 +525,11 @@ export const SuperAdminConsole = () => {
   );
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-12">
-      {/* Header SuperAdmin */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-industrial-800 pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-gold-400 mb-1">
-            <Crown className="w-4 h-4 text-gold-400 animate-pulse" />
-            Central Control Plane • Casa Nodriza
-          </div>
-          <h1 className="text-2xl md:text-3xl font-display font-black text-white flex items-center gap-3">
-            Consola SuperAdmin
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-gold-500/15 text-gold-300 border border-gold-500/30 font-mono">
-              MASTER HUB
-            </span>
-          </h1>
-          <p className="text-sm text-industrial-400 mt-1">
-            Monitoreo en tiempo real de barberías registradas, facturación recurrente, alertas de vencimiento y soporte por WhatsApp.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadMasterData}
-            title="Sincronizar datos de la red"
-            className="p-2.5 rounded-xl bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white hover:border-gold-500/40 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-gold-400' : ''}`} />
-          </button>
-
-          <div className="px-3.5 py-2 rounded-xl bg-noir-900 border border-gold-500/30 text-xs font-mono text-gold-400 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Nodo: Colombia Central</span>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-6 animate-fadeIn pb-12">
       {/* Banner de Feedback */}
       {feedbackMessage && (
         <div
-          className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-fadeIn ${feedbackMessage.type === 'success'
+          className={`p-4 rounded-2xl border flex items-center justify-between text-xs animate-fadeIn ${feedbackMessage.type === 'success'
               ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
               : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
             }`}
@@ -314,330 +544,508 @@ export const SuperAdminConsole = () => {
           </div>
           <button
             onClick={() => setFeedbackMessage(null)}
-            className="text-industrial-400 hover:text-white font-bold ml-4"
+            className="text-industrial-400 hover:text-white font-bold ml-4 cursor-pointer"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Tarjetas de Métricas Globales (MRR & Alertas) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* MRR Recurrente */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-noir-900 to-noir-950 border border-gold-500/30 shadow-glow-gold/10">
-          <div className="flex items-center justify-between text-industrial-400 text-xs font-mono uppercase mb-2">
-            <span>MRR Facturación Mes</span>
-            <DollarSign className="w-4 h-4 text-gold-400" />
-          </div>
-          <div className="text-2xl font-display font-black text-white">
-            ${metrics?.totalMRR_USD || 0}{' '}
-            <span className="text-xs font-mono text-industrial-400">USD</span>
-          </div>
-          <div className="text-[11px] text-gold-400/90 font-mono mt-1">
-            ≈ ${(metrics?.totalMRR_COP || 0).toLocaleString('es-CO')} COP / mes
-          </div>
-        </div>
+      {activeTab === 'companies' ? (
+        <>
+          {/* Tarjetas de Métricas Globales (MRR & Alertas) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* MRR Recurrente */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-noir-900 to-noir-950 border border-gold-500/30 shadow-glow-gold/10">
+              <div className="flex items-center justify-between text-industrial-400 text-xs font-mono uppercase mb-2">
+                <span>MRR Facturación Mes</span>
+                <DollarSign className="w-4 h-4 text-gold-400" />
+              </div>
+              <div className="text-2xl font-display font-black text-white">
+                ${metrics?.totalMRR_USD || 0}{' '}
+                <span className="text-xs font-mono text-industrial-400">USD</span>
+              </div>
+              <div className="text-[11px] text-gold-400/90 font-mono mt-1">
+                ≈ ${(metrics?.totalMRR_COP || 0).toLocaleString('es-CO')} COP / mes
+              </div>
+            </div>
 
-        {/* Total Barberías */}
-        <div className="p-5 rounded-2xl bg-noir-900 border border-industrial-800">
-          <div className="flex items-center justify-between text-industrial-400 text-xs font-mono uppercase mb-2">
-            <span>Barberías Totales</span>
-            <Building2 className="w-4 h-4 text-slate-300" />
-          </div>
-          <div className="text-2xl font-display font-black text-white">
-            {metrics?.totalTenants || 0}
-          </div>
-          <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>{metrics?.statusSummary?.active || 0} Activos • {metrics?.statusSummary?.trial || 0} en Prueba</span>
-          </div>
-        </div>
+            {/* Total Barberías */}
+            <div className="p-5 rounded-2xl bg-noir-900 border border-industrial-800">
+              <div className="flex items-center justify-between text-industrial-400 text-xs font-mono uppercase mb-2">
+                <span>Barberías Totales</span>
+                <Building2 className="w-4 h-4 text-slate-300" />
+              </div>
+              <div className="text-2xl font-display font-black text-white">
+                {metrics?.totalTenants || 0}
+              </div>
+              <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>{metrics?.statusSummary?.active || 0} Activos • {metrics?.statusSummary?.trial || 0} en Prueba</span>
+              </div>
+            </div>
 
-        {/* Alertas de Cobro (≤ 3 Días) */}
-        <div className="p-5 rounded-2xl bg-noir-900 border border-amber-500/30">
-          <div className="flex items-center justify-between text-amber-400 text-xs font-mono uppercase mb-2">
-            <span>Próximos a Vencer (≤ 3d)</span>
-            <Clock className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="text-2xl font-display font-black text-amber-300">
-            {metrics?.statusSummary?.expiringSoon || 0}
-          </div>
-          <div className="text-[11px] text-industrial-400 mt-1">
-            Requieren mensaje de recordatorio preventivo
-          </div>
-        </div>
+            {/* Alertas de Cobro (≤ 3 Días) */}
+            <div className="p-5 rounded-2xl bg-noir-900 border border-amber-500/30">
+              <div className="flex items-center justify-between text-amber-400 text-xs font-mono uppercase mb-2">
+                <span>Próximos a Vencer (≤ 3d)</span>
+                <Clock className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="text-2xl font-display font-black text-amber-300">
+                {metrics?.statusSummary?.expiringSoon || 0}
+              </div>
+              <div className="text-[11px] text-industrial-400 mt-1">
+                Requieren mensaje de recordatorio preventivo
+              </div>
+            </div>
 
-        {/* En Mora / Suspendidos */}
-        <div className="p-5 rounded-2xl bg-noir-900 border border-rose-500/30">
-          <div className="flex items-center justify-between text-rose-400 text-xs font-mono uppercase mb-2">
-            <span>En Mora o Suspendidos</span>
-            <AlertTriangle className="w-4 h-4 text-rose-400" />
-          </div>
-          <div className="text-2xl font-display font-black text-rose-400">
-            {(metrics?.statusSummary?.pastDue || 0) + (metrics?.statusSummary?.suspended || 0)}
-          </div>
-          <div className="text-[11px] text-industrial-400 mt-1">
-            {metrics?.statusSummary?.pastDue || 0} en mora • {metrics?.statusSummary?.suspended || 0} suspendidos
-          </div>
-        </div>
-      </div>
-
-      {/* Barra de Filtros & Búsqueda */}
-      <div className="p-4 rounded-2xl bg-noir-900 border border-industrial-800 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Input Buscador */}
-          <div className="relative md:col-span-2">
-            <Search className="w-4 h-4 text-industrial-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Buscar barbería por nombre, dueño, municipio (Marinilla, Rionegro...) o slug..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-noir-950 border border-industrial-700 rounded-xl text-xs text-white placeholder-industrial-500 focus:outline-none focus:border-gold-500"
-            />
+            {/* En Mora / Suspendidos */}
+            <div className="p-5 rounded-2xl bg-noir-900 border border-rose-500/30">
+              <div className="flex items-center justify-between text-rose-400 text-xs font-mono uppercase mb-2">
+                <span>En Mora o Suspendidos</span>
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+              </div>
+              <div className="text-2xl font-display font-black text-rose-400">
+                {(metrics?.statusSummary?.pastDue || 0) + (metrics?.statusSummary?.suspended || 0)}
+              </div>
+              <div className="text-[11px] text-industrial-400 mt-1">
+                {metrics?.statusSummary?.pastDue || 0} en mora • {metrics?.statusSummary?.suspended || 0} suspendidos
+              </div>
+            </div>
           </div>
 
-          {/* Filtro Estado */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 bg-noir-950 border border-industrial-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-gold-500"
-          >
-            <option value="all">Todos los Estados</option>
-            <option value="urgent">⚠️ Urgentes (Por Vencer / Mora)</option>
-            <option value="active">✅ Activos Vigentes</option>
-            <option value="past_due">🚨 En Mora (Past Due)</option>
-            <option value="suspended">🚫 Suspendidos</option>
-          </select>
-        </div>
+          {/* Barra de Filtros & Búsqueda */}
+          <div className="p-4 rounded-2xl bg-noir-900 border border-industrial-800 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Input Buscador */}
+              <div className="relative md:col-span-2">
+                <Search className="w-4 h-4 text-industrial-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar barbería por nombre, dueño, municipio (Marinilla, Rionegro...) o slug..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-noir-950 border border-industrial-700 rounded-xl text-xs text-white placeholder-industrial-500 focus:outline-none focus:border-gold-500"
+                />
+              </div>
 
-        {/* Chips de Municipios de Oriente Antioqueño / Medellín */}
-        <div className="flex items-center gap-2 pt-2 border-t border-industrial-800/80 overflow-x-auto text-xs">
-          <span className="text-industrial-500 font-mono text-[11px] flex items-center gap-1 flex-shrink-0">
-            <MapPin className="w-3.5 h-3.5" /> Municipios:
-          </span>
-          <button
-            onClick={() => setSelectedMunicipality('all')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedMunicipality === 'all'
-                ? 'bg-gold-500 text-noir-950 font-bold'
-                : 'bg-noir-950 text-industrial-400 hover:text-white'
-              }`}
-          >
-            Todos ({tenants.length})
-          </button>
-          {uniqueMunicipalities.map((mun) => {
-            const count = tenants.filter(t => t.municipality === mun).length;
-            return (
+              {/* Filtro Estado */}
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-3 py-2 bg-noir-950 border border-industrial-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-gold-500"
+              >
+                <option value="all">Todos los Estados</option>
+                <option value="urgent">⚠️ Urgentes (Por Vencer / Mora)</option>
+                <option value="active">✅ Activos Vigentes</option>
+                <option value="past_due">🚨 En Mora (Past Due)</option>
+                <option value="suspended">🚫 Suspendidos</option>
+              </select>
+            </div>
+
+            {/* Chips de Municipios de Oriente Antioqueño / Medellín */}
+            <div className="flex items-center gap-2 pt-2 border-t border-industrial-800/80 overflow-x-auto text-xs">
+              <span className="text-industrial-500 font-mono text-[11px] flex items-center gap-1 flex-shrink-0">
+                <MapPin className="w-3.5 h-3.5" /> Municipios:
+              </span>
               <button
-                key={mun}
-                onClick={() => setSelectedMunicipality(mun)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedMunicipality === mun
+                onClick={() => setSelectedMunicipality('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedMunicipality === 'all'
                     ? 'bg-gold-500 text-noir-950 font-bold'
                     : 'bg-noir-950 text-industrial-400 hover:text-white'
                   }`}
               >
-                {mun} ({count})
+                Todos ({tenants.length})
               </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tabla Nodriza de Negocios */}
-      <div className="rounded-2xl bg-noir-900 border border-industrial-800 overflow-hidden shadow-2xl">
-        <div className="p-4 border-b border-industrial-800 flex items-center justify-between">
-          <div className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-gold-400" />
-            Red de Barberías Registradas ({filteredTenants.length})
-          </div>
-          <span className="text-[11px] text-industrial-500 font-mono">
-            Acciones rápidas de cobranza por WhatsApp en 1 clic
-          </span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-noir-950/80 text-industrial-400 font-mono uppercase tracking-wider border-b border-industrial-800">
-              <tr>
-                <th className="py-3.5 px-4">Barbería & Ubicación</th>
-                <th className="py-3.5 px-4">Dueño & Contacto</th>
-                <th className="py-3.5 px-4">Plan SaaS</th>
-                <th className="py-3.5 px-4">Estado & Vencimiento</th>
-                <th className="py-3.5 px-4 text-right">Cobranza & Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-industrial-800/60 text-slate-300">
-              {filteredTenants.map((t) => {
+              {uniqueMunicipalities.map((mun) => {
+                const count = tenants.filter(t => t.municipality === mun).length;
                 return (
-                  <tr
-                    key={t.id}
-                    className={`hover:bg-noir-800/50 transition-colors ${t.urgencyLevel === 'CRITICAL'
-                        ? 'bg-rose-950/15'
-                        : t.urgencyLevel === 'DANGER'
-                          ? 'bg-rose-950/10'
-                          : t.urgencyLevel === 'WARNING'
-                            ? 'bg-amber-950/10'
-                            : ''
+                  <button
+                    key={mun}
+                    onClick={() => setSelectedMunicipality(mun)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedMunicipality === mun
+                        ? 'bg-gold-500 text-noir-950 font-bold'
+                        : 'bg-noir-950 text-industrial-400 hover:text-white'
                       }`}
                   >
-                    {/* Barbería e Identificación */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-start gap-2.5">
-                        <div className="p-2 rounded-xl bg-noir-950 border border-gold-500/30 flex-shrink-0 mt-0.5">
-                          {getBarberShopIcon()}
-                        </div>
-                        <div>
-                          <div className="font-bold text-white text-sm flex items-center gap-2">
-                            {t.name}
-                            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-gold-500/15 text-gold-300 border-gold-500/30">
-                              BARBERÍA
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-industrial-400 flex items-center gap-1.5 mt-0.5">
-                            <MapPin className="w-3 h-3 text-industrial-500" />
-                            <span>
-                              <strong>{t.municipality}</strong> • {t.address}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-industrial-500 font-mono mt-0.5">
-                            slug: /{t.slug} • ID: {t.id}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
+                    {mun} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-                    {/* Dueño & Teléfono */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-medium text-white">{t.ownerName}</div>
-                      <div className="text-[11px] text-industrial-400 flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3 text-emerald-400" />
-                        <span className="font-mono">{t.whatsapp}</span>
-                      </div>
-                      <div className="text-[10px] text-industrial-500 truncate max-w-[150px]">
-                        {t.ownerEmail}
-                      </div>
-                    </td>
+          {/* Tabla Nodriza de Negocios */}
+          <div className="rounded-2xl bg-noir-900 border border-industrial-800 overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-industrial-800 flex items-center justify-between">
+              <div className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-gold-400" />
+                Red de Barberías Registradas ({filteredTenants.length})
+              </div>
+              <span className="text-[11px] text-industrial-500 font-mono">
+                Acciones rápidas de cobranza por WhatsApp en 1 clic
+              </span>
+            </div>
 
-                    {/* Plan SaaS */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-white uppercase text-[11px]">
-                        {t.subscriptionPlan === 'pro' ? 'Plan Pro Black' : 'Plan Básico'}
-                      </div>
-                      <div className="text-xs font-mono text-gold-400 font-semibold">
-                        ${t.monthlyRate} USD <span className="text-[10px] text-industrial-500">/ mes</span>
-                      </div>
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleToggleStoreTenant(t)}
-                          className={`text-[9px] font-mono px-2 py-0.5 rounded-full border transition-all flex items-center gap-1 ${
-                            t.storeEnabled !== false
-                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
-                              : 'bg-industrial-800 text-industrial-400 border-industrial-700 hover:text-white hover:border-industrial-600'
-                          }`}
-                          title={t.storeEnabled !== false ? 'Clic para pausar tienda boutique' : 'Clic para activar tienda boutique'}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-noir-950/80 text-industrial-400 font-mono uppercase tracking-wider border-b border-industrial-800">
+                  <tr>
+                    <th className="py-3.5 px-4">Barbería & Ubicación</th>
+                    <th className="py-3.5 px-4">Dueño & Contacto</th>
+                    <th className="py-3.5 px-4">Plan SaaS</th>
+                    <th className="py-3.5 px-4">Estado & Vencimiento</th>
+                    <th className="py-3.5 px-4 text-right">Cobranza & Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-industrial-800/60 text-slate-300">
+                  {filteredTenants.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-16 text-center text-industrial-400">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <Building2 className="w-10 h-10 text-industrial-600 animate-pulse" />
+                          <p className="text-sm font-semibold text-white">No hay barberías registradas en este momento</p>
+                          <p className="text-xs text-industrial-500 max-w-sm">
+                            Como Super Administrador, eres el único que puede crear empresas en la plataforma.
+                          </p>
+                          <button
+                            onClick={() => setShowCreateCompanyModal(true)}
+                            className="mt-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all flex items-center gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>+ Registrar Primera Barbería</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTenants.map((t) => {
+                      return (
+                        <tr
+                          key={t.id}
+                          className={`hover:bg-noir-800/50 transition-colors ${t.urgencyLevel === 'CRITICAL'
+                              ? 'bg-rose-950/15'
+                              : t.urgencyLevel === 'DANGER'
+                                ? 'bg-rose-950/10'
+                                : t.urgencyLevel === 'WARNING'
+                                  ? 'bg-amber-950/10'
+                                  : ''
+                            }`}
                         >
-                          <ShoppingBag className="w-2.5 h-2.5" />
-                          <span>{t.storeEnabled !== false ? 'Tienda: ACTIVA' : 'Tienda: OFF'}</span>
-                        </button>
-                      </div>
-                    </td>
+                          {/* Barbería e Identificación */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-start gap-2.5">
+                              <div className="p-2 rounded-xl bg-noir-950 border border-gold-500/30 flex-shrink-0 mt-0.5">
+                                {getBarberShopIcon()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-white text-sm flex items-center gap-2">
+                                  {t.name}
+                                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-gold-500/15 text-gold-300 border-gold-500/30">
+                                    BARBERÍA
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-industrial-400 flex items-center gap-1.5 mt-0.5">
+                                  <MapPin className="w-3 h-3 text-industrial-500" />
+                                  <span>
+                                    <strong>{t.municipality}</strong> • {t.address}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-industrial-500 font-mono mt-0.5 flex items-center gap-2">
+                                  <span>slug: /{t.slug} • ID: {t.id}</span>
+                                  <a
+                                    href={`/?slug=${t.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-gold-400 hover:underline flex items-center gap-0.5"
+                                  >
+                                    <span>Web</span>
+                                    <ArrowUpRight className="w-2.5 h-2.5" />
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
 
-                    {/* Estado & Días restantes */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase font-mono ${t.billingStatus === 'ACTIVE'
-                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                              : t.billingStatus === 'TRIAL'
-                                ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
-                                : t.billingStatus === 'EXPIRING_SOON'
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                          {/* Dueño & Teléfono */}
+                          <td className="py-3.5 px-4">
+                            <div className="font-medium text-white">{t.ownerName}</div>
+                            <div className="text-[11px] text-industrial-400 flex items-center gap-1 mt-0.5">
+                              <Phone className="w-3 h-3 text-emerald-400" />
+                              <span className="font-mono">{t.whatsapp}</span>
+                            </div>
+                            <div className="text-[10px] text-industrial-500 truncate max-w-[150px]">
+                              {t.ownerEmail}
+                            </div>
+                          </td>
+
+                          {/* Plan SaaS */}
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-white uppercase text-[11px]">
+                              {t.subscriptionPlan === 'pro' ? 'Plan Pro Black' : 'Plan Básico'}
+                            </div>
+                            <div className="text-xs font-mono text-gold-400 font-semibold">
+                              ${t.monthlyRate} USD <span className="text-[10px] text-industrial-500">/ mes</span>
+                            </div>
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleToggleStoreTenant(t)}
+                                className={`text-[9px] font-mono px-2 py-0.5 rounded-full border transition-all flex items-center gap-1 ${
+                                  t.storeEnabled !== false
+                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
+                                    : 'bg-industrial-800 text-industrial-400 border-industrial-700 hover:text-white hover:border-industrial-600'
+                                }`}
+                                title={t.storeEnabled !== false ? 'Clic para pausar tienda boutique' : 'Clic para activar tienda boutique'}
+                              >
+                                <ShoppingBag className="w-2.5 h-2.5" />
+                                <span>{t.storeEnabled !== false ? 'Tienda: ACTIVA' : 'Tienda: OFF'}</span>
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Estado & Días restantes */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase font-mono ${t.billingStatus === 'ACTIVE'
+                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                    : t.billingStatus === 'TRIAL'
+                                      ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                                      : t.billingStatus === 'EXPIRING_SOON'
+                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                                        : t.billingStatus === 'PAST_DUE'
+                                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                                          : 'bg-industrial-800 text-industrial-400 border-industrial-700'
+                                  }`}
+                              >
+                                {t.billingStatus === 'EXPIRING_SOON'
+                                  ? `VENCE EN ${t.daysUntilCutoff} DÍAS`
                                   : t.billingStatus === 'PAST_DUE'
-                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                                    : 'bg-industrial-800 text-industrial-400 border-industrial-700'
-                            }`}
-                        >
-                          {t.billingStatus === 'EXPIRING_SOON'
-                            ? `VENCE EN ${t.daysUntilCutoff} DÍAS`
-                            : t.billingStatus === 'PAST_DUE'
-                              ? 'EN MORA (PAGO PENDIENTE)'
-                              : t.billingStatus === 'TRIAL'
-                                ? `PRUEBA (${t.daysUntilCutoff}D RESTANTES)`
-                                : t.billingStatus}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-industrial-400 font-mono flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-industrial-500" />
-                        <span>
-                          Corte: {new Date(t.currentPeriodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
-                        </span>
-                      </div>
-                    </td>
+                                    ? 'EN MORA (PAGO PENDIENTE)'
+                                    : t.billingStatus === 'TRIAL'
+                                      ? `PRUEBA (${t.daysUntilCutoff}D RESTANTES)`
+                                      : t.billingStatus}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-industrial-400 font-mono flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-industrial-500" />
+                              <span>
+                                Corte: {new Date(t.currentPeriodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+                              </span>
+                            </div>
+                          </td>
 
-                    {/* Acciones de Cobro & Administración */}
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {/* Botón Invitar Administrador */}
-                        <button
-                          onClick={() => handleOpenInviteModal(t)}
-                          className="px-2.5 py-1.5 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 border border-gold-500/30 text-gold-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                          title="Generar invitación privada para el administrador de este negocio"
-                        >
-                          <Mail className="w-3 h-3 text-gold-400" />
-                          <span>Invitar Admin</span>
-                        </button>
+                          {/* Acciones de Cobro & Administración */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Botón Invitar Administrador */}
+                              <button
+                                onClick={() => handleOpenInviteModal(t)}
+                                className="px-2.5 py-1.5 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 border border-gold-500/30 text-gold-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                                title="Generar invitación privada para el administrador de este negocio"
+                              >
+                                <Mail className="w-3 h-3 text-gold-400" />
+                                <span>Invitar Admin</span>
+                              </button>
 
-                        {/* Botón WhatsApp */}
-                        <button
-                          onClick={() => handleOpenWhatsAppModal(t, t.urgencyLevel === 'DANGER' ? 'past_due' : 'expiring_soon')}
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                          title="Contactar por WhatsApp"
-                        >
-                          <Send className="w-3 h-3 text-emerald-400" />
-                          <span>WhatsApp</span>
-                        </button>
+                              {/* Botón WhatsApp */}
+                              <button
+                                onClick={() => handleOpenWhatsAppModal(t, t.urgencyLevel === 'DANGER' ? 'past_due' : 'expiring_soon')}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                                title="Contactar por WhatsApp"
+                              >
+                                <Send className="w-3 h-3 text-emerald-400" />
+                                <span>WhatsApp</span>
+                              </button>
 
-                        {/* Botón Extender Suscripción */}
-                        <button
-                          onClick={() => setSelectedTenantForExtend(t)}
-                          className="px-2.5 py-1.5 rounded-lg bg-noir-950 hover:bg-noir-800 border border-industrial-700 text-slate-300 text-xs font-medium transition-colors"
-                          title="Extender Días de Suscripción"
-                        >
-                          Extender
-                        </button>
+                              {/* Botón Extender Suscripción */}
+                              <button
+                                onClick={() => setSelectedTenantForExtend(t)}
+                                className="px-2.5 py-1.5 rounded-lg bg-noir-950 hover:bg-noir-800 border border-industrial-700 text-slate-300 text-xs font-medium transition-colors"
+                                title="Extender Días de Suscripción"
+                              >
+                                Extender
+                              </button>
 
-                        {/* Botón Suspender / Reactivar */}
-                        <button
-                          onClick={() => handleToggleSuspendTenant(t)}
-                          className={`p-1.5 rounded-lg border transition-colors ${t.subscriptionStatus === 'suspended'
-                              ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50'
-                              : 'bg-rose-950/40 border-rose-500/30 text-rose-400 hover:bg-rose-900/50'
-                            }`}
-                          title={t.subscriptionStatus === 'suspended' ? 'Reactivar Barbería' : 'Suspender Barbería'}
-                        >
-                          {t.subscriptionStatus === 'suspended' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                        </button>
+                              {/* Botón Suspender / Reactivar */}
+                              <button
+                                onClick={() => handleToggleSuspendTenant(t)}
+                                className={`p-1.5 rounded-lg border transition-colors ${t.subscriptionStatus === 'suspended'
+                                    ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50'
+                                    : 'bg-rose-950/40 border-rose-500/30 text-rose-400 hover:bg-rose-900/50'
+                                  }`}
+                                title={t.subscriptionStatus === 'suspended' ? 'Reactivar Barbería' : 'Suspender Barbería'}
+                              >
+                                {t.subscriptionStatus === 'suspended' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                              </button>
 
-                        {/* Botón Conectar como este Negocio */}
-                        <button
-                          onClick={() => {
-                            switchTenant(t);
-                            alert(`Has ingresado como administrador de "${t.name}".`);
-                          }}
-                          className="p-1.5 rounded-lg bg-noir-950 hover:bg-gold-500/20 border border-industrial-800 text-industrial-400 hover:text-gold-400 transition-colors"
-                          title="Abrir esta barbería en el panel"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </button>
+                              {/* Botón Conectar como este Negocio */}
+                              <button
+                                onClick={async () => {
+                                  switchTenant(t);
+                                  await showSuccessAlert('Conexión Activa', `Has ingresado al panel de "${t.name}".`);
+                                }}
+                                className="p-1.5 rounded-lg bg-noir-950 hover:bg-gold-500/20 border border-industrial-800 text-industrial-400 hover:text-gold-400 transition-colors"
+                                title="Abrir esta barbería en el panel"
+                              >
+                                <ArrowUpRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Vista de Gestión de Usuarios y Asignación de Empresas */
+        <div className="rounded-2xl bg-noir-900 border border-industrial-800 overflow-hidden shadow-2xl animate-fadeIn">
+          <div className="p-4 border-b border-industrial-800 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <User className="w-4 h-4 text-sky-400" />
+                Control de Usuarios Registrados & Asignación ({platformUsers.length})
+              </div>
+              <p className="text-[11px] text-industrial-400 mt-0.5">
+                Los usuarios nuevos inician sin empresa asignada. Como Superadmin, asígnalos a su barbería para desbloquear su acceso.
+              </p>
+            </div>
+            <button
+              onClick={loadPlatformUsers}
+              className="p-2 rounded-lg bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white"
+              title="Refrescar usuarios"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${usersLoading ? 'animate-spin text-gold-400' : ''}`} />
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-noir-950/80 text-industrial-400 font-mono uppercase tracking-wider border-b border-industrial-800">
+                <tr>
+                  <th className="py-3.5 px-4">Usuario</th>
+                  <th className="py-3.5 px-4">Correo</th>
+                  <th className="py-3.5 px-4">Rol en Plataforma</th>
+                  <th className="py-3.5 px-4">Empresa Asignada</th>
+                  <th className="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-industrial-800/60 text-slate-300">
+                {platformUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-16 text-center text-industrial-400">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <User className="w-8 h-8 text-industrial-600" />
+                        <p className="text-sm font-semibold text-white">No hay usuarios registrados todavía</p>
+                        <p className="text-xs text-industrial-500">
+                          Cualquier persona que inicie sesión con Google o Correo aparecerá aquí automáticamente.
+                        </p>
                       </div>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ) : (
+                  platformUsers.map((u) => {
+                    const assignedCompany = tenants.find((t) => t.id === u.companyId);
+                    const isSA = isPlatformSuperadminEmail(u.email) || u.role === 'superadmin';
+
+                    return (
+                      <tr key={u.uid} className="hover:bg-noir-800/50 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={
+                                u.avatarUrl ||
+                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+                              }
+                              alt={u.displayName}
+                              className="w-8 h-8 rounded-full border border-gold-500/30 object-cover"
+                            />
+                            <div>
+                              <div className="font-bold text-white text-xs">{u.displayName || 'Sin Nombre'}</div>
+                              <div className="text-[10px] text-industrial-500 font-mono">
+                                UID: {u.uid.slice(0, 10)}...
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-300">{u.email}</td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase border ${
+                              isSA
+                                ? 'bg-amber-500/15 text-gold-300 border-gold-500/30'
+                                : u.role === 'admin'
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : 'bg-industrial-800 text-industrial-400 border-industrial-700'
+                            }`}
+                          >
+                            {isSA ? '👑 SUPERADMIN' : u.role === 'admin' ? '💈 ADMIN EMPRESA' : '👤 USUARIO'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {isSA ? (
+                            <span className="text-xs text-gold-400/80 font-mono">Global (Acceso a Todas)</span>
+                          ) : assignedCompany ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                              <span className="font-semibold text-white">{assignedCompany.name}</span>
+                            </div>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit">
+                              <Clock className="w-2.5 h-2.5" />
+                              Sin Asignar (Cuarentena)
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          {!isSA && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedUserForAssign(u);
+                                  setTargetCompanyId(u.companyId || (tenants[0]?.id || ''));
+                                  setTargetRole(u.role === 'admin' ? 'admin' : 'user');
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 border border-gold-500/30 text-gold-300 text-xs font-bold transition-colors flex items-center gap-1"
+                                title="Asignar a Empresa"
+                              >
+                                <Building2 className="w-3 h-3" />
+                                <span>{u.companyId ? 'Reasignar' : 'Asignar Empresa'}</span>
+                              </button>
+
+                              {u.companyId && (
+                                <button
+                                  onClick={() => handleUnassignUser(u)}
+                                  className="px-2 py-1.5 rounded-lg bg-industrial-800 hover:bg-industrial-700 text-industrial-300 text-xs transition-colors"
+                                  title="Desvincular de la empresa"
+                                >
+                                  Desvincular
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => handleDeleteUser(u)}
+                                className="p-1.5 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-400 hover:bg-rose-900/50 transition-colors"
+                                title="Eliminar usuario de la plataforma"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal de Alerta de WhatsApp Pre-redactada */}
       {selectedTenantForWA && (
@@ -980,6 +1388,216 @@ export const SuperAdminConsole = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Modal Registrar Nueva Empresa / Barbería (Superadmin Only) */}
+      <Modal
+        isOpen={showCreateCompanyModal}
+        onClose={() => setShowCreateCompanyModal(false)}
+        title="Registrar Nueva Empresa / Barbería"
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handleCreateCompany} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+              Nombre de la Barbería *
+            </label>
+            <input
+              type="text"
+              placeholder="ej. Vintage Cuts Studio"
+              value={newCompanyName}
+              onChange={e => setNewCompanyName(e.target.value)}
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-gold-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+                Municipio
+              </label>
+              <input
+                type="text"
+                value={newCompanyMunicipality}
+                onChange={e => setNewCompanyMunicipality(e.target.value)}
+                placeholder="ej. Rionegro"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+                Moneda Base
+              </label>
+              <select
+                value={newCompanyCurrency}
+                onChange={e => setNewCompanyCurrency(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+              >
+                <option value="COP">COP ($ Pesos)</option>
+                <option value="USD">USD ($ Dólares)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+              Dirección del Salón
+            </label>
+            <input
+              type="text"
+              placeholder="ej. Cra 50 #49-20, Parque Principal"
+              value={newCompanyAddress}
+              onChange={e => setNewCompanyAddress(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-gold-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+                Dueño / Contacto Principal
+              </label>
+              <input
+                type="text"
+                placeholder="ej. Mateo Osorio"
+                value={newCompanyOwner}
+                onChange={e => setNewCompanyOwner(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-gold-500"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+                WhatsApp Oficial
+              </label>
+              <input
+                type="text"
+                placeholder="ej. +57 300 456 7890"
+                value={newCompanyWhatsapp}
+                onChange={e => setNewCompanyWhatsapp(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-gold-500"
+              />
+            </div>
+          </div>
+
+          {/* Toggle Tienda Boutique */}
+          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800">
+            <input
+              type="checkbox"
+              id="storeCheckModal"
+              checked={newCompanyStoreEnabled}
+              onChange={e => setNewCompanyStoreEnabled(e.target.checked)}
+              className="rounded border-slate-300 text-gold-500 focus:ring-gold-500 w-4 h-4 cursor-pointer"
+            />
+            <label htmlFor="storeCheckModal" className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+              Habilitar Módulo de Tienda Boutique & Catálogo de Productos
+            </label>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-industrial-800">
+            <button
+              type="button"
+              onClick={() => setShowCreateCompanyModal(false)}
+              className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-industrial-400 dark:hover:text-white"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={creatingCompany}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold uppercase tracking-wider shadow-glow-gold transition-all"
+            >
+              {creatingCompany ? 'Registrando...' : 'Registrar Barbería'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Asignar Usuario a Empresa */}
+      {selectedUserForAssign && (
+        <Modal
+          isOpen={Boolean(selectedUserForAssign)}
+          onClose={() => setSelectedUserForAssign(null)}
+          title="Asignar Usuario a una Empresa"
+          maxWidth="max-w-md"
+        >
+          <form onSubmit={handleAssignUserSubmit} className="space-y-4 text-xs">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 flex items-center gap-2.5">
+              <img
+                src={
+                  selectedUserForAssign.avatarUrl ||
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+                }
+                alt={selectedUserForAssign.displayName}
+                className="w-10 h-10 rounded-full object-cover border border-gold-500/40"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-slate-900 dark:text-white truncate">
+                  {selectedUserForAssign.displayName || 'Usuario'}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono truncate">
+                  {selectedUserForAssign.email}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+                Seleccionar Barbería / Empresa *
+              </label>
+              {tenants.length === 0 ? (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+                  No hay barberías creadas todavía. Primero registra una barbería en la pestaña anterior.
+                </div>
+              ) : (
+                <select
+                  value={targetCompanyId}
+                  onChange={e => setTargetCompanyId(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                >
+                  <option value="">-- Elige una barbería --</option>
+                  {tenants.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.municipality})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-industrial-300 uppercase mb-1">
+                Rol en la Empresa *
+              </label>
+              <select
+                value={targetRole}
+                onChange={e => setTargetRole(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+              >
+                <option value="admin">Administrador / Dueño de Barbería (Acceso Total al Salón)</option>
+                <option value="user">Personal / Barbero (Acceso Operativo)</option>
+              </select>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-industrial-800">
+              <button
+                type="button"
+                onClick={() => setSelectedUserForAssign(null)}
+                className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-industrial-400 dark:hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading || !targetCompanyId}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold uppercase tracking-wider shadow-glow-gold disabled:opacity-50"
+              >
+                {actionLoading ? 'Guardando...' : 'Confirmar Asignación'}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

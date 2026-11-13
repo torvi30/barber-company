@@ -4,7 +4,7 @@ const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5
 
 let socket = null;
 
-export const initSocket = (tenantId = 'demo-barbershop-01') => {
+export const initSocket = (tenantId = 'nodriza-global') => {
   if (!socket) {
     socket = io(SOCKET_SERVER_URL, {
       transports: ['websocket', 'polling'],
@@ -15,12 +15,16 @@ export const initSocket = (tenantId = 'demo-barbershop-01') => {
 
     socket.on('connect', () => {
       console.log('⚡ [Socket.io Client] Conectado al cluster en tiempo real.');
-      socket.emit('tenant:join', { barbershopId: tenantId });
+      if (tenantId) {
+        socket.emit('tenant:join', { barbershopId: tenantId });
+      }
     });
 
     socket.on('disconnect', (reason) => {
       console.warn('⚠️ [Socket.io Client] Desconectado:', reason);
     });
+  } else if (tenantId && socket.connected) {
+    socket.emit('tenant:join', { barbershopId: tenantId });
   }
 
   return socket;

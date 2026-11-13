@@ -34,7 +34,23 @@ export const NotificationsHub = () => {
   const [testing, setTesting] = useState(false);
   const [testSuccessMessage, setTestSuccessMessage] = useState('');
 
+  const defaultSettings = {
+    whatsappActive: true,
+    senderPhone: '+57 300 000 0000',
+    templates: {
+      BOOKING_CONFIRMED: 'Hola {client_name}, tu cita en {barber_shop} con {barber_name} está confirmada para el {date} a las {time}.',
+      REMINDER_2_HOURS: 'Hola {client_name}, te recordamos tu cita hoy a las {time} con {barber_name}.',
+      REVIEW_REQUEST: '¡Gracias por visitarnos {client_name}! Califícanos en Google.'
+    }
+  };
+
   const fetchHubData = async () => {
+    if (!tenantId) {
+      setSettings(defaultSettings);
+      setLogs([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const [settingsRes, logsRes] = await Promise.all([
@@ -42,10 +58,18 @@ export const NotificationsHub = () => {
         api.getNotificationLogs(tenantId)
       ]);
 
-      if (settingsRes.success) setSettings(settingsRes.data);
-      if (logsRes.success) setLogs(logsRes.data || []);
+      if (settingsRes && settingsRes.success && settingsRes.data) {
+        setSettings(settingsRes.data);
+      } else {
+        setSettings(defaultSettings);
+      }
+
+      if (logsRes && logsRes.success) setLogs(logsRes.data || []);
+      else setLogs([]);
     } catch (err) {
       console.error('Error al cargar centro de notificaciones:', err);
+      setSettings(defaultSettings);
+      setLogs([]);
     } finally {
       setLoading(false);
     }

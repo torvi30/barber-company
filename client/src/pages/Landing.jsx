@@ -22,7 +22,7 @@ import {
 export const Landing = ({ onEnterAdmin }) => {
   const { barbershopInfo, availableTenants, switchTenant } = useBarbershop();
   const { theme, toggleTheme, isDark } = useTheme();
-  const [activeSlug, setActiveSlug] = useState(barbershopInfo?.slug || 'black-gold');
+  const [activeSlug, setActiveSlug] = useState(barbershopInfo?.slug || '');
   const [activeTab, setActiveTab] = useState('booking'); // 'booking' | 'store'
 
   const isStoreEnabled = barbershopInfo?.storeEnabled !== false;
@@ -44,10 +44,10 @@ export const Landing = ({ onEnterAdmin }) => {
             </div>
             <div className="min-w-0">
               <span className="font-display font-bold text-sm md:text-lg text-slate-900 dark:text-white tracking-wide truncate block">
-                {barbershopInfo.name}
+                {barbershopInfo?.name || 'BarberPulse Studio'}
               </span>
               <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono flex items-center gap-1 truncate">
-                <MapPin className="w-2.5 h-2.5 flex-shrink-0" /> {barbershopInfo.municipality}
+                <MapPin className="w-2.5 h-2.5 flex-shrink-0" /> {barbershopInfo?.municipality || 'Colombia'}
               </span>
             </div>
           </div>

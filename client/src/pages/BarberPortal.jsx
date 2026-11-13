@@ -5,6 +5,11 @@ import { StatCard } from '../components/StatCard';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import {
+  showSuccessAlert,
+  showErrorAlert,
+  showConfirmDialog
+} from '../lib/swal';
+import {
   Scissors,
   DollarSign,
   TrendingUp,
@@ -42,7 +47,8 @@ export const BarberPortal = () => {
   const { tenantId, barbers, updateStatus, addBarber, editBarber, removeBarber } = useBarbershop();
   const [selectedBarberId, setSelectedBarberId] = useState('');
   const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState('jornada'); // 'jornada' | 'schedule' | 'team'
 
   // Mantener actualizado el barbero seleccionado cuando cambien los barberos del tenant
   useEffect(() => {
@@ -54,6 +60,8 @@ export const BarberPortal = () => {
       }
     } else {
       setSelectedBarberId('');
+      setDashboardData(null);
+      setLoading(false);
     }
   }, [barbers, tenantId]);
 
@@ -101,7 +109,7 @@ export const BarberPortal = () => {
       });
       loadBarberSlots();
     } catch (err) {
-      alert('Error al modificar turno: ' + err.message);
+      await showErrorAlert('Gestión de Turnos', 'Error al modificar turno: ' + err.message);
     }
   };
 
@@ -119,7 +127,7 @@ export const BarberPortal = () => {
       });
       loadBarberSlots();
     } catch (err) {
-      alert('Error al modificar turnos en lote: ' + err.message);
+      await showErrorAlert('Turnos en Lote', 'Error al modificar turnos en lote: ' + err.message);
     } finally {
       setLoadingBarberSlots(false);
     }
@@ -195,8 +203,12 @@ export const BarberPortal = () => {
 
       setIsBarberFormOpen(false);
       fetchBarberData();
+      await showSuccessAlert(
+        editingBarber ? '¡Barbero Actualizado!' : '¡Barbero Registrado!',
+        `El perfil de "${formData.name}" ha sido guardado exitosamente.`
+      );
     } catch (err) {
-      alert('Error al guardar especialista: ' + err.message);
+      await showErrorAlert('Error al Guardar Especialista', err.message);
     } finally {
       setFormSaving(false);
     }
@@ -204,12 +216,18 @@ export const BarberPortal = () => {
 
   const handleDeleteBarber = async (b) => {
     if (barbers.length <= 1) {
-      alert('Tu barbería debe tener al menos un especialista registrado.');
+      await showErrorAlert('Operación No Permitida', 'Tu barbería debe tener al menos un especialista registrado.');
       return;
     }
 
-    const ok = window.confirm(`¿Estás seguro de eliminar a "${b.name}" del equipo?`);
-    if (!ok) return;
+    const confirmRes = await showConfirmDialog({
+      title: '¿Eliminar Barbero?',
+      text: `¿Estás seguro de eliminar a "${b.name}" del equipo de trabajo?`,
+      confirmText: 'Sí, eliminar',
+      cancelText: 'Cancelar',
+      icon: 'warning'
+    });
+    if (!confirmRes.isConfirmed) return;
 
     try {
       await removeBarber(b.id);
@@ -218,18 +236,23 @@ export const BarberPortal = () => {
         if (remaining.length > 0) setSelectedBarberId(remaining[0].id);
       }
       fetchBarberData();
+      await showSuccessAlert('Barbero Eliminado', `"${b.name}" fue removido de la barbería.`);
     } catch (err) {
-      alert('Error al eliminar barbero: ' + err.message);
+      await showErrorAlert('Error al Eliminar', err.message);
     }
   };
 
   const fetchBarberData = async () => {
+    if (!selectedBarberId) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await api.getBarberDashboard(tenantId, selectedBarberId);
-      if (res.success) {
+      if (res && res.success && res.barber) {
         setDashboardData(res);
-        setDailyTargetInput(res.barber.dailyTarget || 150);
+        setDailyTargetInput(res.barber.dailyTarget || 150000);
         setCommissionRateInput(res.barber.commissionPercent || 50);
         setScheduleForm(res.barber.schedule || {
           monday: { working: true, start: '09:00', end: '19:00' },
@@ -240,9 +263,36 @@ export const BarberPortal = () => {
           saturday: { working: true, start: '09:00', end: '15:00' },
           sunday: { working: false }
         });
+      } else {
+        const currentB = barbers.find(b => b.id === selectedBarberId) || { name: 'Especialista', commissionRate: 0.5 };
+        setDashboardData({
+          barber: currentB,
+          metrics: {
+            todayCommission: 0,
+            todayTips: 0,
+            totalEarningsToday: 0,
+            completedCuts: 0,
+            targetProgress: 0,
+            dailyTarget: currentB.dailyTarget || 150000
+          },
+          appointments: []
+        });
       }
     } catch (err) {
-      console.error('Error al cargar dashboard del barbero:', err);
+      console.warn('Error al cargar dashboard del barbero, usando datos locales:', err.message);
+      const currentB = barbers.find(b => b.id === selectedBarberId) || { name: 'Especialista', commissionRate: 0.5 };
+      setDashboardData({
+        barber: currentB,
+        metrics: {
+          todayCommission: 0,
+          todayTips: 0,
+          totalEarningsToday: 0,
+          completedCuts: 0,
+          targetProgress: 0,
+          dailyTarget: currentB.dailyTarget || 150000
+        },
+        appointments: []
+      });
     } finally {
       setLoading(false);
     }
@@ -251,6 +301,8 @@ export const BarberPortal = () => {
   useEffect(() => {
     if (selectedBarberId) {
       fetchBarberData();
+    } else {
+      setLoading(false);
     }
   }, [tenantId, selectedBarberId]);
 
@@ -262,7 +314,7 @@ export const BarberPortal = () => {
         barber: { ...prev.barber, status: newStatus }
       }));
     } catch (err) {
-      alert('Error al actualizar estado en vivo');
+      await showErrorAlert('Estado en Salón', 'Error al actualizar estado en vivo: ' + err.message);
     }
   };
 
@@ -278,14 +330,14 @@ export const BarberPortal = () => {
       const res = await api.updateBarberSchedule(tenantId, selectedBarberId, payload);
       if (res.success) {
         setSaveSuccess(true);
-        setTimeout(() => {
-          setSaveSuccess(false);
-          setIsScheduleModalOpen(false);
-          fetchBarberData();
-        }, 1500);
+        fetchBarberData();
+        await showSuccessAlert(
+          '¡Horarios y Metas Guardados!',
+          `Se actualizaron los turnos semanales de "${dashboardData?.barber?.name || 'barbero'}" exitosamente.`
+        );
       }
     } catch (err) {
-      alert(err.message || 'Error al guardar horario');
+      await showErrorAlert('Horarios', err.message || 'Error al guardar horario');
     }
   };
 
@@ -299,22 +351,53 @@ export const BarberPortal = () => {
     sunday: 'Domingo'
   };
 
-  if (barbers.length === 0 && !loading) {
+  if (barbers.length === 0) {
     return (
-      <div className="py-20 text-center space-y-3">
-        <Scissors className="w-8 h-8 text-gold-400 mx-auto" />
-        <h3 className="text-base font-bold text-white">No hay barberos registrados en esta barbería</h3>
-        <p className="text-xs text-industrial-400 max-w-sm mx-auto">
-          Registra especialistas en el equipo para gestionar horarios, comisiones y turnos del día.
-        </p>
+      <div className="py-16 text-center space-y-4 max-w-md mx-auto p-8 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-3xl shadow-lg animate-fadeIn my-10">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-gold-600/20 to-gold-400/20 border border-gold-500/30 flex items-center justify-center mx-auto text-gold-400 shadow-glow-gold/10">
+          <Scissors className="w-8 h-8" />
+        </div>
+        <div>
+          <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white">
+            {tenantId ? 'No hay barberos registrados' : 'Selecciona una barbería'}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-industrial-400 mt-1.5 leading-relaxed">
+            {tenantId
+              ? 'Para activar las jornadas, comisiones y turnos en tiempo real, registra a tu primer especialista del equipo.'
+              : 'Selecciona una barbería en el menú superior o crea una nueva desde el SuperAdmin.'}
+          </p>
+        </div>
+        {tenantId ? (
+          <button
+            type="button"
+            onClick={openNewBarberModal}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider transition-all shadow-glow-gold cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>+ Registrar Primer Barbero</span>
+          </button>
+        ) : (
+          <div className="text-[11px] font-mono text-gold-400 bg-gold-500/10 border border-gold-500/20 px-3 py-1.5 rounded-xl">
+            💡 Abre el menú superior para elegir o crear una sede.
+          </div>
+        )}
       </div>
     );
   }
 
-  if (loading || !dashboardData) {
+  if (loading && !dashboardData) {
     return (
-      <div className="py-20 text-center font-mono text-xs text-industrial-400 animate-pulse">
-        Cargando portal privado del barbero...
+      <div className="py-20 text-center font-mono text-xs text-industrial-400 flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-gold-400 border-t-transparent animate-spin" />
+        <span>Sincronizando portal privado...</span>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="py-20 text-center font-mono text-xs text-industrial-400">
+        No se pudieron cargar los datos del especialista seleccionado.
       </div>
     );
   }
@@ -322,35 +405,53 @@ export const BarberPortal = () => {
   const { barber, metrics, appointments } = dashboardData;
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
-      {/* Top Header con Selector de Barbero */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-industrial-800">
-        <div className="flex items-center gap-4">
-          <img
-            src={barber.avatar}
-            alt={barber.name}
-            className="w-14 h-14 rounded-2xl object-cover border-2 border-gold-500 shadow-glow-gold"
-          />
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
-                {barber.name}
-              </h2>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-gold-400 border border-amber-500/30 dark:border-gold-500/30">
-                Tasa: {barber.commissionPercent}%
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5 flex items-center gap-2">
-              <span>Portal Móvil Staff</span>
-              <span>•</span>
-              <span className="font-mono text-slate-700 dark:text-slate-300">Meta Diaria: ${barber.dailyTarget}</span>
-            </p>
-          </div>
+    <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto">
+      {/* Sub-Navegación Intuitiva: Selección dinámica según donde estés ubicado */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-850 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setActiveSection('jornada')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'jornada'
+                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Scissors className="w-3.5 h-3.5" />
+            <span>Mi Jornada ({barber.name})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('schedule')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'schedule'
+                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Turnos & Metas</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('team')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'team'
+                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Equipo ({barbers.length})</span>
+          </button>
         </div>
 
-        {/* Switcher de Barbero, Botón Horarios y Gestión de Equipo */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs shadow-sm">
+        {/* Switcher rápido de barbero y acción según sección */}
+        <div className="flex items-center gap-2 justify-between sm:justify-end">
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs shadow-sm">
             <span className="text-slate-500 dark:text-industrial-400 text-[11px] hidden sm:inline">Ver como:</span>
             <select
               value={selectedBarberId}
@@ -365,28 +466,55 @@ export const BarberPortal = () => {
             </select>
           </div>
 
-          <button
-            onClick={() => setIsScheduleModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 hover:border-amber-400 dark:hover:border-gold-500 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-colors"
-            title="Horarios y metas del especialista activo"
-          >
-            <Sliders className="w-3.5 h-3.5 text-gold-500" />
-            <span className="hidden sm:inline">Turnos & Metas</span>
-            <span className="sm:hidden">Metas</span>
-          </button>
-
-          <button
-            onClick={() => setIsTeamModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 text-xs font-bold shadow-glow-gold transition-all"
-            title="Agregar, modificar o eliminar barberos del equipo"
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Equipo ({barbers.length})</span>
-          </button>
+          {activeSection === 'team' && (
+            <button
+              onClick={openNewBarberModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 text-xs font-bold shadow-glow-gold transition-all cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ Nuevo Barbero</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Control Rápido de Estado en Vivo (Sillón / Descanso) */}
+      {activeSection === 'jornada' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Header Resumen del Barbero Activo */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
+            <div className="flex items-center gap-4">
+              <img
+                src={barber.avatar}
+                alt={barber.name}
+                className="w-14 h-14 rounded-2xl object-cover border-2 border-gold-500 shadow-glow-gold"
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
+                    {barber.name}
+                  </h2>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-gold-400 border border-amber-500/30 dark:border-gold-500/30">
+                    Tasa: {barber.commissionPercent}%
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5 flex items-center gap-2">
+                  <span>Portal Móvil Staff</span>
+                  <span>•</span>
+                  <span className="font-mono text-slate-700 dark:text-slate-300">Meta Diaria: ${barber.dailyTarget}</span>
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveSection('schedule')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 hover:border-gold-500 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
+            >
+              <Sliders className="w-3.5 h-3.5 text-gold-500" />
+              <span>Ajustar Horarios & Metas</span>
+            </button>
+          </div>
+
+          {/* Control Rápido de Estado en Vivo (Sillón / Descanso) */}
       <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-industrial-400 block mb-1">
@@ -706,7 +834,7 @@ export const BarberPortal = () => {
                               await updateStatus(apt.id, 'IN_CHAIR');
                               fetchBarberData();
                             } catch (e) {
-                              alert('Error al pasar al sillón');
+                              await showErrorAlert('Sillón', 'Error al pasar cliente al sillón');
                             }
                           }}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
@@ -722,25 +850,29 @@ export const BarberPortal = () => {
           </div>
         </div>
       </div>
+    </div>
+  )}
 
-      {/* Modal Configuración de Horarios & Turnos (Rostering) */}
-      <Modal
-        isOpen={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
-        title={`Configurar Horarios & Metas: ${barber.name}`}
-        maxWidth="max-w-xl"
-      >
-        {scheduleForm && (
-          <form onSubmit={handleSaveSchedule} className="space-y-5 max-h-[75vh] overflow-y-auto pr-1">
-            {saveSuccess && (
-              <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                ¡Turnos y metas guardadas exitosamente!
-              </div>
-            )}
+      {/* Vista 2: Gestión de Horarios Semanales & Metas */}
+      {activeSection === 'schedule' && (
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-industrial-800">
+            <div>
+              <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white">
+                Horarios & Metas Financieras: {barber.name}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5">
+                Define la meta de facturación diaria, comisión pactada y disponibilidad semanal de este especialista.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold text-amber-600 dark:text-gold-400 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 self-start sm:self-auto">
+              Tasa Actual: {barber.commissionPercent}%
+            </span>
+          </div>
 
+          <form onSubmit={handleSaveSchedule} className="space-y-6">
             {/* Metas Financieras */}
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-noir-950 p-4 rounded-2xl border border-slate-200 dark:border-industrial-800 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-noir-950 p-4 rounded-2xl border border-slate-200 dark:border-industrial-800">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                   Meta Diaria Facturación ($)
@@ -749,7 +881,7 @@ export const BarberPortal = () => {
                   type="number"
                   value={dailyTargetInput}
                   onChange={(e) => setDailyTargetInput(e.target.value)}
-                  className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono font-bold"
+                  className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-gold-500"
                 />
               </div>
 
@@ -761,7 +893,7 @@ export const BarberPortal = () => {
                   type="number"
                   value={commissionRateInput}
                   onChange={(e) => setCommissionRateInput(e.target.value)}
-                  className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3 py-2 text-xs text-amber-600 dark:text-gold-400 font-mono font-bold"
+                  className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3.5 py-2.5 text-xs text-amber-600 dark:text-gold-400 font-mono font-bold focus:outline-none focus:border-gold-500"
                 />
               </div>
             </div>
@@ -772,18 +904,18 @@ export const BarberPortal = () => {
                 Jornada Laboral Semanal (Staff Rostering)
               </label>
 
-              {Object.keys(daysLabels).map((dayKey) => {
+              {scheduleForm && Object.keys(daysLabels).map((dayKey) => {
                 const dayConfig = scheduleForm[dayKey] || { working: false };
                 return (
                   <div
                     key={dayKey}
-                    className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs transition-colors ${
+                    className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-colors ${
                       dayConfig.working
                         ? 'bg-white dark:bg-noir-950 border-slate-200 dark:border-industrial-800 shadow-sm'
                         : 'bg-slate-50 dark:bg-noir-950/40 border-slate-200 dark:border-industrial-900 opacity-60'
                     }`}
                   >
-                    <label className="flex items-center gap-3 cursor-pointer sm:w-32">
+                    <label className="flex items-center gap-3 cursor-pointer sm:w-36">
                       <input
                         type="checkbox"
                         checked={dayConfig.working}
@@ -793,9 +925,9 @@ export const BarberPortal = () => {
                             [dayKey]: { ...dayConfig, working: e.target.checked }
                           })
                         }
-                        className="rounded border-slate-300 dark:border-industrial-700 text-gold-500 focus:ring-gold-500"
+                        className="rounded border-slate-300 dark:border-industrial-700 text-gold-500 focus:ring-gold-500 w-4 h-4 cursor-pointer"
                       />
-                      <span className="font-semibold text-slate-900 dark:text-white">{daysLabels[dayKey]}</span>
+                      <span className="font-semibold text-slate-900 dark:text-white text-sm">{daysLabels[dayKey]}</span>
                     </label>
 
                     {dayConfig.working ? (
@@ -809,7 +941,7 @@ export const BarberPortal = () => {
                               [dayKey]: { ...dayConfig, start: e.target.value }
                             })
                           }
-                          className="bg-slate-50 dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-lg px-2 py-1 text-xs text-slate-900 dark:text-white"
+                          className="bg-slate-50 dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
                         />
                         <span className="text-slate-400 dark:text-industrial-500">hasta</span>
                         <input
@@ -821,7 +953,7 @@ export const BarberPortal = () => {
                               [dayKey]: { ...dayConfig, end: e.target.value }
                             })
                           }
-                          className="bg-slate-50 dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-lg px-2 py-1 text-xs text-slate-900 dark:text-white"
+                          className="bg-slate-50 dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
                         />
                       </div>
                     ) : (
@@ -832,49 +964,41 @@ export const BarberPortal = () => {
               })}
             </div>
 
-            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-industrial-800">
-              <button
-                type="button"
-                onClick={() => setIsScheduleModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold"
-              >
-                Cancelar
-              </button>
+            <div className="pt-4 flex justify-end gap-3 border-t border-slate-200 dark:border-industrial-800">
               <button
                 type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer"
               >
-                <Save className="w-4 h-4" /> Guardar Turno
+                <Save className="w-4 h-4" />
+                <span>Guardar Horarios y Metas</span>
               </button>
             </div>
           </form>
-        )}
-      </Modal>
+        </div>
+      )}
 
-      {/* Modal: Administrar Todo el Equipo de Barberos */}
-      <Modal
-        isOpen={isTeamModalOpen}
-        onClose={() => setIsTeamModalOpen(false)}
-        title={`Equipo de Barberos (${barbers.length})`}
-      >
-        <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-          <div className="flex items-center justify-between pb-3 border-b border-industrial-800">
-            <p className="text-xs text-industrial-400">
-              Gestiona los barberos del salón, sus tasas de comisión y datos de contacto.
-            </p>
+      {/* Vista 3: Gestión del Equipo de Barberos */}
+      {activeSection === 'team' && (
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-industrial-800">
+            <div>
+              <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white">
+                Equipo de Especialistas ({barbers.length})
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5">
+                Administra los barberos del salón, sus tasas de comisión y datos de contacto.
+              </p>
+            </div>
             <button
-              onClick={() => {
-                setIsTeamModalOpen(false);
-                openNewBarberModal();
-              }}
-              className="px-3 py-1.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs flex items-center gap-1.5 shadow-glow-gold transition-all flex-shrink-0"
+              onClick={openNewBarberModal}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs shadow-glow-gold transition-all self-start sm:self-auto cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>+ Nuevo Barbero</span>
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {barbers.map((b) => {
               const isCurrent = b.id === selectedBarberId;
               const commissionPct = Math.round((Number(b.commissionRate) || 0.5) * 100);
@@ -882,81 +1006,92 @@ export const BarberPortal = () => {
               return (
                 <div
                   key={b.id}
-                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  className={`p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 ${
                     isCurrent
-                      ? 'bg-gold-500/10 border-gold-500/40 shadow-sm'
-                      : 'bg-noir-950 border-industrial-800 hover:border-industrial-700'
+                      ? 'bg-amber-500/5 dark:bg-gold-500/10 border-gold-500/50 shadow-md ring-1 ring-gold-500/20'
+                      : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 hover:border-gold-500/30'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={b.avatar || AVATAR_PRESETS[0].url}
-                      alt={b.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-gold-500/30 flex-shrink-0"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-white text-sm">{b.name}</h4>
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded-full bg-gold-500/20 text-gold-300">
-                          {commissionPct}% Comisión
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] text-industrial-400 flex flex-wrap items-center gap-2 mt-0.5">
-                        {b.phone && <span>📞 {b.phone}</span>}
-                        {b.dailyTarget && <span>• Meta: ${b.dailyTarget}</span>}
-                      </div>
-
-                      {b.specialties && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {(Array.isArray(b.specialties) ? b.specialties : b.specialties.split(',')).map((spec, i) => (
-                            <span key={i} className="text-[9px] px-1.5 py-0.2 rounded bg-noir-900 border border-industrial-800 text-slate-300">
-                              {spec.trim ? spec.trim() : spec}
-                            </span>
-                          ))}
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={b.avatar || AVATAR_PRESETS[0].url}
+                          alt={b.name}
+                          className="w-12 h-12 rounded-xl object-cover border border-gold-500/40 shadow-sm flex-shrink-0"
+                        />
+                        <div>
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{b.name}</h4>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-gold-300 border border-amber-500/30">
+                            {commissionPct}% Comisión
+                          </span>
                         </div>
-                      )}
+                      </div>
+
+                      <Badge status={b.status || 'AVAILABLE'}>
+                        {b.status === 'AVAILABLE' ? '🟢 Libre' : b.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
+                      </Badge>
                     </div>
+
+                    <div className="text-xs text-slate-500 dark:text-industrial-400 space-y-1 font-mono">
+                      {b.phone && <div className="flex items-center gap-1.5">📞 {b.phone}</div>}
+                      {b.dailyTarget && <div className="flex items-center gap-1.5">🎯 Meta: ${b.dailyTarget}</div>}
+                    </div>
+
+                    {b.specialties && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {(Array.isArray(b.specialties) ? b.specialties : b.specialties.split(',')).map((spec, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-300"
+                          >
+                            {spec.trim ? spec.trim() : spec}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Acciones */}
-                  <div className="flex items-center gap-1.5 self-end sm:self-center">
+                  {/* Acciones del Barbero */}
+                  <div className="pt-3 border-t border-slate-200 dark:border-industrial-850 flex items-center justify-between gap-2">
                     <button
                       onClick={() => {
                         setSelectedBarberId(b.id);
-                        setIsTeamModalOpen(false);
+                        setActiveSection('jornada');
                       }}
-                      className="px-2.5 py-1.5 rounded-lg bg-noir-900 hover:bg-noir-850 border border-industrial-700 text-slate-200 text-xs font-semibold transition-colors"
-                      title="Ver panel de este barbero"
+                      className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                        isCurrent
+                          ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
+                          : 'bg-slate-200/80 dark:bg-industrial-800/80 hover:bg-gold-500 hover:text-black text-slate-700 dark:text-slate-200'
+                      }`}
                     >
-                      Ver Panel
+                      {isCurrent ? 'Viendo Jornada' : 'Ver Jornada'}
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setIsTeamModalOpen(false);
-                        openEditBarberModal(b);
-                      }}
-                      className="p-2 rounded-lg bg-noir-900 hover:bg-gold-500/20 border border-industrial-700 text-industrial-400 hover:text-gold-400 transition-colors"
-                      title="Editar barbero"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditBarberModal(b)}
+                        className="p-2 rounded-xl bg-slate-200/80 dark:bg-industrial-800/80 hover:bg-gold-500/20 text-slate-700 dark:text-industrial-300 hover:text-gold-400 transition-colors cursor-pointer"
+                        title="Editar barbero"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
 
-                    <button
-                      onClick={() => handleDeleteBarber(b)}
-                      className="p-2 rounded-lg bg-noir-900 hover:bg-rose-500/20 border border-industrial-700 text-industrial-400 hover:text-rose-400 transition-colors"
-                      title="Eliminar barbero"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        onClick={() => handleDeleteBarber(b)}
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                        title="Eliminar barbero"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      </Modal>
+      )}
 
       {/* Modal: Formulario Crear / Editar Barbero */}
       <Modal

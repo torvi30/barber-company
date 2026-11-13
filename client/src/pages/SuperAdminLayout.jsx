@@ -2,161 +2,149 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useBarbershop } from '../context/BarbershopContext';
 import { SuperAdminConsole } from './SuperAdminConsole';
-import { OnboardingWizard } from './OnboardingWizard';
 import {
   Crown,
   Building2,
-  PlusCircle,
+  Plus,
   LogOut,
   RefreshCw,
   Bell,
   Scissors,
   BarChart3,
-  Settings
+  User,
+  ShieldCheck
 } from 'lucide-react';
 
 /**
- * Layout exclusivo del SuperAdmin — gestión de TODAS las barberías
- * Panel separado y dedicado, sin mezclar con la vista de dueño
+ * Layout exclusivo del SuperAdmin — Central Control Plane / Casa Nodriza
+ * Diseño ultra-elegante, sin botones repetidos, 100% intuitivo y unificado con la barra lateral
  */
-export const SuperAdminLayout = ({ onExitSuperAdmin }) => {
+export const SuperAdminLayout = ({ onExitSuperAdmin, embedded = true }) => {
   const { currentUser, logout } = useAuth();
-  const { availableTenants, switchTenant } = useBarbershop();
-  const [activeSection, setActiveSection] = useState('consola'); // 'consola' | 'analytics'
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { availableTenants } = useBarbershop();
+  const [activeSection, setActiveSection] = useState('companies'); // 'companies' | 'users' | 'analytics'
+  const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
+  const [counts, setCounts] = useState({ tenantsCount: 0, usersCount: 0 });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const totalBarbers = availableTenants.length;
+  const handleRefreshMaster = () => {
+    setIsRefreshing(true);
+    setRefreshTrigger(prev => prev + 1);
+    setTimeout(() => setIsRefreshing(false), 800);
+  };
 
   const navItems = [
-    { id: 'consola', label: 'Red de Barberías', icon: Building2, badge: totalBarbers },
+    { id: 'companies', label: 'Red de Barberías', icon: Building2, badge: counts.tenantsCount },
+    { id: 'users', label: 'Usuarios & Asignación', icon: User, badge: counts.usersCount },
     { id: 'analytics', label: 'Métricas Globales', icon: BarChart3 },
   ];
 
-  if (showOnboarding) {
-    return (
-      <div className="min-h-screen bg-noir-950 text-slate-100 p-6 md:p-8">
-        <div className="max-w-2xl mx-auto">
-          <button
-            onClick={() => setShowOnboarding(false)}
-            className="flex items-center gap-2 text-sm text-industrial-400 hover:text-white mb-6 transition-colors"
-          >
-            ← Volver a la Consola
-          </button>
-          <OnboardingWizard
-            onComplete={() => setShowOnboarding(false)}
-            onCancel={() => setShowOnboarding(false)}
-          />
+  const content = (
+    <div className="space-y-6 animate-fadeIn pb-10">
+      {/* Control Plane Header Banner */}
+      <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-r from-noir-900 via-noir-900 to-noir-950 border border-gold-500/25 shadow-lg">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Título y Badge */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-lg shadow-glow-gold flex-shrink-0">
+              <Crown className="w-5 h-5 text-noir-950" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-display font-black text-white text-base md:text-lg tracking-wide">
+                  Consola SuperAdmin
+                </h1>
+                <span className="px-2 py-0.5 rounded-full bg-gold-500/15 border border-gold-500/30 text-gold-300 text-[10px] font-mono font-bold flex items-center gap-1">
+                  CASA NODRIZA
+                </span>
+              </div>
+              <p className="text-[11px] text-industrial-400 font-mono mt-0.5">
+                Control maestro de barberías, asignación de cuentas y métricas de red.
+              </p>
+            </div>
+          </div>
+
+          {/* Pestañas de Sub-navegación */}
+          <nav className="flex items-center gap-1 bg-noir-950 border border-industrial-800 rounded-xl p-1 overflow-x-auto">
+            {navItems.map(item => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                      : 'text-industrial-400 hover:text-white hover:bg-noir-900'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-noir-950' : 'text-gold-400'}`} />
+                  <span>{item.label}</span>
+                  {item.badge !== undefined && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                      isActive ? 'bg-noir-950 text-gold-300' : 'bg-industrial-800 text-industrial-300'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Acciones Rápidas */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-noir-950 border border-gold-500/30 text-[11px] font-mono text-gold-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Nodo: Colombia</span>
+            </div>
+
+            <button
+              onClick={handleRefreshMaster}
+              title="Sincronizar toda la red"
+              className="p-2 rounded-xl bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white hover:border-gold-500/40 transition-colors cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-gold-400' : ''}`} />
+            </button>
+
+            <button
+              onClick={() => setShowCreateCompanyModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider transition-all shadow-glow-gold cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nueva Barbería</span>
+            </button>
+          </div>
         </div>
       </div>
-    );
+
+      {/* Alerta de barberías vencidas o en mora */}
+      <AlertBar tenants={availableTenants} />
+
+      {/* Vistas */}
+      {(activeSection === 'companies' || activeSection === 'users') && (
+        <SuperAdminConsole
+          activeTab={activeSection}
+          showCreateCompanyModal={showCreateCompanyModal}
+          setShowCreateCompanyModal={setShowCreateCompanyModal}
+          onCountsChange={setCounts}
+          refreshTrigger={refreshTrigger}
+        />
+      )}
+      {activeSection === 'analytics' && <SuperAdminAnalytics tenants={availableTenants} />}
+    </div>
+  );
+
+  if (embedded) {
+    return content;
   }
 
   return (
-    <div className="min-h-screen bg-noir-950 text-slate-100 flex flex-col">
-      {/* Header SuperAdmin */}
-      <header className="h-16 border-b border-gold-500/30 bg-noir-900/90 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-4">
-          {/* Logo */}
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-lg shadow-glow-gold flex-shrink-0">
-            BP
-          </div>
-
-          {/* Título y modo */}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-display font-black text-white text-sm">BarberPulse OS</h1>
-              <span className="px-2 py-0.5 rounded-full bg-gold-500/20 border border-gold-500/40 text-gold-300 text-[10px] font-mono font-bold flex items-center gap-1">
-                <Crown className="w-2.5 h-2.5" />
-                SUPERADMIN
-              </span>
-            </div>
-            <p className="text-[10px] text-industrial-500 font-mono mt-0.5">
-              Casa Nodriza · {totalBarbers} barberías registradas
-            </p>
-          </div>
-        </div>
-
-        {/* Nav central */}
-        <nav className="hidden md:flex items-center gap-1 bg-noir-950 border border-industrial-800 rounded-xl p-1">
-          {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeSection === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-gold-500 text-noir-950 font-bold'
-                    : 'text-industrial-400 hover:text-white'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
-                {item.badge !== undefined && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    isActive ? 'bg-noir-950/30 text-noir-950' : 'bg-industrial-800 text-industrial-300'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Acciones derechas */}
-        <div className="flex items-center gap-3">
-          {/* Botón Ver como Dueño / Panel Operativo */}
-          {onExitSuperAdmin && (
-            <button
-              onClick={onExitSuperAdmin}
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-noir-950 border border-industrial-700 hover:border-gold-500/40 text-slate-300 text-xs font-medium transition-colors"
-              title="Ir al panel operativo de la barbería seleccionada"
-            >
-              <Scissors className="w-3.5 h-3.5 text-gold-400" />
-              <span>Ver Panel de Barbería</span>
-            </button>
-          )}
-
-          {/* Botón Nueva Barbería */}
-          <button
-            onClick={() => setShowOnboarding(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-black text-xs uppercase tracking-wider transition-all shadow-glow-gold"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Nueva Barbería</span>
-          </button>
-
-          {/* Usuario */}
-          <div className="flex items-center gap-2 pl-3 border-l border-industrial-800">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center text-noir-950 font-black text-xs">
-              {currentUser.name?.charAt(0) || 'S'}
-            </div>
-            <div className="hidden md:block">
-              <div className="text-xs font-bold text-white">{currentUser.name}</div>
-              <div className="text-[10px] text-gold-400 font-mono">👑 SUPERADMIN</div>
-            </div>
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={logout}
-            title="Cerrar Sesión"
-            className="p-2 rounded-xl bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-rose-400 hover:border-rose-500/40 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
-
-      {/* Barra de alerta rapida de barberías en mora */}
-      <AlertBar tenants={availableTenants} />
-
-      {/* Contenido principal */}
-      <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
-        {activeSection === 'consola' && <SuperAdminConsole />}
-        {activeSection === 'analytics' && <SuperAdminAnalytics tenants={availableTenants} />}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-gold-500 selection:text-black">
+      <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        {content}
       </main>
     </div>
   );

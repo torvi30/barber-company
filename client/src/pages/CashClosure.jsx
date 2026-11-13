@@ -24,15 +24,29 @@ export const CashClosure = () => {
   const [closureResult, setClosureResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const defaultSummary = {
+    metrics: { totalRevenue: 0, cashRevenue: 0, electronicRevenue: 0, serviceCount: 0, retailCount: 0 },
+    drawerReconciliation: { openingCash: openingCash || 0, cashIn: 0, cashOut: 0, expectedCashInDrawer: openingCash || 0 },
+    commissions: []
+  };
+
   const fetchSummary = async () => {
+    if (!tenantId) {
+      setSummaryData(defaultSummary);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await api.getCashSummary(tenantId, openingCash);
-      if (res.success) {
+      if (res && res.success && res.data) {
         setSummaryData(res.data);
+      } else {
+        setSummaryData(defaultSummary);
       }
     } catch (err) {
       setErrorMsg(err.message);
+      setSummaryData(defaultSummary);
     } finally {
       setLoading(false);
     }
