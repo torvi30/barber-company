@@ -213,3 +213,4 @@ export async function deleteFirestoreCashMovement(tenantId, movementId) {
     console.warn('Firestore notice (deleteCashMovement):', err.message);
   }
 }
+
