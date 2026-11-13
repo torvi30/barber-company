@@ -70,8 +70,11 @@ export const api = {
   updateStock: (tenantId, id, adjustment) => apiClient(`/inventory/${id}/stock`, { method: 'PATCH', body: { adjustment } }, tenantId),
 
   // --- Cierre de Caja & Arqueo ---
-  getCashSummary: (tenantId, openingCash = 100) => apiClient(`/cash-closures/summary?openingCash=${openingCash}`, { method: 'GET' }, tenantId),
+  getCashSummary: (tenantId, openingCash = 100000) => apiClient(`/cash-closures/summary?openingCash=${openingCash}`, { method: 'GET' }, tenantId),
   executeCashClosure: (tenantId, payload) => apiClient('/cash-closures/close', { method: 'POST', body: payload }, tenantId),
+  getCashClosureHistory: (tenantId) => apiClient('/cash-closures/history', { method: 'GET' }, tenantId),
+  addCashMovement: (tenantId, payload) => apiClient('/cash-closures/movements', { method: 'POST', body: payload }, tenantId),
+  deleteCashMovement: (tenantId, id) => apiClient(`/cash-closures/movements/${id}`, { method: 'DELETE' }, tenantId),
 
   // --- Clientes & CRM (Ficha de Estilo & Fidelización) ---
   getClients: (tenantId, search = '', tier = '') => apiClient(`/clients?search=${encodeURIComponent(search)}&tier=${tier}`, { method: 'GET' }, tenantId),
