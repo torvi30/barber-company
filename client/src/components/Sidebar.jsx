@@ -8,10 +8,12 @@ import {
   DollarSign,
   Crown,
   ExternalLink,
-  LogOut
+  LogOut,
+  Sparkles,
+  Settings
 } from 'lucide-react';
 
-export const Sidebar = ({ activeTab, onTabChange }) => {
+export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
   const { barbershopInfo } = useBarbershop();
   const { isSuperAdmin, currentUser, logout } = useAuth();
 
@@ -91,12 +93,58 @@ export const Sidebar = ({ activeTab, onTabChange }) => {
                 </button>
               );
             })}
+
+            {/* Acceso Directo a Identidad & Logo */}
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-industrial-400 hover:text-gold-300 hover:bg-gold-500/10 border border-transparent hover:border-gold-500/20 transition-all cursor-pointer mt-2"
+                title="Configurar Logotipo, Datos y Módulos del Salón"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>Identidad & Logo</span>
+                </div>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-gold-500/10 text-gold-400 border border-gold-500/20">
+                  LOGO
+                </span>
+              </button>
+            )}
           </nav>
         </div>
       </div>
 
-      {/* Footer con Usuario y Salir */}
-      <div className="pt-3 border-t border-industrial-800/40 space-y-2">
+      {/* Footer con Tarjeta de Barbería, Usuario y Salir */}
+      <div className="pt-3 border-t border-industrial-800/40 space-y-3">
+        {/* Tarjeta de la Empresa Activa con Logo */}
+        <div
+          onClick={onOpenSettings}
+          className="p-2.5 rounded-xl bg-noir-950/80 border border-industrial-800/80 hover:border-gold-500/40 transition-colors flex items-center gap-2.5 cursor-pointer group"
+          title="Click para cambiar el logotipo o datos de la empresa"
+        >
+          {barbershopInfo?.logoUrl ? (
+            <img
+              src={barbershopInfo.logoUrl}
+              alt={barbershopInfo.name}
+              className="w-8 h-8 rounded-lg object-cover border border-gold-500/40 flex-shrink-0 group-hover:scale-105 transition-transform"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-gold-600 to-gold-400 text-black font-display font-black text-xs flex items-center justify-center flex-shrink-0 shadow-sm">
+              {barbershopInfo?.name ? barbershopInfo.name.substring(0, 2).toUpperCase() : 'BP'}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-white truncate group-hover:text-gold-400 transition-colors">
+              {barbershopInfo?.name || 'Mi Barbería'}
+            </div>
+            <div className="text-[10px] text-industrial-400 truncate flex items-center gap-1">
+              <span>{barbershopInfo?.municipality || 'Rionegro'}</span>
+              <span>•</span>
+              <span className="text-gold-400 font-mono text-[9px]">Editar logo</span>
+            </div>
+          </div>
+        </div>
+
         <div className="px-1 flex items-center justify-between text-xs">
           <div className="min-w-0">
             <span className="font-bold text-white text-xs truncate block">{currentUser?.name || 'Usuario'}</span>
@@ -121,5 +169,6 @@ export const Sidebar = ({ activeTab, onTabChange }) => {
     </aside>
   );
 };
+
 
 

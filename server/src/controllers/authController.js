@@ -223,17 +223,40 @@ export const deleteUser = async (req, res) => {
 export const updateBarbershopSettings = async (req, res) => {
   try {
     const { barbershopId } = req.params;
-    const { storeEnabled, name, address, whatsapp } = req.body;
+    const { storeEnabled, name, address, whatsapp, logoUrl, slogan, municipality } = req.body;
 
-    const barbershop = mockStore.barbershops?.[barbershopId];
+    if (!mockStore.barbershops) mockStore.barbershops = {};
+    let barbershop = mockStore.barbershops[barbershopId];
     if (!barbershop) {
-      return res.status(404).json({ success: false, error: 'Barbería no encontrada' });
+      barbershop = {
+        id: barbershopId,
+        name: name || 'Mi Barbería',
+        address: address || '',
+        whatsapp: whatsapp || '',
+        municipality: municipality || 'Rionegro',
+        logoUrl: logoUrl || '',
+        slogan: slogan || '',
+        storeEnabled: storeEnabled !== undefined ? Boolean(storeEnabled) : true
+      };
+      mockStore.barbershops[barbershopId] = barbershop;
     }
 
     if (storeEnabled !== undefined) barbershop.storeEnabled = Boolean(storeEnabled);
     if (name) barbershop.name = name;
-    if (address) barbershop.address = address;
-    if (whatsapp) barbershop.whatsapp = whatsapp;
+    if (address !== undefined) barbershop.address = address;
+    if (whatsapp !== undefined) barbershop.whatsapp = whatsapp;
+    if (logoUrl !== undefined) barbershop.logoUrl = logoUrl;
+    if (slogan !== undefined) barbershop.slogan = slogan;
+    if (municipality !== undefined) barbershop.municipality = municipality;
+
+    // Persistir en Firestore si está conectado
+    if (!isMock && db) {
+      try {
+        await db.collection('barbershops').doc(barbershopId).set(barbershop, { merge: true });
+      } catch (e) {
+        console.warn('Notice saving barbershop settings to Firestore:', e.message);
+      }
+    }
 
     const io = req.app.get('io');
     if (io) {
@@ -243,7 +266,7 @@ export const updateBarbershopSettings = async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Configuración actualizada exitosamente',
+      message: 'Configuración e identidad actualizadas exitosamente',
       data: barbershop
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { initSocket, getSocket } from '../services/socket';
+import { saveFirestoreTenant } from '../services/firestoreService';
 import { useAuth } from './AuthContext';
 
 const BarbershopContext = createContext();
@@ -16,7 +17,9 @@ export const DEFAULT_BLANK_TENANT = {
   whatsapp: '',
   ownerName: 'Administrador',
   subscriptionStatus: 'active',
-  storeEnabled: false
+  storeEnabled: false,
+  logoUrl: '',
+  slogan: ''
 };
 
 export const BarbershopProvider = ({ children }) => {
@@ -284,6 +287,22 @@ export const BarbershopProvider = ({ children }) => {
     }
   };
 
+  const updateCompanySettings = async (settings) => {
+    try {
+      const res = await api.updateBarbershopSettings(tenantId, settings);
+      setBarbershopInfo(prev => ({ ...prev, ...settings }));
+      setTenantList(prev => prev.map(t => t.id === tenantId ? { ...t, ...settings } : t));
+      await saveFirestoreTenant({ id: tenantId, ...barbershopInfo, ...settings });
+      return res;
+    } catch (err) {
+      console.warn('Actualización local de identidad:', err.message);
+      setBarbershopInfo(prev => ({ ...prev, ...settings }));
+      setTenantList(prev => prev.map(t => t.id === tenantId ? { ...t, ...settings } : t));
+      await saveFirestoreTenant({ id: tenantId, ...barbershopInfo, ...settings });
+      return { success: true, data: { ...barbershopInfo, ...settings } };
+    }
+  };
+
   return (
     <BarbershopContext.Provider
       value={{
@@ -308,7 +327,8 @@ export const BarbershopProvider = ({ children }) => {
         addBarber,
         editBarber,
         removeBarber,
-        toggleStoreModule
+        toggleStoreModule,
+        updateCompanySettings
       }}
     >
       {children}

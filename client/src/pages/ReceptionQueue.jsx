@@ -3,6 +3,7 @@ import { useBarbershop } from '../context/BarbershopContext';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import { api } from '../services/api';
+import { showErrorAlert, showSuccessAlert } from '../lib/swal';
 import {
   UserPlus,
   PlayCircle,
@@ -119,7 +120,7 @@ export const ReceptionQueue = () => {
       });
       fetchSlots();
     } catch (err) {
-      alert('Error al modificar turno: ' + err.message);
+      showErrorAlert('Error al modificar turno', err.message);
     }
   };
 
@@ -136,7 +137,7 @@ export const ReceptionQueue = () => {
       });
       fetchSlots();
     } catch (err) {
-      alert('Error al modificar turnos en lote: ' + err.message);
+      showErrorAlert('Error al modificar turnos en lote', err.message);
     } finally {
       setLoadingSlots(false);
     }
@@ -157,7 +158,7 @@ export const ReceptionQueue = () => {
         fetchSlots();
       }
     } catch (err) {
-      alert('Error al actualizar horario semanal: ' + err.message);
+      showErrorAlert('Error al actualizar horario semanal', err.message);
     } finally {
       setSavingSchedule(false);
     }
@@ -210,7 +211,7 @@ export const ReceptionQueue = () => {
       setClientName('');
       setClientPhone('');
     } catch (err) {
-      alert(err.message || 'Error al agendar cita: horario no disponible');
+      showErrorAlert('Horario No Disponible', err.message || 'Error al agendar cita.');
     }
   };
 

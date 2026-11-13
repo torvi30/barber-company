@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { showErrorAlert } from '../lib/swal';
 import {
   ShoppingBag,
   Plus,
@@ -125,7 +126,7 @@ export const PublicStore = ({ slug = 'black-gold' }) => {
         setCart([]);
       }
     } catch (err) {
-      alert(err.message || 'Error al procesar el pedido');
+      showErrorAlert('Error en el pedido', err.message || 'Error al procesar el pedido');
     } finally {
       setSubmitting(false);
     }

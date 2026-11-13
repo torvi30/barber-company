@@ -39,15 +39,24 @@ export const Landing = ({ onEnterAdmin }) => {
       <nav className="border-b border-slate-200 dark:border-industrial-800 bg-white/90 dark:bg-noir-900/90 backdrop-blur-md px-4 py-3 md:px-6 md:py-4 sticky top-0 z-40 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-sm md:text-xl shadow-glow-gold flex-shrink-0">
-              BP
-            </div>
+            {barbershopInfo?.logoUrl ? (
+              <img
+                src={barbershopInfo.logoUrl}
+                alt={barbershopInfo?.name || 'Logo'}
+                className="w-8 h-8 md:w-10 md:h-10 rounded-xl object-cover border border-amber-500/40 shadow-glow-gold flex-shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-sm md:text-xl shadow-glow-gold flex-shrink-0">
+                {barbershopInfo?.name ? barbershopInfo.name.substring(0, 2).toUpperCase() : 'BP'}
+              </div>
+            )}
             <div className="min-w-0">
               <span className="font-display font-bold text-sm md:text-lg text-slate-900 dark:text-white tracking-wide truncate block">
                 {barbershopInfo?.name || 'BarberPulse Studio'}
               </span>
               <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono flex items-center gap-1 truncate">
                 <MapPin className="w-2.5 h-2.5 flex-shrink-0" /> {barbershopInfo?.municipality || 'Colombia'}
+                {barbershopInfo?.slogan && <span className="hidden sm:inline">• {barbershopInfo.slogan}</span>}
               </span>
             </div>
           </div>
@@ -110,6 +119,25 @@ export const Landing = ({ onEnterAdmin }) => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
             {/* Left Column: Brand Story & Live Proof (Texto fluido responsivo) */}
             <div className="lg:col-span-5 space-y-4 md:space-y-6">
+              {/* Badge oficial de la barbería */}
+              {barbershopInfo?.logoUrl && (
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm w-fit">
+                  <img
+                    src={barbershopInfo.logoUrl}
+                    alt={barbershopInfo.name}
+                    className="w-12 h-12 rounded-xl object-cover border border-amber-500/40 shadow-glow-gold flex-shrink-0"
+                  />
+                  <div>
+                    <h3 className="font-display font-black text-sm text-slate-900 dark:text-white">
+                      {barbershopInfo.name}
+                    </h3>
+                    <p className="text-[11px] text-amber-600 dark:text-gold-400 font-mono">
+                      {barbershopInfo.slogan || 'Salón & Barbería Oficial'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/30 dark:border-gold-500/30 text-amber-700 dark:text-gold-400 text-[11px] font-semibold tracking-wider uppercase font-mono">
                 <Award className="w-3.5 h-3.5" /> Grooming & Gentlemen Sanctuary
               </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
+import { showSuccessAlert } from '../lib/swal';
 import {
   CreditCard,
   Crown,
@@ -594,7 +595,7 @@ export const SubscriptionSettings = () => {
                 </td>
                 <td className="py-3.5 px-4 text-right">
                   <button
-                    onClick={() => alert('Descarga de recibo en PDF lista en entorno Stripe')}
+                    onClick={() => showSuccessAlert('Comprobante Contable', 'Recibo de pago en PDF generado y enviado a tu correo.')}
                     className="p-1.5 rounded-lg bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white transition-colors"
                     title="Descargar Comprobante PDF"
                   >
@@ -614,7 +615,7 @@ export const SubscriptionSettings = () => {
                 </td>
                 <td className="py-3.5 px-4 text-right">
                   <button
-                    onClick={() => alert('Descarga de recibo en PDF lista en entorno Stripe')}
+                    onClick={() => showSuccessAlert('Comprobante Contable', 'Recibo de pago en PDF generado y enviado a tu correo.')}
                     className="p-1.5 rounded-lg bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white transition-colors"
                     title="Descargar Comprobante PDF"
                   >

@@ -19,11 +19,13 @@ import { SuperAdminLayout } from './pages/SuperAdminLayout';
 import { OnboardingWizard } from './pages/OnboardingWizard';
 import { LoginScreen } from './pages/LoginScreen';
 import { UnassignedUserScreen } from './pages/UnassignedUserScreen';
+import { SettingsModal } from './components/SettingsModal';
 
 const AppContent = () => {
   const { isAuthenticated, isSuperAdmin, isUnassigned, isLoading } = useAuth();
   const { availableTenants, switchTenant } = useBarbershop();
   const [activeTab, setActiveTab] = useState('reception');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Detectar si la URL trae un parámetro público (ej: ?slug=black-gold o ?view=landing o ruta /citas)
   const urlParams = new URLSearchParams(window.location.search);
@@ -64,6 +66,7 @@ const AppContent = () => {
       <Navbar
         onOpenOnboarding={() => setActiveTab('onboarding')}
         onOpenSuperAdmin={() => setActiveTab('superadmin')}
+        onOpenSettings={() => setShowSettingsModal(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
@@ -71,6 +74,7 @@ const AppContent = () => {
       <div className="flex flex-1">
         <Sidebar
           activeTab={activeTab}
+          onOpenSettings={() => setShowSettingsModal(true)}
           onTabChange={(tab) => {
             if (tab === 'landing') {
               setIsLandingMode(true);
@@ -101,6 +105,12 @@ const AppContent = () => {
           {activeTab === 'subscription' && <SubscriptionSettings />}
         </main>
       </div>
+
+      {/* Modal Global de Ajustes de Barbería & Logotipo */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
 
       {/* Barra de Navegación Inferior Móvil (Mobile Bottom Bar) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-noir-900/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 z-50 flex items-center justify-around px-2 shadow-sm transition-colors">

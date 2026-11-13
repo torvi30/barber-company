@@ -3,6 +3,7 @@ import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { Badge } from '../components/Badge';
+import { showErrorAlert, showSuccessAlert } from '../lib/swal';
 import {
   Bell,
   MessageSquare,
@@ -118,7 +119,7 @@ export const NotificationsHub = () => {
         setTimeout(() => setSaveSuccess(false), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Error al guardar la configuración');
+      showErrorAlert('Error de configuración', err.message || 'Error al guardar la configuración');
     }
   };
 
@@ -138,7 +139,7 @@ export const NotificationsHub = () => {
         setTimeout(() => setTestSuccessMessage(''), 4000);
       }
     } catch (err) {
-      alert('Error en la prueba de notificación');
+      showErrorAlert('Error en prueba', 'No se pudo enviar la notificación de prueba.');
     } finally {
       setTesting(false);
     }

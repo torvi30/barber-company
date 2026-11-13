@@ -3,6 +3,7 @@ import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
+import { showErrorAlert, showSuccessAlert } from '../lib/swal';
 import {
   Users,
   Search,
@@ -94,7 +95,7 @@ export const ClientsCRM = () => {
         setTimeout(() => setSaveSuccess(false), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Error al guardar la ficha técnica');
+      showErrorAlert('Error al guardar', err.message || 'Error al guardar la ficha técnica');
     }
   };
 
@@ -105,7 +106,7 @@ export const ClientsCRM = () => {
         window.open(res.whatsappUrl, '_blank');
       }
     } catch (err) {
-      alert('Error al generar recordatorio de WhatsApp');
+      showErrorAlert('Recordatorio de WhatsApp', 'Error al generar el recordatorio.');
     }
   };
 
@@ -136,9 +137,10 @@ export const ClientsCRM = () => {
         setNewPhone('');
         setNewEmail('');
         fetchClients();
+        showSuccessAlert('Cliente Registrado', `${newName} fue añadido con éxito al CRM.`);
       }
     } catch (err) {
-      alert(err.message || 'Error al registrar cliente');
+      showErrorAlert('Error al registrar cliente', err.message);
     }
   };
 

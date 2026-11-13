@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
 import { StatCard } from '../components/StatCard';
+import { showErrorAlert } from '../lib/swal';
 import {
   TrendingUp,
   BarChart3,
@@ -88,7 +89,7 @@ export const Analytics = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Error al descargar el archivo contable.');
+      showErrorAlert('Error de descarga', 'Error al descargar el archivo contable.');
     }
   };
 
