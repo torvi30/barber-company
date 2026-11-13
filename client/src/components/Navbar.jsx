@@ -19,7 +19,8 @@ import {
   ExternalLink,
   Sparkles,
   Sliders,
-  Check
+  Check,
+  User
 } from 'lucide-react';
 
 export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabChange, onOpenSettings }) => {
@@ -39,8 +40,16 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
   const [showTenantMenu, setShowTenantMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [internalSettingsModal, setInternalSettingsModal] = useState(false);
+  const [internalInitialTab, setInternalInitialTab] = useState('identity');
 
-  const handleOpenSettings = onOpenSettings || (() => setInternalSettingsModal(true));
+  const handleOpenSettings = (tab = 'identity') => {
+    if (onOpenSettings) {
+      onOpenSettings(tab);
+    } else {
+      setInternalInitialTab(tab);
+      setInternalSettingsModal(true);
+    }
+  };
 
   const statusColors = {
     active:   'bg-emerald-400',
@@ -283,19 +292,28 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
                   </div>
                 </div>
 
-                {/* Acceso a Configuración de Identidad & Módulos */}
+                {/* Acceso a Configuración de Mi Perfil Personal */}
                 <button
-                  onClick={() => { setShowUserMenu(false); handleOpenSettings(); }}
+                  onClick={() => { setShowUserMenu(false); handleOpenSettings('profile'); }}
                   className="w-full text-left px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-noir-800 font-medium transition-colors mt-1 flex items-center gap-2 cursor-pointer"
                 >
+                  <User className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400" />
+                  <span>Mi Perfil Personal</span>
+                </button>
+
+                {/* Acceso a Configuración de Identidad & Módulos */}
+                <button
+                  onClick={() => { setShowUserMenu(false); handleOpenSettings('identity'); }}
+                  className="w-full text-left px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-noir-800 font-medium transition-colors mt-0.5 flex items-center gap-2 cursor-pointer"
+                >
                   <Sliders className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400" />
-                  <span>Ajustes & Logotipo</span>
+                  <span>Identidad & Logotipo</span>
                 </button>
 
                 {isSuperAdmin && onOpenSuperAdmin && (
                   <button
                     onClick={() => { setShowUserMenu(false); onOpenSuperAdmin(); }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-amber-600 dark:text-gold-400 hover:bg-slate-100 dark:hover:bg-noir-800 font-medium transition-colors mt-1 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 rounded-xl text-amber-600 dark:text-gold-400 hover:bg-slate-100 dark:hover:bg-noir-800 font-medium transition-colors mt-0.5 flex items-center gap-2"
                   >
                     <Crown className="w-3.5 h-3.5" />
                     <span>Consola SuperAdmin</span>
@@ -319,6 +337,7 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
         <SettingsModal
           isOpen={internalSettingsModal}
           onClose={() => setInternalSettingsModal(false)}
+          initialTab={internalInitialTab}
         />
       )}
 

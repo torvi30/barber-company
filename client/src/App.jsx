@@ -26,6 +26,12 @@ const AppContent = () => {
   const { availableTenants, switchTenant } = useBarbershop();
   const [activeTab, setActiveTab] = useState('reception');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState('profile');
+
+  const handleOpenSettings = (tab = 'profile') => {
+    setSettingsInitialTab(tab);
+    setShowSettingsModal(true);
+  };
 
   // Detectar si la URL trae un parámetro público (ej: ?slug=black-gold o ?view=landing o ruta /citas)
   const urlParams = new URLSearchParams(window.location.search);
@@ -66,7 +72,7 @@ const AppContent = () => {
       <Navbar
         onOpenOnboarding={() => setActiveTab('onboarding')}
         onOpenSuperAdmin={() => setActiveTab('superadmin')}
-        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenSettings={handleOpenSettings}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
@@ -74,7 +80,7 @@ const AppContent = () => {
       <div className="flex flex-1">
         <Sidebar
           activeTab={activeTab}
-          onOpenSettings={() => setShowSettingsModal(true)}
+          onOpenSettings={handleOpenSettings}
           onTabChange={(tab) => {
             if (tab === 'landing') {
               setIsLandingMode(true);
@@ -106,10 +112,11 @@ const AppContent = () => {
         </main>
       </div>
 
-      {/* Modal Global de Ajustes de Barbería & Logotipo */}
+      {/* Modal Global de Ajustes de Barbería, Perfil Personal & Logotipo */}
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+        initialTab={settingsInitialTab}
       />
 
       {/* Barra de Navegación Inferior Móvil (Mobile Bottom Bar) */}

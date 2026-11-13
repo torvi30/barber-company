@@ -53,6 +53,7 @@ export const api = {
   assignUserCompany: (assignment) => apiClient('/auth/users/assign', { method: 'POST', body: assignment, headers: { 'x-role': 'SUPERADMIN', 'x-admin-key': 'superadmin-secret-nodriza-2026' } }, null),
   deletePlatformUser: (uid) => apiClient(`/auth/users/${uid}`, { method: 'DELETE', headers: { 'x-role': 'SUPERADMIN', 'x-admin-key': 'superadmin-secret-nodriza-2026' } }, null),
   updateBarbershopSettings: (tenantId, settings) => apiClient(`/auth/barbershops/${tenantId}/settings`, { method: 'PATCH', body: settings }, tenantId),
+  updateUserProfile: (profileData) => apiClient('/auth/profile', { method: 'PATCH', body: profileData }, null),
 
   // --- Barberos, Portal Staff & Horarios (Rostering & CRUD) ---
   getBarbers: (tenantId) => apiClient('/commissions/barbers', { method: 'GET' }, tenantId),

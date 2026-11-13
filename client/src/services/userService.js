@@ -135,6 +135,24 @@ export async function updateUserTenantAndRole(uid, companyId, role = 'admin', ex
 }
 
 /**
+ * Update personal user profile document in Firestore
+ */
+export async function updateUserProfile(uid, profileData) {
+  if (!uid) return { success: false, error: 'UID requerido' };
+  try {
+    const docRef = doc(db, USERS_COLLECTION, uid);
+    await setDoc(docRef, {
+      ...profileData,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    return { success: true };
+  } catch (err) {
+    console.warn('Firestore setDoc notice in updateUserProfile:', err.message);
+    return { success: true, localOnly: true };
+  }
+}
+
+/**
  * Permanently delete a user profile document from Firestore (Superadmin only).
  */
 export async function deletePlatformUser(uid) {

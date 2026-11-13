@@ -313,3 +313,65 @@ export const getUserStatus = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
+
+/**
+ * Actualizar perfil personal del usuario (nombre, avatar, teléfono, bio)
+ */
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { uid, displayName, avatarUrl, phone, bio } = req.body;
+    if (!uid) {
+      return res.status(400).json({ success: false, error: 'UID de usuario requerido' });
+    }
+
+    if (!mockStore.users) mockStore.users = [];
+    let user = mockStore.users.find(u => u.uid === uid);
+
+    if (user) {
+      if (displayName !== undefined) user.displayName = displayName;
+      if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+      if (phone !== undefined) user.phone = phone;
+      if (bio !== undefined) user.bio = bio;
+      user.updatedAt = new Date().toISOString();
+    } else {
+      user = {
+        uid,
+        displayName: displayName || 'Usuario',
+        avatarUrl: avatarUrl || null,
+        phone: phone || '',
+        bio: bio || '',
+        updatedAt: new Date().toISOString()
+      };
+      mockStore.users.push(user);
+    }
+
+    // Persistir en Firestore si está conectado
+    if (!isMock && db) {
+      try {
+        await db.collection('users').doc(uid).set({
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          phone: user.phone || '',
+          bio: user.bio || '',
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (fsErr) {
+        console.warn('Backend firestore update profile notice:', fsErr.message);
+      }
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('user:profile_updated', user);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Perfil de usuario actualizado exitosamente',
+      user
+    });
+  } catch (error) {
+    console.error('Error al actualizar perfil de usuario:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};

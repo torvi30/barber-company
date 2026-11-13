@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { useBarbershop } from '../context/BarbershopContext';
+import { useAuth } from '../context/AuthContext';
 import { showSuccessAlert, showErrorAlert } from '../lib/swal';
 import {
+  User,
   Upload,
   Image as ImageIcon,
   Link as LinkIcon,
@@ -16,7 +18,11 @@ import {
   ExternalLink,
   Store,
   Layers,
-  Eye
+  Eye,
+  KeyRound,
+  Shield,
+  Mail,
+  Camera
 } from 'lucide-react';
 
 const PRESET_LOGOS = [
@@ -52,43 +58,73 @@ const PRESET_LOGOS = [
   }
 ];
 
-export const SettingsModal = ({ isOpen, onClose }) => {
-  const { barbershopInfo, updateCompanySettings, toggleStoreModule } = useBarbershop();
+const AVATAR_PRESETS = [
+  { label: 'Fade Master', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80' },
+  { label: 'Blade Classic', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=200&q=80' },
+  { label: 'Scissors Pro', url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?fit=crop&w=200&q=80' },
+  { label: 'Sofía Stylist', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?fit=crop&w=200&q=80' },
+  { label: 'Alejo Barber', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?fit=crop&w=200&q=80' },
+  { label: 'Victor Master', url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?fit=crop&w=200&q=80' },
+  { label: 'Daniel Gold', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=200&q=80' },
+  { label: 'Executive Cut', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?fit=crop&w=200&q=80' }
+];
 
-  const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'modules'
-  const [name, setName] = useState('');
-  const [slogan, setSlogan] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [address, setAddress] = useState('');
-  const [municipality, setMunicipality] = useState('');
+export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
+  const { barbershopInfo, updateCompanySettings, toggleStoreModule } = useBarbershop();
+  const { currentUser, isSuperAdmin, updateCurrentUserProfile, resetPassword } = useAuth();
+
+  const [activeTab, setActiveTab] = useState(initialTab); // 'profile' | 'identity' | 'modules'
+
+  // --- Estado de Perfil Personal ---
+  const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [userBio, setUserBio] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [avatarUploadFeedback, setAvatarUploadFeedback] = useState(null);
+  const avatarFileInputRef = useRef(null);
+
+  // --- Estado de Identidad de Barbería ---
+  const [salonName, setSalonName] = useState('');
+  const [salonSlogan, setSalonSlogan] = useState('');
+  const [salonLogoUrl, setSalonLogoUrl] = useState('');
+  const [salonWhatsapp, setSalonWhatsapp] = useState('');
+  const [salonAddress, setSalonAddress] = useState('');
+  const [salonMunicipality, setSalonMunicipality] = useState('');
   const [previewTheme, setPreviewTheme] = useState('dark'); // 'dark' | 'light'
-  const [uploadFeedback, setUploadFeedback] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [logoUploadFeedback, setLogoUploadFeedback] = useState(null);
+  const [isSavingSalon, setIsSavingSalon] = useState(false);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
-  const fileInputRef = useRef(null);
+  const logoFileInputRef = useRef(null);
 
   const isStoreEnabled = barbershopInfo?.storeEnabled !== false;
 
-  // Sincronizar datos al abrir el modal o cambiar la barbería activa
+  // Sincronizar datos al abrir modal
   useEffect(() => {
-    if (barbershopInfo) {
-      setName(barbershopInfo.name || '');
-      setSlogan(barbershopInfo.slogan || '');
-      setLogoUrl(barbershopInfo.logoUrl || '');
-      setWhatsapp(barbershopInfo.whatsapp || '');
-      setAddress(barbershopInfo.address || '');
-      setMunicipality(barbershopInfo.municipality || 'Rionegro');
-      setUploadFeedback(null);
+    if (isOpen) {
+      setActiveTab(initialTab || 'profile');
+      if (currentUser) {
+        setDisplayName(currentUser.displayName || currentUser.name || '');
+        setAvatarUrl(currentUser.avatarUrl || currentUser.avatar || '');
+        setUserPhone(currentUser.phone || '');
+        setUserBio(currentUser.bio || '');
+        setAvatarUploadFeedback(null);
+      }
+      if (barbershopInfo) {
+        setSalonName(barbershopInfo.name || '');
+        setSalonSlogan(barbershopInfo.slogan || '');
+        setSalonLogoUrl(barbershopInfo.logoUrl || '');
+        setSalonWhatsapp(barbershopInfo.whatsapp || '');
+        setSalonAddress(barbershopInfo.address || '');
+        setSalonMunicipality(barbershopInfo.municipality || 'Rionegro');
+        setLogoUploadFeedback(null);
+      }
     }
-  }, [barbershopInfo, isOpen]);
+  }, [isOpen, initialTab, currentUser, barbershopInfo]);
 
-  // Compresión y optimización de imagen en Canvas (Cliente Spark Plan: 256x256 max, ~25-35KB DataURL)
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
+  // Helper de compresión Canvas a 256x256 px JPEG ultra liviano (Spark Plan Ready)
+  const compressImage = (file, callback) => {
+    if (!file || !file.type.startsWith('image/')) {
       showErrorAlert('Archivo no válido', 'Por favor selecciona una imagen (PNG, JPG, SVG o WebP).');
       return;
     }
@@ -97,7 +133,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Redimensionar respetando aspecto a máximo 256x256 px
         const maxDimension = 256;
         let width = img.width;
         let height = img.height;
@@ -122,13 +157,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Exportar como JPEG de alta fidelidad ultra liviano (Spark Plan Ready)
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
         const originalKb = Math.round(file.size / 1024);
         const compressedKb = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
 
-        setLogoUrl(compressedDataUrl);
-        setUploadFeedback(`Imagen optimizada: ${originalKb} KB → ${compressedKb} KB (Carga ultrarrápida)`);
+        callback(compressedDataUrl, originalKb, compressedKb);
       };
       img.onerror = () => {
         showErrorAlert('Error al procesar imagen', 'No pudimos procesar el archivo seleccionado.');
@@ -138,34 +171,95 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     reader.readAsDataURL(file);
   };
 
-  // Guardar configuración general
-  const handleSaveSettings = async (e) => {
+  // Carga de avatar de usuario
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    compressImage(file, (compressedDataUrl, origKb, compKb) => {
+      setAvatarUrl(compressedDataUrl);
+      setAvatarUploadFeedback(`Foto optimizada: ${origKb} KB → ${compKb} KB (Sin costo de almacenamiento)`);
+    });
+  };
+
+  // Carga de logo de barbería
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    compressImage(file, (compressedDataUrl, origKb, compKb) => {
+      setSalonLogoUrl(compressedDataUrl);
+      setLogoUploadFeedback(`Logo optimizado: ${origKb} KB → ${compKb} KB (Carga ultrarrápida)`);
+    });
+  };
+
+  // Guardar Perfil de Usuario en Firebase Auth, Firestore y MongoDB
+  const handleSaveProfile = async (e) => {
     e?.preventDefault();
-    if (!name.trim()) {
+    if (!displayName.trim()) {
+      showErrorAlert('Campo Requerido', 'Tu nombre no puede estar vacío.');
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      await updateCurrentUserProfile({
+        displayName: displayName.trim(),
+        avatarUrl: avatarUrl.trim(),
+        phone: userPhone.trim(),
+        bio: userBio.trim()
+      });
+
+      await showSuccessAlert(
+        '¡Perfil Guardado!',
+        'Tus datos personales y foto de perfil quedaron sincronizados en la base de datos.'
+      );
+    } catch (err) {
+      showErrorAlert('Error al guardar perfil', err.message || 'No se pudieron guardar los cambios.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // Enviar correo de restablecimiento de contraseña
+  const handlePasswordReset = async () => {
+    if (!currentUser?.email) return;
+    try {
+      await resetPassword(currentUser.email);
+      showSuccessAlert(
+        'Enlace de Seguridad Enviado',
+        `Hemos enviado un enlace a ${currentUser.email} para que actualices tu contraseña con seguridad.`
+      );
+    } catch (err) {
+      showErrorAlert('Error al enviar correo', err.message);
+    }
+  };
+
+  // Guardar Identidad de Barbería
+  const handleSaveSalon = async (e) => {
+    e?.preventDefault();
+    if (!salonName.trim()) {
       showErrorAlert('Campo requerido', 'El nombre de la barbería no puede estar vacío.');
       return;
     }
 
     try {
-      setIsSaving(true);
+      setIsSavingSalon(true);
       await updateCompanySettings({
-        name: name.trim(),
-        slogan: slogan.trim(),
-        logoUrl: logoUrl.trim(),
-        whatsapp: whatsapp.trim(),
-        address: address.trim(),
-        municipality: municipality.trim()
+        name: salonName.trim(),
+        slogan: salonSlogan.trim(),
+        logoUrl: salonLogoUrl.trim(),
+        whatsapp: salonWhatsapp.trim(),
+        address: salonAddress.trim(),
+        municipality: salonMunicipality.trim()
       });
 
       await showSuccessAlert(
-        '¡Identidad Actualizada!',
-        `El logotipo y los datos de ${name.trim()} se han sincronizado en tiempo real.`
+        '¡Identidad de Barbería Guardada!',
+        `El logotipo y datos de ${salonName.trim()} se actualizaron en la base de datos y Firestore.`
       );
-      onClose();
     } catch (err) {
-      showErrorAlert('Error al guardar', err.message || 'No se pudieron actualizar los ajustes.');
+      showErrorAlert('Error al guardar barbería', err.message || 'No se pudieron actualizar los ajustes.');
     } finally {
-      setIsSaving(false);
+      setIsSavingSalon(false);
     }
   };
 
@@ -186,13 +280,26 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Ajustes de Barbería & Logotipo"
-      subtitle={`Personaliza la marca, logotipo y módulos de ${barbershopInfo?.name || 'tu empresa'}`}
+      title="Centro de Configuración & Perfil"
+      subtitle={`Administra tu perfil personal y la configuración de ${barbershopInfo?.name || 'tu cuenta'}`}
       maxWidth="max-w-2xl"
     >
       <div className="space-y-5">
-        {/* Pestañas de Navegación del Modal */}
+        {/* Pestañas de Navegación del Panel */}
         <div className="flex border-b border-slate-200 dark:border-industrial-800 gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`pb-3 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'profile'
+                ? 'border-gold-500 text-amber-600 dark:text-gold-400'
+                : 'border-transparent text-slate-500 dark:text-industrial-400 hover:text-slate-800 dark:hover:text-white'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Mi Perfil Personal</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveTab('identity')}
@@ -220,9 +327,257 @@ export const SettingsModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* TAB 1: IDENTIDAD & LOGOTIPO */}
+        {/* TAB 1: MI PERFIL PERSONAL */}
+        {activeTab === 'profile' && (
+          <form onSubmit={handleSaveProfile} className="space-y-6 animate-fadeIn">
+            {/* Header del Perfil con Foto y Datos Clave */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              {/* Avatar con botón de cámara */}
+              <div className="relative group flex-shrink-0">
+                <img
+                  src={avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+                  alt={displayName || 'Avatar'}
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-gold-500/50 shadow-glow-gold"
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarFileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 shadow-md transition-transform hover:scale-110 cursor-pointer"
+                  title="Subir foto desde tu dispositivo"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="text-center sm:text-left min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h3 className="font-display font-bold text-base text-slate-900 dark:text-white truncate">
+                    {displayName || 'Usuario'}
+                  </h3>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                    isSuperAdmin
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-gold-300 border border-amber-500/30 dark:border-gold-500/30'
+                      : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                  }`}>
+                    {isSuperAdmin ? 'SUPERADMIN' : 'ADMINISTRADOR'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-industrial-400 font-mono mt-0.5 truncate flex items-center justify-center sm:justify-start gap-1">
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  <span>{currentUser?.email || 'Sin correo registrado'}</span>
+                </p>
+                <p className="text-[11px] text-slate-600 dark:text-industrial-300 mt-1 italic">
+                  {userBio || 'Especialista en estilismo profesional y gestión de salón'}
+                </p>
+              </div>
+            </div>
+
+            {/* Opciones para cambiar Foto de Perfil */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-amber-500 dark:text-gold-400" />
+                  Foto de Perfil & Avatar
+                </span>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAvatarUrl('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+                      setAvatarUploadFeedback(null);
+                    }}
+                    className="text-[11px] text-industrial-400 hover:text-white cursor-pointer"
+                  >
+                    Restablecer
+                  </button>
+                )}
+              </label>
+
+              <input
+                ref={avatarFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => avatarFileInputRef.current?.click()}
+                  className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-industrial-700 bg-white dark:bg-noir-900 hover:border-gold-500 dark:hover:border-gold-500 transition-colors flex items-center gap-3 text-left group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 text-amber-600 dark:text-gold-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">
+                      Subir Foto Personal
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-industrial-400 truncate">
+                      Desde tu celular o PC (JPG, PNG, WebP)
+                    </div>
+                  </div>
+                </button>
+
+                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-industrial-800 bg-white dark:bg-noir-900 flex flex-col justify-center">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-industrial-400 mb-1 flex items-center gap-1">
+                    <LinkIcon className="w-3 h-3 text-amber-500" />
+                    O pegar URL de imagen
+                  </span>
+                  <input
+                    type="url"
+                    value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
+                    onChange={(e) => {
+                      setAvatarUrl(e.target.value);
+                      setAvatarUploadFeedback(null);
+                    }}
+                    placeholder="https://ejemplo.com/mifoto.jpg"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-gold-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {avatarUploadFeedback && (
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  <span>{avatarUploadFeedback}</span>
+                </div>
+              )}
+
+              {/* Presets de Avatares Barberos */}
+              <div className="pt-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-industrial-400 block mb-2 font-bold">
+                  Avatares de Estilistas Profesionales (1 Clic)
+                </span>
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                  {AVATAR_PRESETS.map((p, idx) => {
+                    const isSelected = avatarUrl === p.url;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setAvatarUrl(p.url);
+                          setAvatarUploadFeedback(`Avatar seleccionado: ${p.label}`);
+                        }}
+                        className={`p-1 rounded-xl border transition-all flex flex-col items-center gap-1 cursor-pointer group ${
+                          isSelected
+                            ? 'border-gold-500 bg-gold-500/15 shadow-glow-gold'
+                            : 'border-slate-200 dark:border-industrial-800 hover:border-gold-500/40'
+                        }`}
+                        title={p.label}
+                      >
+                        <img
+                          src={p.url}
+                          alt={p.label}
+                          className="w-9 h-9 rounded-lg object-cover"
+                        />
+                        <span className="text-[8px] font-mono text-slate-600 dark:text-industrial-400 truncate w-full text-center">
+                          {p.label.split(' ')[0]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Datos Personales */}
+            <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-industrial-800">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-400 block">
+                Datos de tu Cuenta
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Nombre Completo *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Ej. Victor Tamayo Pineda"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                    Teléfono / WhatsApp Móvil
+                  </label>
+                  <input
+                    type="tel"
+                    value={userPhone}
+                    onChange={(e) => setUserPhone(e.target.value)}
+                    placeholder="Ej. +57 310 987 6543"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500 font-mono"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Especialidad o Breve Biografía
+                  </label>
+                  <input
+                    type="text"
+                    value={userBio}
+                    onChange={(e) => setUserBio(e.target.value)}
+                    placeholder="Ej. Master Barber especializado en cortes Fade y afeitado con toalla caliente"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Seguridad & Contraseña */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-gold-400">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">Seguridad de la Cuenta</div>
+                  <div className="text-[10px] text-slate-500 dark:text-industrial-400">
+                    Cambia o restablece tu contraseña mediante verificación segura por correo
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-noir-900 hover:bg-slate-300 dark:hover:bg-noir-800 text-slate-700 dark:text-slate-200 text-xs font-semibold font-mono transition-colors border border-slate-300 dark:border-industrial-700 cursor-pointer flex-shrink-0"
+              >
+                Cambiar Contraseña
+              </button>
+            </div>
+
+            {/* Footer de Guardar Perfil */}
+            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-industrial-800">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:bg-slate-100 dark:hover:bg-noir-800 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isSavingProfile}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
+              >
+                {isSavingProfile ? 'Guardando...' : 'Guardar Mi Perfil'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* TAB 2: IDENTIDAD & LOGOTIPO DEL SALÓN */}
         {activeTab === 'identity' && (
-          <form onSubmit={handleSaveSettings} className="space-y-6">
+          <form onSubmit={handleSaveSalon} className="space-y-6 animate-fadeIn">
             {/* Visualizador / Live Preview de Marca */}
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 space-y-3">
               <div className="flex items-center justify-between">
@@ -265,23 +620,22 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Badge de Logo */}
-                  {logoUrl ? (
+                  {salonLogoUrl ? (
                     <img
-                      src={logoUrl}
-                      alt={name || 'Logo'}
+                      src={salonLogoUrl}
+                      alt={salonName || 'Logo'}
                       className="w-10 h-10 rounded-xl object-cover border-2 border-amber-500/50 shadow-glow-gold flex-shrink-0"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-sm shadow-glow-gold flex-shrink-0">
-                      {name ? name.substring(0, 2).toUpperCase() : 'BP'}
+                      {salonName ? salonName.substring(0, 2).toUpperCase() : 'BP'}
                     </div>
                   )}
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="font-display font-bold text-sm truncate">
-                        {name || 'Nombre de tu Barbería'}
+                        {salonName || 'Nombre de tu Barbería'}
                       </span>
                       <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 flex-shrink-0">
                         ADMIN
@@ -289,8 +643,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-industrial-400 flex items-center gap-1 truncate">
                       <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                      <span>{municipality || 'Rionegro'}</span>
-                      {slogan && <span>• "{slogan}"</span>}
+                      <span>{salonMunicipality || 'Rionegro'}</span>
+                      {salonSlogan && <span>• "{salonSlogan}"</span>}
                     </p>
                   </div>
                 </div>
@@ -310,12 +664,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   <ImageIcon className="w-4 h-4 text-amber-500 dark:text-gold-400" />
                   Logotipo Oficial de la Barbería
                 </span>
-                {logoUrl && (
+                {salonLogoUrl && (
                   <button
                     type="button"
                     onClick={() => {
-                      setLogoUrl('');
-                      setUploadFeedback(null);
+                      setSalonLogoUrl('');
+                      setLogoUploadFeedback(null);
                     }}
                     className="text-[11px] text-rose-500 hover:text-rose-400 font-normal flex items-center gap-1 cursor-pointer"
                   >
@@ -325,19 +679,18 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 )}
               </label>
 
-              {/* Botón de subida de archivo con input oculto */}
               <input
-                ref={fileInputRef}
+                ref={logoFileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleFileUpload}
+                onChange={handleLogoUpload}
                 className="hidden"
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => logoFileInputRef.current?.click()}
                   className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-industrial-700 bg-white dark:bg-noir-900 hover:border-gold-500 dark:hover:border-gold-500 transition-colors flex items-center gap-3 text-left group cursor-pointer"
                 >
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 text-amber-600 dark:text-gold-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
@@ -345,7 +698,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-slate-900 dark:text-white">
-                      Subir desde Celular o PC
+                      Subir Logo desde Celular o PC
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-industrial-400 truncate">
                       PNG, JPG, WebP (Optimizado al instante)
@@ -360,39 +713,39 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </span>
                   <input
                     type="url"
-                    value={logoUrl.startsWith('data:') ? '' : logoUrl}
+                    value={salonLogoUrl.startsWith('data:') ? '' : salonLogoUrl}
                     onChange={(e) => {
-                      setLogoUrl(e.target.value);
-                      setUploadFeedback(null);
+                      setSalonLogoUrl(e.target.value);
+                      setLogoUploadFeedback(null);
                     }}
                     placeholder="https://ejemplo.com/logo.png"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-gold-500"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-gold-500 font-mono"
                   />
                 </div>
               </div>
 
-              {uploadFeedback && (
+              {logoUploadFeedback && (
                 <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
                   <Check className="w-4 h-4 flex-shrink-0" />
-                  <span>{uploadFeedback}</span>
+                  <span>{logoUploadFeedback}</span>
                 </div>
               )}
 
-              {/* Galería de Logos Prediseñados de Barbería */}
+              {/* Galería de Logos Prediseñados */}
               <div className="pt-2">
                 <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-industrial-400 block mb-2 font-bold">
                   Catálogo de Logos Barbería Premium (1 Clic)
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                   {PRESET_LOGOS.map((preset) => {
-                    const isSelected = logoUrl === preset.url;
+                    const isSelected = salonLogoUrl === preset.url;
                     return (
                       <button
                         key={preset.id}
                         type="button"
                         onClick={() => {
-                          setLogoUrl(preset.url);
-                          setUploadFeedback(`Seleccionado: ${preset.name}`);
+                          setSalonLogoUrl(preset.url);
+                          setLogoUploadFeedback(`Seleccionado: ${preset.name}`);
                         }}
                         className={`p-2 rounded-xl border transition-all flex flex-col items-center gap-1.5 cursor-pointer relative group ${
                           isSelected
@@ -435,8 +788,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   <input
                     type="text"
                     required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={salonName}
+                    onChange={(e) => setSalonName(e.target.value)}
                     placeholder="Ej. Black & Gold Barber Club"
                     className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500"
                   />
@@ -448,8 +801,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    value={slogan}
-                    onChange={(e) => setSlogan(e.target.value)}
+                    value={salonSlogan}
+                    onChange={(e) => setSalonSlogan(e.target.value)}
                     placeholder="Ej. Estilo, Tradición & Vanguardia"
                     className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500"
                   />
@@ -462,8 +815,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="tel"
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
+                    value={salonWhatsapp}
+                    onChange={(e) => setSalonWhatsapp(e.target.value)}
                     placeholder="Ej. +57 300 123 4567"
                     className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500 font-mono"
                   />
@@ -476,8 +829,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    value={municipality}
-                    onChange={(e) => setMunicipality(e.target.value)}
+                    value={salonMunicipality}
+                    onChange={(e) => setSalonMunicipality(e.target.value)}
                     placeholder="Ej. Rionegro, Antioquia"
                     className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500"
                   />
@@ -489,8 +842,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    value={salonAddress}
+                    onChange={(e) => setSalonAddress(e.target.value)}
                     placeholder="Ej. Carrera 50 # 48-12, Centro Comercial San Nicolás"
                     className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500"
                   />
@@ -506,7 +859,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 rel="noopener noreferrer"
                 className="text-xs text-amber-600 dark:text-gold-400 hover:underline flex items-center gap-1 font-mono"
               >
-                <span>Ver página pública de clientes</span>
+                <span>Ver página pública</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
 
@@ -520,19 +873,19 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSavingSalon}
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
                 >
-                  {isSaving ? 'Guardando...' : 'Guardar Identidad'}
+                  {isSavingSalon ? 'Guardando...' : 'Guardar Identidad'}
                 </button>
               </div>
             </div>
           </form>
         )}
 
-        {/* TAB 2: MÓDULOS DEL SISTEMA */}
+        {/* TAB 3: MÓDULOS DEL SISTEMA */}
         {activeTab === 'modules' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fadeIn">
             <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
@@ -566,7 +919,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                {/* Switch iOS Style */}
                 <button
                   type="button"
                   disabled={isUpdatingStore}

@@ -11,7 +11,7 @@ import {
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../lib/firebase';
 import { isPlatformSuperadminEmail } from '../lib/constants';
-import { getOrCreateUserProfile, USERS_COLLECTION } from '../services/userService';
+import { getOrCreateUserProfile, updateUserProfile, USERS_COLLECTION } from '../services/userService';
 import { api } from '../services/api';
 import { initSocket } from '../services/socket';
 
@@ -72,6 +72,8 @@ export const AuthProvider = ({ children }) => {
             displayName: profile?.displayName || user.displayName || user.email?.split('@')[0],
             avatar: user.photoURL || profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
             avatarUrl: user.photoURL || profile?.avatarUrl || null,
+            phone: profile?.phone || '',
+            bio: profile?.bio || '',
             role: isSA ? 'superadmin' : (profile?.role || 'user'),
             companyId: isSA ? null : (profile?.companyId || null),
             tenantId: isSA ? null : (profile?.companyId || null)
@@ -88,6 +90,12 @@ export const AuthProvider = ({ children }) => {
                 if (!prev) return null;
                 return {
                   ...prev,
+                  name: liveData.displayName || prev.name,
+                  displayName: liveData.displayName || prev.displayName,
+                  avatar: liveData.avatarUrl || prev.avatar,
+                  avatarUrl: liveData.avatarUrl || prev.avatarUrl,
+                  phone: liveData.phone !== undefined ? liveData.phone : prev.phone,
+                  bio: liveData.bio !== undefined ? liveData.bio : prev.bio,
                   role: isSA ? 'superadmin' : (liveData.role || prev.role),
                   companyId: isSA ? null : (liveData.companyId || null),
                   tenantId: isSA ? null : (liveData.companyId || null)
@@ -229,6 +237,62 @@ export const AuthProvider = ({ children }) => {
     return sendPasswordResetEmail(auth, email.trim());
   };
 
+  // Actualizar perfil de usuario en Firebase Auth, Firestore y Backend
+  const updateCurrentUserProfile = async ({ displayName, avatarUrl, phone, bio }) => {
+    if (!currentUser?.uid) return;
+
+    // 1. Actualizar Firebase Auth si hay usuario autenticado
+    if (auth.currentUser) {
+      try {
+        await updateProfile(auth.currentUser, {
+          ...(displayName && { displayName: displayName.trim() }),
+          ...(avatarUrl && { photoURL: avatarUrl.trim() })
+        });
+      } catch (authErr) {
+        console.warn('Firebase Auth updateProfile notice:', authErr.message);
+      }
+    }
+
+    // 2. Actualizar Firestore
+    try {
+      await updateUserProfile(currentUser.uid, {
+        ...(displayName !== undefined && { displayName: displayName.trim() }),
+        ...(avatarUrl !== undefined && { avatarUrl: avatarUrl.trim() }),
+        ...(phone !== undefined && { phone: phone.trim() }),
+        ...(bio !== undefined && { bio: bio.trim() })
+      });
+    } catch (fsErr) {
+      console.warn('Firestore user profile update notice:', fsErr.message);
+    }
+
+    // 3. Actualizar Backend
+    try {
+      await api.updateUserProfile({
+        uid: currentUser.uid,
+        displayName: displayName?.trim(),
+        avatarUrl: avatarUrl?.trim(),
+        phone: phone?.trim(),
+        bio: bio?.trim()
+      });
+    } catch (apiErr) {
+      console.warn('Backend user profile update notice:', apiErr.message);
+    }
+
+    // 4. Actualizar estado local reactivo
+    setCurrentUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        name: displayName ? displayName.trim() : prev.name,
+        displayName: displayName ? displayName.trim() : prev.displayName,
+        avatar: avatarUrl ? avatarUrl.trim() : prev.avatar,
+        avatarUrl: avatarUrl ? avatarUrl.trim() : prev.avatarUrl,
+        phone: phone !== undefined ? phone.trim() : prev.phone,
+        bio: bio !== undefined ? bio.trim() : prev.bio
+      };
+    });
+  };
+
   // Cerrar Sesión
   const logout = async () => {
     setIsLoading(true);
@@ -256,6 +320,7 @@ export const AuthProvider = ({ children }) => {
         loginWithEmail,
         registerWithEmail,
         resetPassword,
+        updateCurrentUserProfile,
         logout
       }}
     >

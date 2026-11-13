@@ -97,7 +97,7 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
             {/* Acceso Directo a Identidad & Logo */}
             {onOpenSettings && (
               <button
-                onClick={onOpenSettings}
+                onClick={() => onOpenSettings('identity')}
                 className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-industrial-400 hover:text-gold-300 hover:bg-gold-500/10 border border-transparent hover:border-gold-500/20 transition-all cursor-pointer mt-2"
                 title="Configurar Logotipo, Datos y Módulos del Salón"
               >
@@ -118,7 +118,7 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
       <div className="pt-3 border-t border-industrial-800/40 space-y-3">
         {/* Tarjeta de la Empresa Activa con Logo */}
         <div
-          onClick={onOpenSettings}
+          onClick={() => onOpenSettings && onOpenSettings('identity')}
           className="p-2.5 rounded-xl bg-noir-950/80 border border-industrial-800/80 hover:border-gold-500/40 transition-colors flex items-center gap-2.5 cursor-pointer group"
           title="Click para cambiar el logotipo o datos de la empresa"
         >
@@ -145,16 +145,33 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
           </div>
         </div>
 
-        <div className="px-1 flex items-center justify-between text-xs">
-          <div className="min-w-0">
-            <span className="font-bold text-white text-xs truncate block">{currentUser?.name || 'Usuario'}</span>
-            <span className="text-[10px] text-industrial-400 block truncate">
-              {isSuperAdmin ? 'SuperAdmin' : 'Dueño / Admin'}
-            </span>
+        {/* Tarjeta de Usuario con Acceso Directo a Perfil */}
+        <div
+          onClick={() => onOpenSettings && onOpenSettings('profile')}
+          className="px-2 py-1.5 rounded-xl bg-noir-950/40 hover:bg-gold-500/10 border border-transparent hover:border-gold-500/20 transition-all flex items-center justify-between text-xs cursor-pointer group"
+          title="Click para ver y editar tu perfil personal"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <img
+              src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+              alt={currentUser?.name}
+              className="w-7 h-7 rounded-full object-cover border border-gold-500/30 flex-shrink-0 group-hover:scale-105 transition-transform"
+            />
+            <div className="min-w-0">
+              <span className="font-bold text-white text-xs truncate block group-hover:text-gold-400 transition-colors">
+                {currentUser?.name || 'Usuario'}
+              </span>
+              <span className="text-[10px] text-industrial-400 block truncate">
+                {isSuperAdmin ? 'SuperAdmin' : 'Dueño / Admin'} • <span className="text-gold-400">Perfil</span>
+              </span>
+            </div>
           </div>
           <button
-            onClick={logout}
-            className="p-1.5 rounded-lg text-industrial-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              logout();
+            }}
+            className="p-1.5 rounded-lg text-industrial-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
             title="Cerrar sesión"
           >
             <LogOut className="w-4 h-4" />

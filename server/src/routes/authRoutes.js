@@ -5,7 +5,8 @@ import {
   listPlatformUsers,
   assignUserCompany,
   deleteUser,
-  updateBarbershopSettings
+  updateBarbershopSettings,
+  updateUserProfile
 } from '../controllers/authController.js';
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get('/users', listPlatformUsers);
 router.post('/users/assign', assignUserCompany);
 router.delete('/users/:uid', deleteUser);
 router.patch('/barbershops/:barbershopId/settings', updateBarbershopSettings);
+router.patch('/profile', updateUserProfile);
 
 export default router;
