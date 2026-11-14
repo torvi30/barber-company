@@ -91,6 +91,19 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
   const tomorrowStr = getLocalDate(new Date(Date.now() + 86400000));
   const dayAfterStr = getLocalDate(new Date(Date.now() + 86400000 * 2));
 
+  // Obtener fecha del siguiente día respecto a cualquier fecha YYYY-MM-DD
+  const getNextDateStr = (dateStr) => {
+    try {
+      const parts = String(dateStr).split('-').map(Number);
+      if (parts.length < 3 || isNaN(parts[0])) return tomorrowStr;
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      d.setDate(d.getDate() + 1);
+      return getLocalDate(d);
+    } catch {
+      return tomorrowStr;
+    }
+  };
+
   // Client info form
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -648,6 +661,24 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
           ) : (() => {
             const freeSlots = slots.filter(s => s.available);
             if (freeSlots.length === 0) {
+              const isToday = selectedDate === todayStr;
+              const nextTargetDate = isToday ? tomorrowStr : getNextDateStr(selectedDate);
+              const nextLabel = isToday
+                ? `Ver Horarios de Mañana (${tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)}) →`
+                : `Ver Siguiente Día (${nextTargetDate.slice(8, 10)}/{nextTargetDate.slice(5, 7)}) →`;
+
+              const rawPhone = barbershop?.whatsapp || barbershop?.phone || '573001234567';
+              const digits = String(rawPhone).replace(/[^\d]/g, '');
+              const cleanPhone = digits.length === 10 && digits.startsWith('3') ? `57${digits}` : digits;
+              const waMsg = encodeURIComponent(
+                `Hola ${barbershop?.name || 'la Barbería'} 💈 Quiero consultar disponibilidad para agendar una cita:\n\n` +
+                `• Servicio: ${selectedService?.name || 'Corte'}\n` +
+                `• Barbero: ${selectedBarber?.name || 'Cualquiera'}\n` +
+                `• Fecha: ${selectedDate}\n\n` +
+                `¿Tienen algún horario libre disponible para coordinar? ¡Muchas gracias!`
+              );
+              const waLink = `https://wa.me/${cleanPhone || '573001234567'}?text=${waMsg}`;
+
               return (
                 <div className="py-8 text-center p-6 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl space-y-3">
                   <Clock className="w-8 h-8 text-amber-500 dark:text-gold-400 mx-auto opacity-70" />
@@ -657,26 +688,40 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   <p className="text-xs text-slate-500 dark:text-industrial-400 max-w-sm mx-auto">
                     {selectedDate === todayStr
                       ? `Las citas para hoy (${selectedDate}) han concluido (horario de atención hasta las 20:00). Reserva con ${selectedBarber?.name} para mañana a primera hora.`
-                      : `${selectedBarber?.name} no tiene horarios libres para el ${selectedDate}. Por favor selecciona otro día en el calendario o elige otro barbero.`}
+                      : `${selectedBarber?.name} no tiene horarios libres para el ${selectedDate}. Puedes avanzar al siguiente día o escribirnos directamente a WhatsApp.`}
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => setSelectedDate(tomorrowStr)}
+                      onClick={() => {
+                        setSelectedDate(nextTargetDate);
+                        setEnableTestSlots(false);
+                      }}
                       className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
                     >
-                      Ver Horarios de Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)}) →
+                      {nextLabel}
                     </button>
-                    {!enableTestSlots && (
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <MessageCircle className="w-4 h-4 text-noir-950" />
+                      <span>Hablar por WhatsApp</span>
+                    </a>
+                  </div>
+                  {!enableTestSlots && (
+                    <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => setEnableTestSlots(true)}
-                        className="px-4 py-2 rounded-xl border border-purple-500/40 text-purple-600 dark:text-purple-300 hover:bg-purple-500/10 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                        className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline font-semibold cursor-pointer"
                       >
-                        <Sparkles className="w-3.5 h-3.5" /> Habilitar turnos para ensayo (Modo Test)
+                        ⚡ Habilitar turnos para ensayo (Modo Test)
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             }

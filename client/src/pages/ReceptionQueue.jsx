@@ -47,7 +47,7 @@ const DAYS_OF_WEEK = [
 ];
 
 export const ReceptionQueue = () => {
-  const { tenantId, appointments, barbers, createAppointment, updateStatus, realtimeAppointment } = useBarbershop();
+  const { tenantId, barbershopInfo, appointments, barbers, createAppointment, updateStatus, realtimeAppointment } = useBarbershop();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
@@ -79,6 +79,19 @@ export const ReceptionQueue = () => {
     d.setDate(d.getDate() + 2);
     return getLocalDate(d);
   })();
+
+  // Obtener fecha del siguiente día respecto a cualquier fecha YYYY-MM-DD
+  const getNextDateStr = (dateStr) => {
+    try {
+      const parts = String(dateStr).split('-').map(Number);
+      if (parts.length < 3 || isNaN(parts[0])) return tomorrowStr;
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      d.setDate(d.getDate() + 1);
+      return getLocalDate(d);
+    } catch {
+      return tomorrowStr;
+    }
+  };
 
   const [agendaDate, setAgendaDate] = useState(todayStr); // Fecha activa del Calendario de la Agenda
   const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -1299,25 +1312,62 @@ export const ReceptionQueue = () => {
               {(() => {
                 const freeSlots = availableSlots.filter(s => s.available);
                 if (freeSlots.length === 0) {
+                  const isCurrentDayToday = selectedDate === todayStr;
+                  const nextTargetDate = isCurrentDayToday ? tomorrowStr : getNextDateStr(selectedDate);
+                  const nextTargetLabel = isCurrentDayToday
+                    ? `Pasar a Mañana (${tomorrowStr.slice(8, 10)}/${tomorrowStr.slice(5, 7)})`
+                    : `Ver Siguiente Día (${nextTargetDate.slice(8, 10)}/${nextTargetDate.slice(5, 7)})`;
+
+                  const rawPhone = barbershopInfo?.whatsapp || barbershopInfo?.phone || '573001234567';
+                  const digits = String(rawPhone).replace(/[^\d]/g, '');
+                  const cleanPhone = digits.length === 10 && digits.startsWith('3') ? `57${digits}` : digits;
+                  const assignedBarber = barbers.find(b => b.id === barberId);
+                  const waMsg = encodeURIComponent(
+                    `Hola ${barbershopInfo?.name || 'la Barbería'} 💈 Quiero consultar disponibilidad para agendar una cita:\n\n` +
+                    `• Servicio: ${serviceName || 'Corte'}\n` +
+                    `• Barbero: ${assignedBarber?.name || 'Cualquiera disponible'}\n` +
+                    `• Fecha: ${selectedDate}\n\n` +
+                    `¿Tienen algún espacio libre para confirmar? ¡Muchas gracias!`
+                  );
+                  const waLink = `https://wa.me/${cleanPhone || '573001234567'}?text=${waMsg}`;
+
                   return (
-                    <div className="p-3.5 text-center bg-noir-950 border border-amber-500/20 text-xs rounded-xl space-y-2.5">
+                    <div className="p-3.5 text-center bg-noir-950 border border-amber-500/20 text-xs rounded-2xl space-y-3">
                       <p className="text-amber-300 font-medium">
-                        {selectedDate === todayStr
+                        {isCurrentDayToday
                           ? '⚠️ Los turnos diurnos de hoy ya finalizaron (cierre comercial 20:00).'
                           : `⚠️ No hay turnos disponibles para este barbero el ${selectedDate}.`}
                       </p>
-                      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                        {/* Botón dinámico que SIEMPRE avanza de fecha */}
                         <button
                           type="button"
-                          onClick={() => setSelectedDate(tomorrowStr)}
-                          className="px-3 py-1.5 rounded-xl bg-gold-500 text-noir-950 font-bold text-xs hover:bg-gold-400 transition-all shadow-sm cursor-pointer"
+                          onClick={() => {
+                            setSelectedDate(nextTargetDate);
+                            setAllowPast(false);
+                          }}
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs transition-all shadow-glow-gold cursor-pointer"
                         >
-                          👉 Pasar a Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
+                          👉 {nextTargetLabel}
                         </button>
+
+                        {/* Botón directo de WhatsApp con la Barbería */}
+                        <a
+                          href={waLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-noir-950" />
+                          <span>Hablar por WhatsApp</span>
+                        </a>
+                      </div>
+
+                      <div className="pt-0.5">
                         <button
                           type="button"
                           onClick={() => setAllowPast(true)}
-                          className="px-3 py-1.5 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 hover:bg-purple-500/30 font-semibold text-xs transition-all cursor-pointer flex items-center gap-1"
+                          className="text-[11px] text-purple-400 hover:text-purple-300 underline font-medium cursor-pointer"
                         >
                           ⚡ Habilitar turnos para ensayo (Modo Test)
                         </button>
