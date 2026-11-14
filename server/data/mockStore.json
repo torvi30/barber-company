@@ -510,6 +510,26 @@
   "appointments": {
     "tenant_imperio_barber_01": [
       {
+        "id": "apt-1794640715332",
+        "barberId": "barber_imp_1",
+        "barberName": "Mateo Restrepo",
+        "clientName": "victor tamayo",
+        "clientPhone": "322222222222",
+        "clientEmail": "",
+        "serviceName": "Barba",
+        "durationMinutes": 20,
+        "price": 18000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "SCHEDULED",
+        "date": "2026-11-14",
+        "time": "11:00",
+        "notes": "quiero que sea el 7 como la otra vez ",
+        "source": "PUBLIC_LANDING",
+        "createdAt": "2026-11-14T07:18:35.332Z",
+        "completedAt": null
+      },
+      {
         "id": "apt-1794640564643",
         "barberId": "barber_imp_2",
         "barberName": "Sebastián Gómez",
@@ -894,14 +914,14 @@
       {
         "id": "cli-1794640564644",
         "name": "victor tamayo",
-        "phone": "3225466733",
+        "phone": "322222222222",
         "email": "",
         "tier": "NEW",
         "totalVisits": 1,
         "totalSpent": 0,
         "lastVisit": "2026-11-14",
-        "preferredBarberId": "barber_imp_2",
-        "preferredBarberName": "Sebastián Gómez",
+        "preferredBarberId": "barber_imp_1",
+        "preferredBarberName": "Mateo Restrepo",
         "styleProfile": {
           "haircutType": "Barba y Cejas",
           "guardSides": "A convenir en cita",
@@ -911,6 +931,16 @@
           "technicalNotes": "Cliente registrado automáticamente al agendar turno (2026-11-14 09:30)"
         },
         "visitHistory": [
+          {
+            "id": "vis-1794640715333",
+            "date": "2026-11-14",
+            "time": "11:00",
+            "service": "Barba",
+            "barber": "Mateo Restrepo",
+            "price": 18000,
+            "status": "SCHEDULED",
+            "recordedAt": "2026-11-14T07:18:35.333Z"
+          },
           {
             "id": "vis-1794640564644",
             "date": "2026-11-14",
@@ -922,7 +952,8 @@
             "recordedAt": "2026-11-14T07:16:04.644Z"
           }
         ],
-        "createdAt": "2026-11-14T07:16:04.644Z"
+        "createdAt": "2026-11-14T07:16:04.644Z",
+        "updatedAt": "2026-11-14T07:18:35.333Z"
       }
     ]
   },
