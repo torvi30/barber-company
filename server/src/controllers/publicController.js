@@ -1,8 +1,9 @@
-import { getTenantCollection, isMock, mockStore, db } from '../config/firebase.js';
+import { getTenantCollection, isMock, mockStore, persistStore, db } from '../config/firebase.js';
 import { validateAppointment, AppointmentStatus } from '../models/schemas.js';
 import { OPERATING_SLOTS, toMinutes, checkSlotCollision, getLocalDateString } from './appointmentController.js';
 import { dispatchNotification } from '../services/notificationService.js';
 import { recordClientAppointment } from './clientController.js';
+import { DEFAULT_BARBERSHOP_PRODUCTS } from './inventoryController.js';
 
 // Catálogo tradicional de servicios básicos de barbería
 const DEFAULT_SERVICES = [
@@ -447,10 +448,24 @@ export const getPublicProducts = async (req, res) => {
     let products = [];
 
     if (isMock) {
+      if (!tenantInventory.data || tenantInventory.data.length === 0) {
+        tenantInventory.data = JSON.parse(JSON.stringify(DEFAULT_BARBERSHOP_PRODUCTS));
+        if (mockStore.inventory) {
+          mockStore.inventory[barbershopId] = tenantInventory.data;
+        }
+        persistStore();
+      }
       products = (tenantInventory.data || []).filter(item => item.isPublic !== false);
     } else {
       const snap = await tenantInventory.where('isPublic', '==', true).get();
-      products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (snap.empty) {
+        for (const item of DEFAULT_BARBERSHOP_PRODUCTS) {
+          await tenantInventory.doc(item.id).set(item);
+        }
+        products = DEFAULT_BARBERSHOP_PRODUCTS;
+      } else {
+        products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
     }
 
     return res.json({

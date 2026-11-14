@@ -85,21 +85,16 @@ export const PublicStore = ({ slug }) => {
     0
   );
 
-  const categories = [
-    { id: 'ALL', label: 'Todos los Productos' },
-    { id: 'FIJACION', label: 'Pomadas & Ceras' },
-    { id: 'CUIDADO_BARBA', label: 'Cuidado Barba' },
-    { id: 'Afeitado', label: 'Afeitado & Afters' },
-    { id: 'TRATAMIENTOS', label: 'Tratamientos' },
-    { id: 'HERRAMIENTAS', label: 'Navajas & Accesorios' }
+  const allCategories = [
+    'Todos los Productos',
+    ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))
   ];
 
   const filteredProducts =
-    selectedCategory === 'ALL'
+    selectedCategory === 'Todos los Productos' || selectedCategory === 'ALL'
       ? products
       : products.filter(
-          (p) =>
-            p.category?.toUpperCase() === selectedCategory.toUpperCase()
+          (p) => (p.category || '').toLowerCase() === selectedCategory.toLowerCase()
         );
 
   const handleCheckoutOrder = async (e) => {
@@ -164,19 +159,22 @@ export const PublicStore = ({ slug }) => {
 
       {/* Categorías Filter Chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedCategory === cat.id
-                ? 'bg-gold-500 text-black shadow-glow-gold'
-                : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white hover:border-industrial-700'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
+        {allCategories.map((cat) => {
+          const isSelected = selectedCategory === cat || (selectedCategory === 'ALL' && cat === 'Todos los Productos');
+          return (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isSelected
+                  ? 'bg-gold-500 text-black shadow-glow-gold font-bold'
+                  : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white hover:border-industrial-700'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
       {/* Catálogo de Productos Grid */}
@@ -202,7 +200,7 @@ export const PublicStore = ({ slug }) => {
                 {/* Imagen con badge */}
                 <div className="relative h-48 w-full overflow-hidden bg-noir-950">
                   <img
-                    src={product.image}
+                    src={product.imageUrl || product.image || 'https://images.unsplash.com/photo-1597852074816-d933c4d2b988?fit=crop&w=400&q=80'}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
                   />

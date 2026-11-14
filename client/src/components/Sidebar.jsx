@@ -9,7 +9,8 @@ import {
   Crown,
   ExternalLink,
   LogOut,
-  Settings
+  Settings,
+  Package
 } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
@@ -19,6 +20,7 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
   const salonItems = [
     { id: 'reception',     label: 'Agenda & Salón',   icon: CalendarDays },
     { id: 'barber-portal', label: 'Portal Barbero',   icon: Scissors },
+    { id: 'inventory',     label: 'Tienda & Stock',   icon: Package },
     { id: 'cash',          label: 'Caja & Ventas',    icon: DollarSign },
     { id: 'clients',       label: 'Clientes CRM',     icon: Users },
   ];

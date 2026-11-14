@@ -66,8 +66,11 @@ export const api = {
   updateBarberSchedule: (tenantId, id, data) => apiClient(`/commissions/barbers/${id}/schedule`, { method: 'PATCH', body: data }, tenantId),
   getCommissionSummary: (tenantId) => apiClient('/commissions/summary', { method: 'GET' }, tenantId),
 
-  // --- Inventario ---
+  // --- Inventario & Tienda Boutique ---
   getInventory: (tenantId) => apiClient('/inventory', { method: 'GET' }, tenantId),
+  createProduct: (tenantId, productData) => apiClient('/inventory', { method: 'POST', body: productData }, tenantId),
+  updateProduct: (tenantId, id, productData) => apiClient(`/inventory/${id}`, { method: 'PUT', body: productData }, tenantId),
+  deleteProduct: (tenantId, id) => apiClient(`/inventory/${id}`, { method: 'DELETE' }, tenantId),
   updateStock: (tenantId, id, adjustment) => apiClient(`/inventory/${id}/stock`, { method: 'PATCH', body: { adjustment } }, tenantId),
 
   // --- Cierre de Caja & Arqueo ---

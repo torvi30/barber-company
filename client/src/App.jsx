@@ -154,6 +154,16 @@ const AppContent = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('inventory')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
+            activeTab === 'inventory' ? 'text-amber-600 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'
+          }`}
+        >
+          <span className="text-base">🛍️</span>
+          <span>Tienda</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('cash')}
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
             activeTab === 'cash' ? 'text-amber-600 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'

@@ -521,12 +521,12 @@
         "price": 12000,
         "tip": 0,
         "paymentMethod": "CASH",
-        "status": "WAITING",
+        "status": "COMPLETED",
         "date": "2026-11-13",
         "time": "23:24",
         "notes": "",
         "createdAt": "2026-11-14T04:24:34.458Z",
-        "completedAt": null
+        "completedAt": "2026-11-14T04:45:00.025Z"
       },
       {
         "id": "apt-1794629939150",
@@ -553,8 +553,166 @@
     "tenant_netx_baber_483": []
   },
   "inventory": {
-    "tenant_imperio_barber_01": [],
-    "demo-barbershop-01": []
+    "tenant_imperio_barber_01": [
+      {
+        "id": "prod-01",
+        "name": "Pomada Mate Fijación Fuerte (100ml)",
+        "sku": "POM-MAT-01",
+        "category": "Pomadas & Ceras",
+        "description": "Acabado natural sin brillo, fijación alta para peinados clásicos y degradados todo el día.",
+        "unitPrice": 35000,
+        "costPrice": 18000,
+        "stock": 15,
+        "minStock": 4,
+        "imageUrl": "https://images.unsplash.com/photo-1597852074816-d933c4d2b988?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-02",
+        "name": "Aceite Orgánico Barba & Madera de Cedro (30ml)",
+        "sku": "OIL-BAR-02",
+        "category": "Cuidado Barba",
+        "description": "Nutre la fibra capilar, hidrata la piel bajo la barba y aporta brillo con aroma a cedro.",
+        "unitPrice": 32000,
+        "costPrice": 15000,
+        "stock": 12,
+        "minStock": 3,
+        "imageUrl": "https://images.unsplash.com/photo-1621607512214-68297480165e?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-03",
+        "name": "Bálsamo Calmante Post-Afeitado Eucalipto (150ml)",
+        "sku": "BAL-AFT-03",
+        "category": "Afeitado & Afters",
+        "description": "Fórmula refrescante con aloe vera y eucalipto que cierra poros y previene irritación tras la navaja.",
+        "unitPrice": 28000,
+        "costPrice": 14000,
+        "stock": 10,
+        "minStock": 3,
+        "imageUrl": "https://images.unsplash.com/photo-1556228720-195a672e8a03?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-04",
+        "name": "Cera en Polvo Voluminizadora Matte Dust (20g)",
+        "sku": "POW-VOL-04",
+        "category": "Pomadas & Ceras",
+        "description": "Volumen instantáneo y textura mate ideal para cabellos finos o peinados desestructurados.",
+        "unitPrice": 25000,
+        "costPrice": 12000,
+        "stock": 18,
+        "minStock": 5,
+        "imageUrl": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-05",
+        "name": "Shaving Gel Precisión Transparente (250ml)",
+        "sku": "GEL-SHV-05",
+        "category": "Afeitado & Afters",
+        "description": "Gel no espumante que permite visibilidad perfecta para delineados precisos de barba y patillas.",
+        "unitPrice": 24000,
+        "costPrice": 11000,
+        "stock": 14,
+        "minStock": 4,
+        "imageUrl": "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-06",
+        "name": "Navaja Tradicional Barbería Acero Inoxidable",
+        "sku": "NAV-ACE-06",
+        "category": "Herramientas & Navajas",
+        "description": "Mango ergonómico con sujeción firme de media cuchilla estándar para rituales clásicos.",
+        "unitPrice": 45000,
+        "costPrice": 22000,
+        "stock": 8,
+        "minStock": 2,
+        "imageUrl": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=400&q=80",
+        "isPublic": true
+      }
+    ],
+    "demo-barbershop-01": [
+      {
+        "id": "prod-01",
+        "name": "Pomada Mate Fijación Fuerte (100ml)",
+        "sku": "POM-MAT-01",
+        "category": "Pomadas & Ceras",
+        "description": "Acabado natural sin brillo, fijación alta para peinados clásicos y degradados todo el día.",
+        "unitPrice": 35000,
+        "costPrice": 18000,
+        "stock": 15,
+        "minStock": 4,
+        "imageUrl": "https://images.unsplash.com/photo-1597852074816-d933c4d2b988?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-02",
+        "name": "Aceite Orgánico Barba & Madera de Cedro (30ml)",
+        "sku": "OIL-BAR-02",
+        "category": "Cuidado Barba",
+        "description": "Nutre la fibra capilar, hidrata la piel bajo la barba y aporta brillo con aroma a cedro.",
+        "unitPrice": 32000,
+        "costPrice": 15000,
+        "stock": 12,
+        "minStock": 3,
+        "imageUrl": "https://images.unsplash.com/photo-1621607512214-68297480165e?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-03",
+        "name": "Bálsamo Calmante Post-Afeitado Eucalipto (150ml)",
+        "sku": "BAL-AFT-03",
+        "category": "Afeitado & Afters",
+        "description": "Fórmula refrescante con aloe vera y eucalipto que cierra poros y previene irritación tras la navaja.",
+        "unitPrice": 28000,
+        "costPrice": 14000,
+        "stock": 10,
+        "minStock": 3,
+        "imageUrl": "https://images.unsplash.com/photo-1556228720-195a672e8a03?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-04",
+        "name": "Cera en Polvo Voluminizadora Matte Dust (20g)",
+        "sku": "POW-VOL-04",
+        "category": "Pomadas & Ceras",
+        "description": "Volumen instantáneo y textura mate ideal para cabellos finos o peinados desestructurados.",
+        "unitPrice": 25000,
+        "costPrice": 12000,
+        "stock": 18,
+        "minStock": 5,
+        "imageUrl": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-05",
+        "name": "Shaving Gel Precisión Transparente (250ml)",
+        "sku": "GEL-SHV-05",
+        "category": "Afeitado & Afters",
+        "description": "Gel no espumante que permite visibilidad perfecta para delineados precisos de barba y patillas.",
+        "unitPrice": 24000,
+        "costPrice": 11000,
+        "stock": 14,
+        "minStock": 4,
+        "imageUrl": "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-06",
+        "name": "Navaja Tradicional Barbería Acero Inoxidable",
+        "sku": "NAV-ACE-06",
+        "category": "Herramientas & Navajas",
+        "description": "Mango ergonómico con sujeción firme de media cuchilla estándar para rituales clásicos.",
+        "unitPrice": 45000,
+        "costPrice": 22000,
+        "stock": 8,
+        "minStock": 2,
+        "imageUrl": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=400&q=80",
+        "isPublic": true
+      }
+    ]
   },
   "cashClosures": {},
   "clients": {
@@ -565,9 +723,9 @@
         "name": "andres ramirez",
         "phone": "3225466673",
         "email": "victortamayopine@gmail.com",
-        "tier": "NEW",
-        "totalVisits": 1,
-        "totalSpent": 0,
+        "tier": "FREQUENT",
+        "totalVisits": 2,
+        "totalSpent": 12000,
         "lastVisit": "2026-11-13",
         "preferredBarberId": "barber_imp_1",
         "preferredBarberName": "Mateo Restrepo",
@@ -581,14 +739,14 @@
         },
         "visitHistory": [
           {
-            "id": "vis-1794630274459",
+            "id": "vis-1794631500025",
             "date": "2026-11-13",
             "time": "23:24",
             "service": "Cera",
             "barber": "Mateo Restrepo",
             "price": 12000,
-            "status": "WAITING",
-            "recordedAt": "2026-11-14T04:24:34.459Z"
+            "status": "COMPLETED",
+            "recordedAt": "2026-11-14T04:45:00.025Z"
           },
           {
             "id": "vis-1794629939151",
@@ -602,7 +760,7 @@
           }
         ],
         "createdAt": "2026-11-14T04:18:59.151Z",
-        "updatedAt": "2026-11-14T04:24:34.459Z"
+        "updatedAt": "2026-11-14T04:45:00.025Z"
       }
     ]
   },
