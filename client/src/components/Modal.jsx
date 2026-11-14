@@ -55,7 +55,7 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
               if (onClose) onClose();
             }}
             aria-label="Cerrar ventana"
-            className="p-2 rounded-xl text-slate-400 dark:text-industrial-400 hover:text-white hover:bg-rose-500/20 hover:text-rose-400 transition-colors cursor-pointer flex-shrink-0"
+            className="p-2 rounded-xl text-slate-400 dark:text-industrial-400 hover:bg-slate-100 dark:hover:bg-noir-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </button>

@@ -1561,19 +1561,19 @@ export const ReceptionQueue = () => {
       >
         {selectedAppointment && (
           <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
-            <div className="bg-noir-950 rounded-xl p-4 border border-industrial-800">
-              <div className="text-xs text-industrial-400">Resumen del Turno:</div>
-              <div className="text-base font-bold text-white mt-0.5">{selectedAppointment.clientName}</div>
-              <div className="text-xs text-gold-400 flex items-center justify-between mt-1">
-                <span>{selectedAppointment.serviceName} ({selectedAppointment.barberName})</span>
-                <span className="font-mono font-bold text-white">${selectedAppointment.price}</span>
+            <div className="bg-slate-50 dark:bg-noir-950 rounded-2xl p-4 border border-slate-200 dark:border-industrial-800 shadow-xs">
+              <div className="text-xs font-semibold text-slate-500 dark:text-industrial-400">Resumen del Turno:</div>
+              <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{selectedAppointment.clientName}</div>
+              <div className="text-xs text-amber-700 dark:text-gold-400 flex items-center justify-between mt-1">
+                <span className="font-medium text-slate-700 dark:text-slate-300">{selectedAppointment.serviceName} ({selectedAppointment.barberName})</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">${Number(selectedAppointment.price).toLocaleString('es-CO')}</span>
               </div>
             </div>
 
             {/* Selector de Productos de Venta Cruzada (Retail Upsell) */}
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-2 flex items-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5 text-gold-400" />
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-2 flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400" />
                 Añadir Producto de Mostrador (Pomadas, Aceites)
               </label>
 
@@ -1583,25 +1583,25 @@ export const ReceptionQueue = () => {
                     key={prod.id}
                     type="button"
                     onClick={() => addRetailToTicket(prod)}
-                    className="flex-shrink-0 px-3 py-2 rounded-xl bg-noir-950 border border-industrial-800 hover:border-gold-500 text-left transition-colors"
+                    className="flex-shrink-0 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-noir-950 dark:hover:bg-noir-900 border border-slate-200 dark:border-industrial-800 hover:border-amber-500 dark:hover:border-gold-500 text-left transition-colors cursor-pointer shadow-xs"
                   >
-                    <div className="text-[11px] font-semibold text-white">{prod.name.split('(')[0]}</div>
-                    <div className="text-[10px] text-gold-400 font-mono">+${prod.unitPrice}</div>
+                    <div className="text-[11px] font-semibold text-slate-900 dark:text-white">{prod.name.split('(')[0]}</div>
+                    <div className="text-[10px] text-amber-600 dark:text-gold-400 font-mono font-bold">+${Number(prod.unitPrice).toLocaleString('es-CO')}</div>
                   </button>
                 ))}
               </div>
 
               {selectedRetailProducts.length > 0 && (
-                <div className="mt-2 space-y-1.5 bg-noir-950 p-2.5 rounded-xl border border-industrial-800 text-xs">
+                <div className="mt-2 space-y-1.5 bg-slate-50 dark:bg-noir-950 p-2.5 rounded-xl border border-slate-200 dark:border-industrial-800 text-xs">
                   {selectedRetailProducts.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between text-slate-300">
+                    <div key={p.id} className="flex items-center justify-between text-slate-800 dark:text-slate-200">
                       <span>{p.name} (x{p.qty})</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-gold-400 font-bold">${(p.unitPrice * p.qty).toFixed(2)}</span>
+                        <span className="font-mono text-amber-700 dark:text-gold-400 font-bold">${Number(p.unitPrice * p.qty).toLocaleString('es-CO')}</span>
                         <button
                           type="button"
                           onClick={() => removeRetailFromTicket(p.id)}
-                          className="text-industrial-500 hover:text-rose-400"
+                          className="text-slate-400 hover:text-rose-500 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1613,14 +1613,14 @@ export const ReceptionQueue = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-2">
                 Método de Pago
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { id: 'CASH', label: 'Efectivo', icon: Banknote },
-                  { id: 'CARD', label: 'Tarjeta', icon: CreditCard },
-                  { id: 'TRANSFER', label: 'Bizum / App', icon: Smartphone }
+                  { id: 'CARD', label: 'Datáfono / Tarjeta', icon: CreditCard },
+                  { id: 'TRANSFER', label: 'Transferencia / Nequi', icon: Smartphone }
                 ].map((m) => {
                   const Icon = m.icon;
                   const isSel = paymentMethod === m.id;
@@ -1629,14 +1629,14 @@ export const ReceptionQueue = () => {
                       key={m.id}
                       type="button"
                       onClick={() => setPaymentMethod(m.id)}
-                      className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all text-xs font-semibold ${
+                      className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all text-xs font-semibold cursor-pointer ${
                         isSel
-                          ? 'border-gold-500 bg-gold-500/10 text-gold-400 shadow-glow-gold'
-                          : 'border-industrial-800 bg-noir-950 text-industrial-400 hover:text-white'
+                          ? 'border-amber-500 bg-amber-500/15 text-amber-950 dark:text-gold-300 dark:bg-gold-500/20 dark:border-gold-500 shadow-sm font-bold'
+                          : 'border-slate-200 dark:border-industrial-800 bg-slate-50 dark:bg-noir-950 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-noir-900'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      {m.label}
+                      <Icon className="w-5 h-5 text-amber-600 dark:text-gold-400" />
+                      <span className="text-center text-[11px] leading-tight">{m.label}</span>
                     </button>
                   );
                 })}
@@ -1644,7 +1644,7 @@ export const ReceptionQueue = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-industrial-400 uppercase mb-1">
                 Propina Voluntaria para el Barbero ($)
               </label>
               <input
@@ -1652,30 +1652,30 @@ export const ReceptionQueue = () => {
                 min="0"
                 value={tip}
                 onChange={(e) => setTip(Number(e.target.value))}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-gold-500 font-mono"
+                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono font-bold"
               />
             </div>
 
-            <div className="pt-3 border-t border-industrial-800 flex items-center justify-between">
+            <div className="pt-3 border-t border-slate-200 dark:border-industrial-800 flex items-center justify-between">
               <div>
-                <span className="text-[11px] text-industrial-400 block">Total a Cobrar:</span>
-                <span className="text-2xl font-bold font-mono text-gold-400">
-                  ${finalTicketTotal.toFixed(2)}
+                <span className="text-[11px] text-slate-500 dark:text-industrial-400 block font-medium">Total a Cobrar:</span>
+                <span className="text-2xl font-bold font-mono text-slate-900 dark:text-gold-400">
+                  ${Number(finalTicketTotal).toLocaleString('es-CO')}
                 </span>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCheckoutModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs"
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 dark:text-industrial-400 dark:hover:text-white text-xs font-medium cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleCompleteCheckout}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shadow-lg transition-colors"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer"
                 >
                   Confirmar Cobro
                 </button>
