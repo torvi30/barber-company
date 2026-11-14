@@ -39,11 +39,9 @@ import {
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
-  { label: 'Fade Master', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80' },
-  { label: 'Blade Classic', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=200&q=80' },
-  { label: 'Scissors Pro', url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?fit=crop&w=200&q=80' },
-  { label: 'Vintage Style', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?fit=crop&w=200&q=80' },
-  { label: 'Urban Look', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?fit=crop&w=200&q=80' }
+  { label: 'Fade / Corto', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=300&q=80' },
+  { label: 'Pompadour / Largo', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=300&q=80' },
+  { label: 'Afro / Rizado', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=300&q=80' }
 ];
 
 export const BarberPortal = () => {
@@ -1201,11 +1199,12 @@ export const BarberPortal = () => {
             />
           </div>
 
-          {/* Selector de Foto / Avatar */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-industrial-400 uppercase">
-                Foto de Perfil Profesional
+          {/* Selector y Vista Previa de Foto de Perfil */}
+          <div className="p-3.5 rounded-2xl bg-noir-950 border border-industrial-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-industrial-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-gold-400" />
+                <span>Foto de Perfil Profesional</span>
               </label>
               <input
                 ref={barberFileInputRef}
@@ -1217,46 +1216,78 @@ export const BarberPortal = () => {
               <button
                 type="button"
                 onClick={() => barberFileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gold-500/10 hover:bg-gold-500/20 border border-gold-500/40 text-gold-400 hover:text-gold-300 text-[11px] font-semibold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
               >
                 <Upload className="w-3.5 h-3.5" />
-                <span>Subir Foto (Cloudinary)</span>
+                <span>Subir Foto Propia</span>
               </button>
             </div>
 
             {barberPhotoFeedback && (
-              <p className={`text-[10px] mb-2 font-mono ${barberPhotoFeedback.startsWith('✓') ? 'text-emerald-400' : 'text-industrial-400 animate-pulse'}`}>
+              <p className={`text-[11px] font-mono ${barberPhotoFeedback.startsWith('✓') ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`}>
                 {barberPhotoFeedback}
               </p>
             )}
 
-            <div className="grid grid-cols-5 gap-2 mb-2">
-              {AVATAR_PRESETS.map((preset, idx) => {
-                const isSelected = barberFormData.avatar === preset.url;
-                return (
+            {/* Vista Previa de Foto Activa + 3 Avatares Genéricos con Diferente Pelo */}
+            <div className="flex items-center gap-4 pt-1">
+              {/* Foto / Preview Activo */}
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className="relative group">
+                  <img
+                    src={barberFormData.avatar || AVATAR_PRESETS[0].url}
+                    alt={barberFormData.name || 'Barbero'}
+                    className="w-16 h-16 rounded-2xl object-cover border-2 border-gold-500 shadow-glow-gold"
+                  />
                   <button
-                    key={idx}
                     type="button"
-                    onClick={() => setBarberFormData({ ...barberFormData, avatar: preset.url })}
-                    className={`p-1 rounded-xl border transition-all text-center flex flex-col items-center gap-1 ${
-                      isSelected
-                        ? 'border-gold-500 bg-gold-500/20 shadow-glow-gold'
-                        : 'border-industrial-800 hover:border-industrial-700 bg-noir-950'
-                    }`}
+                    onClick={() => barberFileInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white font-semibold transition-opacity cursor-pointer"
+                    title="Cambiar foto"
                   >
-                    <img src={preset.url} alt={preset.label} className="w-10 h-10 rounded-lg object-cover" />
-                    <span className="text-[9px] text-industrial-400 truncate w-full">{preset.label}</span>
+                    <Camera className="w-4 h-4 text-gold-400 mb-0.5" />
+                    <span>Cambiar</span>
                   </button>
-                );
-              })}
+                </div>
+                <span className="text-[10px] text-gold-400 font-mono font-semibold">Foto Activa</span>
+              </div>
+
+              {/* 3 Avatares Genéricos con Diferente Pelo */}
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] text-industrial-400 block mb-1.5">
+                  O escoge un avatar genérico por estilo de cabello:
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {AVATAR_PRESETS.map((preset, idx) => {
+                    const isSelected = barberFormData.avatar === preset.url;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setBarberFormData({ ...barberFormData, avatar: preset.url });
+                          setBarberPhotoFeedback(null);
+                        }}
+                        className={`p-1.5 rounded-xl border transition-all text-center flex flex-col items-center gap-1 cursor-pointer ${
+                          isSelected
+                            ? 'border-gold-500 bg-gold-500/20 shadow-glow-gold ring-1 ring-gold-500'
+                            : 'border-industrial-800 hover:border-gold-500/40 bg-noir-900'
+                        }`}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.label}
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
+                        <span className={`text-[9px] truncate w-full font-medium ${isSelected ? 'text-gold-400 font-bold' : 'text-industrial-400'}`}>
+                          {preset.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-            <input
-              type="url"
-              placeholder="O pega una URL de imagen personalizada"
-              value={barberFormData.avatar}
-              onChange={(e) => setBarberFormData({ ...barberFormData, avatar: e.target.value })}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-1.5 text-[11px] text-industrial-400 font-mono focus:outline-none focus:border-gold-500"
-            />
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-industrial-800">
