@@ -204,7 +204,8 @@ export const getWhatsAppReminder = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
     }
 
-    const cleanPhone = client.phone.replace(/[^0-9]/g, '');
+    const rawPhone = (client.phone || '').toString().replace(/[^0-9]/g, '');
+    const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
     const clientFirstName = client.name.split(' ')[0];
     const barber = client.preferredBarberName || 'tu barbero habitual';
     const style = client.styleProfile?.haircutType || 'tu corte habitual';

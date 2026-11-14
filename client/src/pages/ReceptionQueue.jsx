@@ -4,6 +4,7 @@ import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import { api } from '../services/api';
 import { showErrorAlert, showSuccessAlert } from '../lib/swal';
+import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import {
   UserPlus,
   PlayCircle,
@@ -466,7 +467,7 @@ export const ReceptionQueue = () => {
         barberId,
         barberName: assignedBarber ? assignedBarber.name : 'Barbero Asignado',
         clientName,
-        clientPhone,
+        clientPhone: clientPhone ? normalizeWhatsAppPhone(clientPhone) : '',
         serviceName,
         price: Number(price),
         tip: 0,
@@ -956,7 +957,10 @@ export const ReceptionQueue = () => {
 
                         {apt.clientPhone && (
                           <a
-                            href={`https://wa.me/${apt.clientPhone.replace(/[^\d]/g, '')}`}
+                            href={buildWhatsAppLink(
+                              apt.clientPhone,
+                              `Hola ${apt.clientName || 'Cliente'} 💈 te saludamos de ${barbershopInfo?.name || 'la Barbería'}. ¿Cómo estás?`
+                            )}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -1033,7 +1037,10 @@ export const ReceptionQueue = () => {
                         </span>
                         {apt.clientPhone && (
                           <a
-                            href={`https://wa.me/${apt.clientPhone.replace(/[^\d]/g, '')}`}
+                            href={buildWhatsAppLink(
+                              apt.clientPhone,
+                              `Hola ${apt.clientName || 'Cliente'} 💈 te saludamos de ${barbershopInfo?.name || 'la Barbería'}. Tu turno en sillón está en proceso.`
+                            )}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -1136,16 +1143,26 @@ export const ReceptionQueue = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
-              Teléfono (Opcional)
-            </label>
-            <input
-              type="tel"
-              placeholder="+34 611 222 333"
-              value={clientPhone}
-              onChange={(e) => setClientPhone(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
-            />
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
+                WhatsApp / Teléfono (Opcional)
+              </label>
+              <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono font-medium">
+                🇨🇴 Válido 322... o 57322...
+              </span>
+            </div>
+            <div className="relative">
+              <span className="absolute left-3.5 top-2.5 text-xs font-mono font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1 select-none pointer-events-none">
+                🇨🇴 +57
+              </span>
+              <input
+                type="tel"
+                placeholder="322 546 6673"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-20 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
+              />
+            </div>
           </div>
 
           {/* Selector de Servicios Tradicionales */}

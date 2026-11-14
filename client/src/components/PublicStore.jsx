@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { showErrorAlert } from '../lib/swal';
 import { useBarbershop } from '../context/BarbershopContext';
+import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import {
   ShoppingBag,
   Plus,
@@ -108,7 +109,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
       setSubmitting(true);
       const payload = {
         clientName,
-        clientPhone,
+        clientPhone: normalizeWhatsAppPhone(clientPhone),
         items: cart.map((i) => ({
           id: i.id,
           name: i.name,
@@ -335,18 +336,16 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
             </div>
 
             {orderConfirmed ? (() => {
-              const rawPhone = (barbershopInfo?.whatsapp || barbershopInfo?.phone || '573004567890').replace(/[^\d]/g, '');
-              const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
+              const targetPhone = barbershopInfo?.whatsapp || barbershopInfo?.phone || '573225466673';
               const itemsList = (orderConfirmed.items || []).map(i => `• ${i.name} (x${i.qty})`).join('\n');
-              const msg = encodeURIComponent(
+              const msg =
                 `Hola ${barbershopInfo?.name || 'la Barbería'} 🛍️ Acabo de hacer un pedido desde su Tienda Online.\n\n` +
                 `• Código: #${orderConfirmed.id}\n` +
                 `• Cliente: ${orderConfirmed.clientName}\n` +
                 (itemsList ? `• Productos:\n${itemsList}\n` : '') +
                 `• Total a abonar en mostrador: $${Number(orderConfirmed.totalAmount).toLocaleString('es-CO')}\n\n` +
-                `¿Me confirman para pasar a recogerlo? ¡Muchas gracias!`
-              );
-              const waLink = `https://wa.me/${cleanPhone}?text=${msg}`;
+                `¿Me confirman para pasar a recogerlo? ¡Muchas gracias!`;
+              const waLink = buildWhatsAppLink(targetPhone, msg);
 
               return (
                 <div className="py-4 text-center space-y-4 animate-fadeIn">
@@ -499,17 +498,22 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
                       placeholder="Tu Nombre Completo *"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-gold-500 placeholder-industrial-500"
+                      className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 placeholder-slate-400 dark:placeholder-industrial-500"
                     />
 
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Teléfono / WhatsApp (+57 / +34...) *"
-                      value={clientPhone}
-                      onChange={(e) => setClientPhone(e.target.value)}
-                      className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-gold-500 font-mono placeholder-industrial-500"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1 select-none pointer-events-none">
+                        🇨🇴 +57
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="322 546 6673 (o 57...)"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-18 pr-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono"
+                      />
+                    </div>
                   </div>
 
                   <button

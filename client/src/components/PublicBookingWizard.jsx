@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
+import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import {
   Scissors,
   Calendar,
@@ -245,7 +246,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
         date: selectedDate,
         time: selectedTime,
         clientName,
-        clientPhone,
+        clientPhone: normalizeWhatsAppPhone(clientPhone),
         clientEmail,
         notes
       };
@@ -304,18 +305,16 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
   // Pantalla de Confirmación Exitosa (Ticket de Cita)
   if (confirmedBooking) {
-    const rawPhone = (barbershop?.whatsapp || barbershop?.phone || '573004567890').replace(/[^\d]/g, '');
-    const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
-    const msg = encodeURIComponent(
+    const targetPhone = barbershop?.whatsapp || barbershop?.phone || '573225466673';
+    const msg =
       `Hola ${barbershop?.name || 'la Barbería'} 💈 Acabo de reservar mi turno desde su web.\n\n` +
       `• Cliente: ${confirmedBooking.clientName}\n` +
       `• Servicio: ${confirmedBooking.serviceName}\n` +
       `• Barbero: ${confirmedBooking.barberName}\n` +
       `• Fecha y Hora: ${confirmedBooking.date} a las ${confirmedBooking.time} hrs\n` +
       `• Ticket: #${confirmedBooking.id}\n\n` +
-      `¿Me confirman si recibieron mi reserva? ¡Muchas gracias!`
-    );
-    const waLink = `https://wa.me/${cleanPhone}?text=${msg}`;
+      `¿Me confirman si recibieron mi reserva? ¡Muchas gracias!`;
+    const waLink = buildWhatsAppLink(targetPhone, msg);
 
     return (
       <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-gold-500/30 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl dark:shadow-2xl relative overflow-hidden animate-fadeIn transition-colors">
@@ -728,17 +727,14 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                 ? `Ver Horarios de Mañana (${tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)}) →`
                 : `Ver Siguiente Día (${nextTargetDate.slice(8, 10)}/{nextTargetDate.slice(5, 7)}) →`;
 
-              const rawPhone = barbershop?.whatsapp || barbershop?.phone || '573001234567';
-              const digits = String(rawPhone).replace(/[^\d]/g, '');
-              const cleanPhone = digits.length === 10 && digits.startsWith('3') ? `57${digits}` : digits;
-              const waMsg = encodeURIComponent(
+              const targetPhone = barbershop?.whatsapp || barbershop?.phone || '573225466673';
+              const waMsg =
                 `Hola ${barbershop?.name || 'la Barbería'} 💈 Quiero consultar disponibilidad para agendar una cita:\n\n` +
                 `• Servicio: ${selectedService?.name || 'Corte'}\n` +
                 `• Barbero: ${selectedBarber?.name || 'Cualquiera'}\n` +
                 `• Fecha: ${selectedDate}\n\n` +
-                `¿Tienen algún horario libre disponible para coordinar? ¡Muchas gracias!`
-              );
-              const waLink = `https://wa.me/${cleanPhone || '573001234567'}?text=${waMsg}`;
+                `¿Tienen algún horario libre disponible para coordinar? ¡Muchas gracias!`;
+              const waLink = buildWhatsAppLink(targetPhone, waMsg);
 
               return (
                 <div className="py-8 text-center p-6 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl space-y-3">
@@ -877,16 +873,25 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 dark:text-industrial-400 uppercase mb-1">WhatsApp / Móvil *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-slate-600 dark:text-industrial-400 uppercase font-semibold">
+                  WhatsApp / Celular *
+                </label>
+                <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono font-medium">
+                  🇨🇴 322... o 57322...
+                </span>
+              </div>
               <div className="relative">
-                <Phone className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 dark:text-industrial-500" />
+                <span className="absolute left-3.5 top-2.5 text-xs font-mono font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1 select-none pointer-events-none">
+                  🇨🇴 +57
+                </span>
                 <input
                   type="tel"
                   required
-                  placeholder="+34 600 000 000"
+                  placeholder="322 546 6673"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
-                  className="w-full bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
+                  className="w-full bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-20 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
                 />
               </div>
             </div>

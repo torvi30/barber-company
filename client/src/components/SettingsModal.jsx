@@ -4,6 +4,7 @@ import { useBarbershop } from '../context/BarbershopContext';
 import { useAuth } from '../context/AuthContext';
 import { showSuccessAlert, showErrorAlert } from '../lib/swal';
 import { uploadToCloudinary } from '../services/cloudinaryService';
+import { normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import {
   User,
   Upload,
@@ -274,7 +275,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
         name: salonName.trim(),
         slogan: salonSlogan.trim(),
         logoUrl: salonLogoUrl.trim(),
-        whatsapp: salonWhatsapp.trim(),
+        whatsapp: normalizeWhatsAppPhone(salonWhatsapp),
         address: salonAddress.trim(),
         municipality: salonMunicipality.trim()
       });
@@ -836,17 +837,27 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-emerald-500" />
-                    WhatsApp de Atención / Reservas
-                  </label>
-                  <input
-                    type="tel"
-                    value={salonWhatsapp}
-                    onChange={(e) => setSalonWhatsapp(e.target.value)}
-                    placeholder="Ej. +57 300 123 4567"
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500 font-mono"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                      WhatsApp de Atención / Reservas
+                    </label>
+                    <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono">
+                      🇨🇴 Válido 322... o 57322...
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1 select-none pointer-events-none">
+                      🇨🇴 +57
+                    </span>
+                    <input
+                      type="tel"
+                      value={salonWhatsapp}
+                      onChange={(e) => setSalonWhatsapp(e.target.value)}
+                      placeholder="322 546 6673"
+                      className="w-full pl-18 pr-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500 font-mono"
+                    />
+                  </div>
                 </div>
 
                 <div>

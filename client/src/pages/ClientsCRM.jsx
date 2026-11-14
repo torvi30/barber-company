@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
 import { showErrorAlert, showSuccessAlert } from '../lib/swal';
+import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import {
   Users,
   Search,
@@ -155,7 +156,7 @@ export const ClientsCRM = () => {
       const assignedBarber = barbers.find(b => b.id === newPreferredBarber);
       const payload = {
         name: newName,
-        phone: newPhone,
+        phone: normalizeWhatsAppPhone(newPhone),
         email: newEmail,
         preferredBarberId: newPreferredBarber,
         preferredBarberName: assignedBarber ? assignedBarber.name : 'Carlos FadeMaster',
@@ -280,10 +281,11 @@ export const ClientsCRM = () => {
               </div>
             ) : (
               clients.map((client) => {
-                const rawPhone = (client.phone || '').replace(/[^\d]/g, '');
-                const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
-                const waUrl = cleanPhone
-                  ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${client.name} 💈 te saludamos de BarberPulse. ¿Te gustaría agendar tu próximo corte?`)}`
+                const waUrl = client.phone
+                  ? buildWhatsAppLink(
+                      client.phone,
+                      `Hola ${client.name} 💈 te saludamos de BarberPulse. ¿Te gustaría agendar tu próximo corte?`
+                    )
                   : null;
 
                 return (

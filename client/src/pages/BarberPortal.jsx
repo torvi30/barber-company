@@ -9,6 +9,7 @@ import {
   showErrorAlert,
   showConfirmDialog
 } from '../lib/swal';
+import { buildWhatsAppLink } from '../lib/phoneUtils';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import {
   Scissors,
@@ -913,10 +914,11 @@ export const BarberPortal = () => {
                 </div>
               ) : (
                 appointments.upcoming.map((apt) => {
-                  const rawPhone = (apt.clientPhone || '').replace(/[^\d]/g, '');
-                  const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
-                  const waUrl = cleanPhone
-                    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${apt.clientName} 💈 te escribe ${barber.name} de BarberPulse. ¿Estás listo para tu turno a las ${apt.time}?`)}`
+                  const waUrl = apt.clientPhone
+                    ? buildWhatsAppLink(
+                        apt.clientPhone,
+                        `Hola ${apt.clientName} 💈 te escribe ${barber.name} de BarberPulse. ¿Estás listo para tu turno a las ${apt.time}?`
+                      )
                     : null;
 
                   return (

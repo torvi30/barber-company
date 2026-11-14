@@ -16,7 +16,10 @@ const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 export const normalizePhoneNumber = (rawPhone) => {
   if (!rawPhone) return '';
   const cleaned = rawPhone.toString().replace(/[^\d]/g, '');
-  // Si no tiene código de país y parece número de 10 dígitos (México/Colombia/EEUU común), se puede asumir o dejar limpio
+  // Si comienza por 3 (celular estándar de Colombia de 10 dígitos) y no tiene código de país, asegurar +57
+  if (cleaned.length === 10 && cleaned.startsWith('3')) {
+    return `57${cleaned}`;
+  }
   return cleaned;
 };
 
