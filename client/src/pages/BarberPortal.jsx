@@ -56,7 +56,7 @@ export const BarberPortal = ({
   barberSession = null,
   onLogoutBarber = null
 }) => {
-  const { tenantId, barbers, updateStatus, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
+  const { tenantId, barbers, updateStatus, cancelAppointment, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
   const [selectedBarberId, setSelectedBarberId] = useState(
     standaloneBarberMode && (barberSession?.id || barberSession?.barberId)
       ? (barberSession.id || barberSession.barberId)
@@ -271,6 +271,30 @@ export const BarberPortal = ({
     const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\n👉 *Ingresa a tu sillón aquí para digitar tu PIN:*\n${accessUrl}\n\n💡 _Tu sesión quedará guardada en tu celular y seguirá funcionando todos los días hasta que la administración cambie tu clave._`;
     const link = buildWhatsAppLink(phone, text);
     window.open(link, '_blank');
+  };
+
+  const handleCancelAppointment = async (apt) => {
+    if (!apt) return;
+    const result = await showConfirmDialog({
+      title: '¿Cancelar Turno?',
+      text: `¿Estás seguro de cancelar o retirar el turno de ${apt.clientName || 'este cliente'}? Esta acción liberará tu sillón y la agenda.`,
+      confirmText: 'Sí, Cancelar Turno',
+      cancelText: 'Volver',
+      icon: 'warning'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await cancelAppointment(apt.id);
+        fetchBarberData();
+        showSuccessAlert(
+          'Turno Cancelado',
+          `El turno de ${apt.clientName || 'el cliente'} ha sido cancelado.`
+        );
+      } catch (err) {
+        showErrorAlert('Error', 'No se pudo cancelar el turno.');
+      }
+    }
   };
 
   const handlePreviewBarberMobile = (b) => {
@@ -1191,6 +1215,15 @@ export const BarberPortal = ({
                         )}
 
                         <button
+                          type="button"
+                          onClick={() => handleCancelAppointment(apt)}
+                          className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-xs cursor-pointer"
+                          title="Cancelar turno de este cliente"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
                           onClick={async () => {
                             try {
                               await updateStatus(apt.id, 'IN_CHAIR');
@@ -1199,7 +1232,7 @@ export const BarberPortal = ({
                               await showErrorAlert('Sillón', 'Error al pasar cliente al sillón');
                             }
                           }}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold cursor-pointer"
                         >
                           <PlayCircle className="w-3.5 h-3.5" /> Sillón
                         </button>

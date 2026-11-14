@@ -356,6 +356,16 @@ export async function updateFirestoreAppointmentStatus(tenantId, appointmentId, 
   }
 }
 
+export async function deleteFirestoreAppointment(tenantId, appointmentId) {
+  if (!tenantId || !appointmentId) return;
+  try {
+    const docRef = doc(db, 'barbershops', tenantId, 'appointments', appointmentId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.warn('Firestore notice (deleteAppointment):', err.message);
+  }
+}
+
 // --- 4. CAJA & CIERRES DIARIOS (ARQUEO & AUDITORÍA) ---
 export async function saveFirestoreCashClosure(tenantId, closureData) {
   if (!tenantId || !closureData) return null;

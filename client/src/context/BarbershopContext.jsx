@@ -9,7 +9,8 @@ import {
   deleteFirestoreBarber,
   fetchFirestoreAppointments,
   saveFirestoreAppointment,
-  updateFirestoreAppointmentStatus
+  updateFirestoreAppointmentStatus,
+  deleteFirestoreAppointment
 } from '../services/firestoreService';
 import { useAuth } from './AuthContext';
 
@@ -317,6 +318,13 @@ export const BarbershopProvider = ({ children }) => {
     return res.success ? res : { success: true };
   };
 
+  const deleteAppointment = async (id) => {
+    await api.deleteAppointment(tenantId, id).catch(() => ({ success: false }));
+    await deleteFirestoreAppointment(tenantId, id);
+    setAppointments((prev) => prev.filter((a) => a.id !== id));
+    return { success: true };
+  };
+
   const addBarber = async (barberData) => {
     const res = await api.createBarber(tenantId, barberData).catch(() => ({ success: false }));
     const saved = res.success ? res.data : {
@@ -398,6 +406,8 @@ export const BarbershopProvider = ({ children }) => {
         refreshData: () => loadTenantData(tenantId),
         createAppointment,
         updateStatus,
+        deleteAppointment,
+        cancelAppointment: deleteAppointment,
         addBarber,
         editBarber,
         removeBarber,

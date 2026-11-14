@@ -444,3 +444,63 @@ export const updateAppointmentStatus = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
+
+/**
+ * Eliminar / Cancelar cita de la agenda
+ */
+export const deleteAppointment = async (req, res) => {
+  try {
+    const { barbershopId } = req;
+    const { id } = req.params;
+
+    const tenantAppointments = getTenantCollection(barbershopId, 'appointments');
+
+    if (isMock) {
+      const index = (tenantAppointments.data || []).findIndex(a => a.id === id);
+      if (index === -1) {
+        return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+      }
+      const deleted = tenantAppointments.data.splice(index, 1)[0];
+      persistStore();
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`barbershop:${barbershopId}`).emit('appointment:cancelled', {
+          barbershopId,
+          appointmentId: id
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Cita eliminada y cancelada exitosamente',
+        data: deleted
+      });
+    }
+
+    const docRef = tenantAppointments.doc(id);
+    const snap = await docRef.get();
+    if (!snap.exists) {
+      return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+    }
+    const deletedData = { id: snap.id, ...snap.data() };
+    await docRef.delete();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`barbershop:${barbershopId}`).emit('appointment:cancelled', {
+        barbershopId,
+        appointmentId: id
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Cita eliminada y cancelada exitosamente',
+      data: deletedData
+    });
+  } catch (error) {
+    console.error('Error al eliminar cita:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};

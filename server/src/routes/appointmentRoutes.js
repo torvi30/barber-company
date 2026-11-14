@@ -3,6 +3,7 @@ import {
   getAppointments,
   createAppointment,
   updateAppointmentStatus,
+  deleteAppointment,
   getAvailableSlots,
   toggleSlot
 } from '../controllers/appointmentController.js';
@@ -14,5 +15,6 @@ router.get('/available-slots', getAvailableSlots);
 router.post('/toggle-slot', toggleSlot);
 router.post('/', createAppointment);
 router.patch('/:id/status', updateAppointmentStatus);
+router.delete('/:id', deleteAppointment);
 
 export default router;

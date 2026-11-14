@@ -1242,7 +1242,9 @@
     ]
   },
   "notifications": {},
-  "blockedSlots": {},
+  "blockedSlots": {
+    "tenant_imperio_barber_01_barber_imp_1_2026-11-14": []
+  },
   "cash_movements": {
     "tenant_imperio_barber_01": []
   }

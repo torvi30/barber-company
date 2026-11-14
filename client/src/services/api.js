@@ -46,6 +46,7 @@ export const api = {
   toggleSlot: (tenantId, payload) => apiClient('/appointments/toggle-slot', { method: 'POST', body: payload }, tenantId),
   createAppointment: (tenantId, appointmentData) => apiClient('/appointments', { method: 'POST', body: appointmentData }, tenantId),
   updateAppointmentStatus: (tenantId, id, payload) => apiClient(`/appointments/${id}/status`, { method: 'PATCH', body: payload }, tenantId),
+  deleteAppointment: (tenantId, id) => apiClient(`/appointments/${id}`, { method: 'DELETE' }, tenantId),
 
   // --- Autenticación & Gestión de Roles / Multi-Tenant ---
   syncUser: (userData) => apiClient('/auth/sync', { method: 'POST', body: userData }, null),
