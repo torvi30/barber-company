@@ -214,3 +214,30 @@ export async function deleteFirestoreCashMovement(tenantId, movementId) {
   }
 }
 
+// --- 6. CLIENTES & HISTORIAL CRM ---
+export async function saveFirestoreClient(tenantId, client) {
+  if (!tenantId || !client) return null;
+  try {
+    const id = client.id || `cli_${Date.now()}`;
+    const docRef = doc(db, 'barbershops', tenantId, 'clients', id);
+    const data = { ...client, id, updatedAt: serverTimestamp() };
+    await setDoc(docRef, data, { merge: true });
+    return data;
+  } catch (err) {
+    console.warn('Firestore notice (saveClient):', err.message);
+    return client;
+  }
+}
+
+export async function fetchFirestoreClients(tenantId) {
+  if (!tenantId) return [];
+  try {
+    const colRef = collection(db, 'barbershops', tenantId, 'clients');
+    const snapshot = await getDocs(colRef);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('Firestore notice (fetchClients):', err.message);
+    return [];
+  }
+}
+

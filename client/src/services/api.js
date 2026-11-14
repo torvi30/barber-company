@@ -82,6 +82,7 @@ export const api = {
   getClientById: (tenantId, id) => apiClient(`/clients/${id}`, { method: 'GET' }, tenantId),
   updateClientStyleProfile: (tenantId, id, styleProfile) => apiClient(`/clients/${id}/style-profile`, { method: 'PATCH', body: { styleProfile } }, tenantId),
   createClient: (tenantId, clientData) => apiClient('/clients', { method: 'POST', body: clientData }, tenantId),
+  addClientVisit: (tenantId, id, visitData) => apiClient(`/clients/${id}/visits`, { method: 'POST', body: visitData }, tenantId),
   getWhatsAppReminder: (tenantId, id) => apiClient(`/clients/${id}/whatsapp-reminder`, { method: 'GET' }, tenantId),
 
   // --- Analíticas & Business Intelligence ---

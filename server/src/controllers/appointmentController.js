@@ -1,6 +1,7 @@
 import { getTenantCollection, isMock, mockStore, db } from '../config/firebase.js';
 import { validateAppointment, AppointmentStatus } from '../models/schemas.js';
 import { dispatchNotification } from '../services/notificationService.js';
+import { recordClientAppointment } from './clientController.js';
 
 // Horarios de apertura operativos base (09:00 a 19:30 cada 30 mins)
 export const OPERATING_SLOTS = [
@@ -254,6 +255,21 @@ export const createAppointment = async (req, res) => {
     // 4. Disparo Automatizado de Confirmación (WhatsApp / Webhook)
     dispatchNotification(barbershopId, 'BOOKING_CONFIRMED', newAppointment).catch(console.error);
 
+    // 5. Vincular automáticamente al historial del cliente en el CRM
+    recordClientAppointment({
+      barbershopId,
+      clientName: newAppointment.clientName,
+      clientPhone: newAppointment.clientPhone,
+      clientEmail: newAppointment.clientEmail || '',
+      serviceName: newAppointment.serviceName,
+      barberId: newAppointment.barberId,
+      barberName: newAppointment.barberName,
+      price: newAppointment.price,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      status: newAppointment.status || 'WAITING'
+    }).catch(err => console.warn('Aviso: sync CRM cita creada:', err.message));
+
     return res.status(201).json({
       success: true,
       message: 'Cita agendada exitosamente sin conflicto de horario.',
@@ -344,36 +360,72 @@ export const updateAppointmentStatus = async (req, res) => {
         return res.status(404).json({ success: false, error: 'Cita no encontrada' });
       }
       tenantAppointments.data[index] = { ...tenantAppointments.data[index], ...updates };
+      const currentApt = tenantAppointments.data[index];
+
+      // Si la cita fue completada, registrar visita con pago en historial del cliente
+      if (status === AppointmentStatus.COMPLETED && currentApt) {
+        recordClientAppointment({
+          barbershopId,
+          clientName: currentApt.clientName,
+          clientPhone: currentApt.clientPhone,
+          clientEmail: currentApt.clientEmail || '',
+          serviceName: currentApt.serviceName,
+          barberId: currentApt.barberId,
+          barberName: currentApt.barberName,
+          price: Number(currentApt.price || 0) + Number(tip || 0),
+          date: currentApt.date,
+          time: currentApt.time,
+          status: 'COMPLETED'
+        }).catch(err => console.warn('Aviso: sync CRM cita completada:', err.message));
+      }
 
       const io = req.app.get('io');
       if (io) {
         io.to(`barbershop:${barbershopId}`).emit('appointment:updated', {
           barbershopId,
-          appointment: tenantAppointments.data[index]
+          appointment: currentApt
         });
       }
 
       return res.json({
         success: true,
-        data: tenantAppointments.data[index]
+        data: currentApt
       });
     }
 
     const docRef = tenantAppointments.doc(id);
     await docRef.update(updates);
     const updatedDoc = await docRef.get();
+    const updatedData = { id: updatedDoc.id, ...updatedDoc.data() };
+
+    // Si la cita fue completada en Firestore real, sincronizar historial del cliente
+    if (status === AppointmentStatus.COMPLETED && updatedData) {
+      recordClientAppointment({
+        barbershopId,
+        clientName: updatedData.clientName,
+        clientPhone: updatedData.clientPhone,
+        clientEmail: updatedData.clientEmail || '',
+        serviceName: updatedData.serviceName,
+        barberId: updatedData.barberId,
+        barberName: updatedData.barberName,
+        price: Number(updatedData.price || 0) + Number(tip || 0),
+        date: updatedData.date,
+        time: updatedData.time,
+        status: 'COMPLETED'
+      }).catch(err => console.warn('Aviso: sync CRM cita completada firestore:', err.message));
+    }
 
     const io = req.app.get('io');
     if (io) {
       io.to(`barbershop:${barbershopId}`).emit('appointment:updated', {
         barbershopId,
-        appointment: { id: updatedDoc.id, ...updatedDoc.data() }
+        appointment: updatedData
       });
     }
 
     return res.json({
       success: true,
-      data: { id: updatedDoc.id, ...updatedDoc.data() }
+      data: updatedData
     });
   } catch (error) {
     console.error('Error al actualizar estado:', error);

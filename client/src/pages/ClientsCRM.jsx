@@ -20,7 +20,8 @@ import {
   CheckCircle2,
   Calendar,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 
 export const ClientsCRM = () => {
@@ -43,6 +44,15 @@ export const ClientsCRM = () => {
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPreferredBarber, setNewPreferredBarber] = useState(barbers[0]?.id || 'barber-01');
+
+  // Registro Manual de Visita / Historial
+  const [isAddingVisitOpen, setIsAddingVisitOpen] = useState(false);
+  const [visitService, setVisitService] = useState('Skin Fade + Barba');
+  const [visitBarber, setVisitBarber] = useState(barbers[0]?.name || 'Carlos FadeMaster');
+  const [visitPrice, setVisitPrice] = useState(35000);
+  const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0]);
+  const [visitNotes, setVisitNotes] = useState('');
+  const [isSavingVisit, setIsSavingVisit] = useState(false);
 
   const fetchClients = async () => {
     try {
@@ -107,6 +117,34 @@ export const ClientsCRM = () => {
       }
     } catch (err) {
       showErrorAlert('Recordatorio de WhatsApp', 'Error al generar el recordatorio.');
+    }
+  };
+
+  const handleAddVisit = async (e) => {
+    e.preventDefault();
+    if (!selectedClient?.id || !visitService.trim()) return;
+
+    try {
+      setIsSavingVisit(true);
+      const res = await api.addClientVisit(tenantId, selectedClient.id, {
+        service: visitService.trim(),
+        barber: visitBarber || (barbers[0]?.name || 'Carlos FadeMaster'),
+        price: Number(visitPrice) || 0,
+        date: visitDate,
+        notes: visitNotes.trim()
+      });
+
+      if (res.success && res.data) {
+        setSelectedClient(res.data);
+        setClients(prev => prev.map(c => c.id === selectedClient.id ? res.data : c));
+        setIsAddingVisitOpen(false);
+        setVisitNotes('');
+        showSuccessAlert('¡Visita Registrada!', 'El servicio se ha guardado en el historial del cliente.');
+      }
+    } catch (err) {
+      showErrorAlert('Error al registrar visita', err.message);
+    } finally {
+      setIsSavingVisit(false);
     }
   };
 
@@ -374,19 +412,19 @@ export const ClientsCRM = () => {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 font-mono font-bold text-white">
+                      <td className="px-6 py-4 font-mono font-bold text-slate-900 dark:text-white">
                         {client.totalVisits || 1}
                       </td>
 
-                      <td className="px-6 py-4 font-mono font-bold text-gold-400">
-                        ${Number(client.totalSpent || 0).toFixed(2)}
+                      <td className="px-6 py-4 font-mono font-bold text-amber-600 dark:text-gold-400">
+                        $ {Number(client.totalSpent || 0).toLocaleString('es-CO')} COP
                       </td>
 
-                      <td className="px-6 py-4 font-mono text-industrial-400">
+                      <td className="px-6 py-4 font-mono text-slate-500 dark:text-industrial-400 text-xs">
                         {client.lastVisit || 'Reciente'}
                       </td>
 
-                      <td className="px-6 py-4 text-slate-300">
+                      <td className="px-6 py-4 text-slate-700 dark:text-slate-300 text-xs">
                         {client.preferredBarberName || 'Cualquiera'}
                       </td>
 
@@ -544,29 +582,138 @@ export const ClientsCRM = () => {
             </form>
 
             {/* Historial Cronológico de Visitas */}
-            <div className="pt-4 border-t border-industrial-800">
-              <h5 className="font-display font-bold text-xs text-white uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-gold-400" />
-                Historial de Servicios Anteriores
-              </h5>
+            <div className="pt-4 border-t border-slate-200 dark:border-industrial-800">
+              <div className="flex items-center justify-between mb-3">
+                <h5 className="font-display font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                  Historial de Servicios & Cortes ({selectedClient.visitHistory?.length || 0})
+                </h5>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingVisitOpen(!isAddingVisitOpen)}
+                  className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-gold-400 border border-amber-500/30 text-[11px] font-bold font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>{isAddingVisitOpen ? 'Cancelar' : '+ Agregar Visita'}</span>
+                </button>
+              </div>
+
+              {/* Formulario para Registrar Visita Manual */}
+              {isAddingVisitOpen && (
+                <form onSubmit={handleAddVisit} className="p-3.5 rounded-xl bg-slate-100 dark:bg-noir-900 border border-slate-300 dark:border-industrial-700/80 mb-3 space-y-3 animate-fadeIn">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Scissors className="w-3.5 h-3.5 text-gold-500" />
+                    <span>Registrar Corte / Servicio al Historial</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[10px] uppercase font-mono text-slate-500 dark:text-industrial-400 block mb-1">Servicio Realizado *</label>
+                      <input
+                        type="text"
+                        required
+                        value={visitService}
+                        onChange={(e) => setVisitService(e.target.value)}
+                        placeholder="Ej: Skin Fade + Barba Ritual"
+                        className="w-full bg-white dark:bg-noir-950 border border-slate-300 dark:border-industrial-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-mono text-slate-500 dark:text-industrial-400 block mb-1">Barbero *</label>
+                      <select
+                        value={visitBarber}
+                        onChange={(e) => setVisitBarber(e.target.value)}
+                        className="w-full bg-white dark:bg-noir-950 border border-slate-300 dark:border-industrial-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                      >
+                        {barbers.map(b => (
+                          <option key={b.id} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-mono text-slate-500 dark:text-industrial-400 block mb-1">Precio Cobrado ($ COP) *</label>
+                      <input
+                        type="number"
+                        required
+                        value={visitPrice}
+                        onChange={(e) => setVisitPrice(e.target.value)}
+                        className="w-full bg-white dark:bg-noir-950 border border-slate-300 dark:border-industrial-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-mono text-slate-500 dark:text-industrial-400 block mb-1">Fecha *</label>
+                      <input
+                        type="date"
+                        required
+                        value={visitDate}
+                        onChange={(e) => setVisitDate(e.target.value)}
+                        className="w-full bg-white dark:bg-noir-950 border border-slate-300 dark:border-industrial-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] uppercase font-mono text-slate-500 dark:text-industrial-400 block mb-1">Detalles / Notas de este Corte</label>
+                      <input
+                        type="text"
+                        value={visitNotes}
+                        onChange={(e) => setVisitNotes(e.target.value)}
+                        placeholder="Ej: Degradado a navaja, navaja lateral, aceite sándalo"
+                        className="w-full bg-white dark:bg-noir-950 border border-slate-300 dark:border-industrial-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingVisitOpen(false)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-industrial-800 text-xs text-slate-600 dark:text-industrial-400 hover:bg-slate-200 dark:hover:bg-noir-800 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingVisit}
+                      className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase font-mono shadow-sm cursor-pointer disabled:opacity-50"
+                    >
+                      {isSavingVisit ? 'Guardando...' : 'Guardar en Historial'}
+                    </button>
+                  </div>
+                </form>
+              )}
 
               {selectedClient.visitHistory?.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {selectedClient.visitHistory.map((v, idx) => (
-                    <div key={idx} className="bg-noir-950 p-3 rounded-xl border border-industrial-800/80 flex items-center justify-between text-xs">
+                    <div key={idx} className="bg-slate-50 dark:bg-noir-950 p-3 rounded-xl border border-slate-200 dark:border-industrial-800/80 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-semibold text-white">{v.service}</span>
-                        <div className="text-[10px] text-industrial-400">Atendido por {v.barber}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-900 dark:text-white">{v.service}</span>
+                          <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase ${
+                            v.status === 'COMPLETED'
+                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                              : v.status === 'IN_CHAIR'
+                                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30'
+                                : 'bg-amber-500/15 text-amber-700 dark:text-gold-300 border border-amber-500/30'
+                          }`}>
+                            {v.status === 'COMPLETED' ? 'Completado' : v.status === 'IN_CHAIR' ? 'En Sillón' : 'Agendado'}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-industrial-400 mt-0.5">
+                          Atendido por {v.barber}
+                          {v.notes && <span className="ml-1 italic text-slate-400 dark:text-industrial-500">• "{v.notes}"</span>}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="font-mono font-bold text-gold-400">${Number(v.price).toFixed(2)}</span>
-                        <div className="text-[10px] text-industrial-500 font-mono">{v.date}</div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="font-mono font-bold text-amber-600 dark:text-gold-400">
+                          $ {Number(v.price || 0).toLocaleString('es-CO')} COP
+                        </span>
+                        <div className="text-[10px] text-slate-400 dark:text-industrial-500 font-mono">
+                          {v.date} {v.time ? `• ${v.time}` : ''}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-industrial-500">Primer registro en el sistema.</p>
+                <p className="text-xs text-slate-400 dark:text-industrial-500">Primer registro en el sistema. Al agendar citas o registrarlas manualmente aparecerán aquí.</p>
               )}
             </div>
           </div>

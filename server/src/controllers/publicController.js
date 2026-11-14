@@ -2,6 +2,7 @@ import { getTenantCollection, isMock, mockStore, db } from '../config/firebase.j
 import { validateAppointment, AppointmentStatus } from '../models/schemas.js';
 import { OPERATING_SLOTS, toMinutes, checkSlotCollision } from './appointmentController.js';
 import { dispatchNotification } from '../services/notificationService.js';
+import { recordClientAppointment } from './clientController.js';
 
 // Catálogo maestro de servicios que cada barbería ofrece
 const DEFAULT_SERVICES = [
@@ -295,6 +296,21 @@ export const createPublicBooking = async (req, res) => {
 
     // 4. DISPARO AUTOMATIZADO WHATSAPP / WEBHOOK
     dispatchNotification(barbershopId, 'BOOKING_CONFIRMED', newAppointment).catch(console.error);
+
+    // 5. REGISTRAR O VINCULAR AUTOMÁTICAMENTE AL CLIENTE EN EL HISTORIAL CRM
+    recordClientAppointment({
+      barbershopId,
+      clientName: newAppointment.clientName,
+      clientPhone: newAppointment.clientPhone,
+      clientEmail: newAppointment.clientEmail,
+      serviceName: newAppointment.serviceName,
+      barberId: newAppointment.barberId,
+      barberName: newAppointment.barberName,
+      price: newAppointment.price,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      status: 'SCHEDULED'
+    }).catch(err => console.warn('Aviso: sync CRM cliente reserva pública:', err.message));
 
     return res.status(201).json({
       success: true,
