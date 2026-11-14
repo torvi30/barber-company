@@ -68,7 +68,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16 md:pb-0 transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16 md:pb-0 transition-colors duration-200 overflow-x-hidden">
       <Navbar
         onOpenOnboarding={() => setActiveTab('onboarding')}
         onOpenSuperAdmin={() => setActiveTab('superadmin')}
@@ -77,7 +77,7 @@ const AppContent = () => {
         onTabChange={setActiveTab}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-w-0 overflow-x-hidden">
         <Sidebar
           activeTab={activeTab}
           onOpenSettings={handleOpenSettings}
@@ -90,7 +90,7 @@ const AppContent = () => {
           }}
         />
 
-        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto overflow-x-hidden">
           {activeTab === 'onboarding' && (
             <OnboardingWizard
               onComplete={() => setActiveTab('reception')}

@@ -85,12 +85,13 @@ export const getBarberPersonalDashboard = async (req, res) => {
     // Métricas de facturación y comisión
     const grossServices = completed.reduce((sum, a) => sum + Number(a.price || 0), 0);
     const tipsEarned = completed.reduce((sum, a) => sum + Number(a.tip || 0), 0);
-    const rate = Number(barber.commissionRate || 0.50);
+    const rawRate = Number(barber.commissionRate !== undefined ? barber.commissionRate : 0.50);
+    const rate = rawRate > 1 ? rawRate / 100 : rawRate;
     const commissionEarned = Number((grossServices * rate).toFixed(2));
     const totalPersonalEarnings = Number((commissionEarned + tipsEarned).toFixed(2));
 
-    const dailyTarget = Number(barber.dailyTarget || 150.00);
-    const targetProgressPercent = Math.min(100, Number(((grossServices / dailyTarget) * 100).toFixed(1)));
+    const dailyTarget = Number(barber.dailyGoal || barber.dailyTarget || 150000);
+    const targetProgressPercent = dailyTarget > 0 ? Math.min(100, Number(((grossServices / dailyTarget) * 100).toFixed(1))) : 0;
 
     return res.json({
       success: true,
@@ -100,7 +101,7 @@ export const getBarberPersonalDashboard = async (req, res) => {
         avatar: barber.avatar,
         status: barber.status,
         commissionRate: rate,
-        commissionPercent: rate * 100,
+        commissionPercent: Math.round(rate * 100),
         dailyTarget,
         schedule: barber.schedule
       },

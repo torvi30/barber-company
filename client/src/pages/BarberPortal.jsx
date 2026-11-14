@@ -24,6 +24,7 @@ import {
   Sparkles,
   Award,
   ChevronRight,
+  ChevronDown,
   Save,
   Sliders,
   Phone,
@@ -50,6 +51,7 @@ export const BarberPortal = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('jornada'); // 'jornada' | 'schedule' | 'team'
+  const [isBarberDropdownOpen, setIsBarberDropdownOpen] = useState(false);
 
   // Mantener actualizado el barbero seleccionado cuando cambien los barberos del tenant
   useEffect(() => {
@@ -433,18 +435,25 @@ export const BarberPortal = () => {
   }
 
   const { barber, metrics, appointments } = dashboardData;
+  const commissionDisplay = barber.commissionPercent > 100
+    ? Math.round(barber.commissionPercent / 100)
+    : Math.round(barber.commissionPercent || 50);
+  const dailyTargetDisplay = (barber.dailyTarget && barber.dailyTarget > 1000)
+    ? barber.dailyTarget
+    : (barber.dailyGoal || 150000);
 
   return (
-    <div className="space-y-4 animate-fadeIn max-w-6xl mx-auto">
-      {/* Sub-Navegación Compacta */}
-      <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-850">
+    <div className="space-y-4 animate-fadeIn max-w-6xl mx-auto w-full min-w-0">
+      {/* Sub-Navegación y Switcher Profesional de Barbero (Totalmente Responsive) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-sm">
+        {/* Pestañas de Sección */}
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-850 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveSection('jornada')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'jornada'
-                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -455,9 +464,9 @@ export const BarberPortal = () => {
           <button
             type="button"
             onClick={() => setActiveSection('schedule')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'schedule'
-                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -468,9 +477,9 @@ export const BarberPortal = () => {
           <button
             type="button"
             onClick={() => setActiveSection('team')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'team'
-                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -479,34 +488,103 @@ export const BarberPortal = () => {
           </button>
         </div>
 
-        {/* Switcher rápido de barbero */}
-        <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs shadow-sm">
-          <span className="text-slate-400 dark:text-industrial-500 text-[10px] hidden sm:inline uppercase font-bold tracking-wider">Barbero:</span>
-          <select
-            value={selectedBarberId}
-            onChange={(e) => setSelectedBarberId(e.target.value)}
-            className="bg-transparent font-semibold text-slate-900 dark:text-white focus:outline-none cursor-pointer text-xs"
+        {/* Custom Luxury Barber Switcher Dropdown (No salta fuera de pantalla) */}
+        <div className="relative w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setIsBarberDropdownOpen(prev => !prev)}
+            className="w-full sm:w-auto flex items-center justify-between gap-2.5 px-3 py-2 bg-slate-50 dark:bg-noir-950 hover:bg-slate-100 dark:hover:bg-noir-850 border border-slate-200 dark:border-industrial-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white transition-all cursor-pointer shadow-sm"
           >
-            {barbers.map((b) => (
-              <option key={b.id} value={b.id} className="bg-white dark:bg-noir-950 text-slate-900 dark:text-white">
-                {b.name}
-              </option>
-            ))}
-          </select>
+            <div className="flex items-center gap-2 min-w-0">
+              <img
+                src={barber.avatar}
+                alt={barber.name}
+                className="w-6 h-6 rounded-full object-cover border border-slate-300 dark:border-industrial-700 flex-shrink-0"
+              />
+              <span className="text-slate-400 dark:text-industrial-500 text-[10px] uppercase font-bold tracking-wider hidden sm:inline">
+                Especialista:
+              </span>
+              <span className="font-bold text-slate-900 dark:text-white truncate">
+                {barber.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className={`w-2 h-2 rounded-full ${
+                barber.status === 'AVAILABLE' ? 'bg-emerald-500' : barber.status === 'IN_SERVICE' ? 'bg-blue-500' : 'bg-slate-400'
+              }`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBarberDropdownOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </button>
+
+          {/* Menú Desplegable Flotante de Selección Elegante */}
+          {isBarberDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsBarberDropdownOpen(false)}
+              />
+              <div className="absolute top-full left-0 right-0 sm:left-auto sm:right-0 sm:w-72 mt-1.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-xl z-50 p-1.5 animate-fadeIn space-y-1">
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-industrial-500 border-b border-slate-100 dark:border-industrial-800/80">
+                  Seleccionar Barbero
+                </div>
+                <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5">
+                  {barbers.map((b) => {
+                    const isSelected = b.id === selectedBarberId;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedBarberId(b.id);
+                          setIsBarberDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-slate-900 text-white dark:bg-gold-500/20 dark:text-gold-300 font-bold'
+                            : 'hover:bg-slate-100 dark:hover:bg-noir-950 text-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={b.avatar || AVATAR_PRESETS[0].url}
+                            alt={b.name}
+                            className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-industrial-700 flex-shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold truncate block">{b.name}</span>
+                            <span className={`text-[10px] font-mono block ${isSelected ? 'text-slate-300 dark:text-gold-400' : 'text-slate-400 dark:text-industrial-500'}`}>
+                              {b.status === 'AVAILABLE' ? '🟢 Disponible' : b.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
+                            </span>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <CheckCircle2 className="w-4 h-4 text-white dark:text-gold-400 flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {activeSection === 'jornada' && (
         <div className="space-y-4 animate-fadeIn">
-          {/* Header Unificado de Barbero + Control de Estado en Vivo (1 sola fila limpia) */}
+          {/* Header Unificado de Barbero + Control de Estado en Vivo */}
           <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Perfil del Barbero */}
             <div className="flex items-center gap-3 min-w-0">
-              <div className="relative flex-shrink-0">
+              <div
+                onClick={() => setIsBarberDropdownOpen(prev => !prev)}
+                className="relative flex-shrink-0 cursor-pointer group"
+                title="Toca para cambiar de barbero"
+              >
                 <img
                   src={barber.avatar}
                   alt={barber.name}
-                  className="w-11 h-11 rounded-xl object-cover border-2 border-gold-500 shadow-glow-gold"
+                  className="w-11 h-11 rounded-xl object-cover border-2 border-slate-900 dark:border-gold-500 shadow-sm group-hover:scale-105 transition-transform"
                 />
                 <span
                   className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-noir-900 ${
@@ -517,18 +595,25 @@ export const BarberPortal = () => {
                 />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-white truncate">
                     {barber.name}
                   </h2>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-gold-500/15 text-gold-400 border border-gold-500/30 flex-shrink-0">
-                    {barber.commissionPercent}% com.
+                  <button
+                    type="button"
+                    onClick={() => setIsBarberDropdownOpen(prev => !prev)}
+                    className="text-[10px] text-slate-500 hover:text-slate-900 dark:text-industrial-400 dark:hover:text-white underline font-semibold cursor-pointer"
+                  >
+                    Cambiar
+                  </button>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gold-500/15 text-slate-700 dark:text-gold-400 border border-slate-200 dark:border-gold-500/30 flex-shrink-0">
+                    {commissionDisplay}% com.
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-2 truncate">
-                  <span>Meta: <strong className="font-mono text-slate-700 dark:text-slate-200">${Math.round(barber.dailyTarget || 0).toLocaleString('es-CO')}</strong></span>
+                <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-2 truncate mt-0.5">
+                  <span>Meta: <strong className="font-mono text-slate-700 dark:text-slate-200">${Math.round(dailyTargetDisplay).toLocaleString('es-CO')}</strong></span>
                   <span>•</span>
-                  <span className="text-emerald-500 dark:text-emerald-400 font-mono text-[10px]">
+                  <span className="font-mono text-[10px]">
                     {barber.status === 'AVAILABLE' ? '🟢 Disponible' : barber.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
                   </span>
                 </div>
@@ -542,7 +627,7 @@ export const BarberPortal = () => {
                 onClick={() => handleStatusChange('AVAILABLE')}
                 className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   barber.status === 'AVAILABLE'
-                    ? 'bg-emerald-500 text-white shadow-sm'
+                    ? 'bg-emerald-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -555,7 +640,7 @@ export const BarberPortal = () => {
                 onClick={() => handleStatusChange('IN_SERVICE')}
                 className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   barber.status === 'IN_SERVICE'
-                    ? 'bg-blue-500 text-white shadow-sm'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -568,7 +653,7 @@ export const BarberPortal = () => {
                 onClick={() => handleStatusChange('BREAK')}
                 className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   barber.status === 'BREAK'
-                    ? 'bg-slate-600 text-white shadow-sm'
+                    ? 'bg-slate-700 text-white shadow-sm'
                     : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -578,28 +663,28 @@ export const BarberPortal = () => {
             </div>
           </div>
 
-          {/* Métricas Financieras del Barbero: Cuadrícula Compacta 2x2 en Móvil / 4 columnas en Desktop */}
+          {/* Métricas Financieras del Barbero: Limpias, Elegantes y en Porcelana Blanca en Modo Claro */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {/* Total Ganado Hoy */}
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-gold-500/10 via-noir-900 to-noir-950 border border-gold-500/30 shadow-sm flex flex-col justify-between">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gold-400">Total Ganado</span>
-                <TrendingUp className="w-3.5 h-3.5 text-gold-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-gold-400">Total Ganado</span>
+                <TrendingUp className="w-3.5 h-3.5 text-slate-600 dark:text-gold-400" />
               </div>
               <div className="mt-1">
-                <div className="text-base sm:text-xl font-bold font-mono text-white">
+                <div className="text-base sm:text-xl font-bold font-mono text-slate-900 dark:text-white">
                   ${Math.round(metrics.totalPersonalEarnings || 0).toLocaleString('es-CO')}
                 </div>
-                <span className="text-[10px] text-industrial-400 font-mono">
+                <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-mono">
                   {metrics.servicesCount || 0} {metrics.servicesCount === 1 ? 'corte' : 'cortes'}
                 </span>
               </div>
             </div>
 
             {/* Mi Comisión */}
-            <div className="p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Mi Comisión</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300">Mi Comisión</span>
                 <DollarSign className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <div className="mt-1">
@@ -607,40 +692,40 @@ export const BarberPortal = () => {
                   ${Math.round(metrics.commissionEarned || 0).toLocaleString('es-CO')}
                 </div>
                 <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-mono">
-                  {barber.commissionPercent}% de ${Math.round(metrics.grossServices || 0).toLocaleString('es-CO')}
+                  {commissionDisplay}% de ${Math.round(metrics.grossServices || 0).toLocaleString('es-CO')}
                 </span>
               </div>
             </div>
 
             {/* Propinas */}
-            <div className="p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Mis Propinas</span>
-                <Award className="w-3.5 h-3.5 text-gold-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300">Mis Propinas</span>
+                <Award className="w-3.5 h-3.5 text-slate-600 dark:text-gold-400" />
               </div>
               <div className="mt-1">
                 <div className="text-base sm:text-xl font-bold font-mono text-slate-900 dark:text-white">
                   ${Math.round(metrics.tipsEarned || 0).toLocaleString('es-CO')}
                 </div>
-                <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono">
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
                   100% tuyas
                 </span>
               </div>
             </div>
 
             {/* Meta Diaria y Progreso */}
-            <div className="p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
-                <span className="text-[10px] font-bold uppercase tracking-wider">Meta Diaria</span>
-                <span className="text-[10px] font-mono font-bold text-gold-400">{metrics.targetProgressPercent || 0}%</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300">Meta Diaria</span>
+                <span className="text-[10px] font-mono font-bold text-slate-900 dark:text-gold-400">{metrics.targetProgressPercent || 0}%</span>
               </div>
               <div className="mt-1">
                 <div className="text-xs sm:text-sm font-bold font-mono text-slate-900 dark:text-white truncate">
-                  ${Math.round(metrics.grossServices || 0).toLocaleString('es-CO')} <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-normal">/ ${Math.round(barber.dailyTarget || 0).toLocaleString('es-CO')}</span>
+                  ${Math.round(metrics.grossServices || 0).toLocaleString('es-CO')} <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-normal">/ ${Math.round(dailyTargetDisplay).toLocaleString('es-CO')}</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-noir-950 rounded-full h-1.5 mt-1.5 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-amber-500 to-gold-400 h-1.5 rounded-full transition-all duration-500"
+                    className="bg-slate-900 dark:bg-gradient-to-r dark:from-amber-500 dark:to-gold-400 h-1.5 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(metrics.targetProgressPercent || 0, 100)}%` }}
                   />
                 </div>
@@ -652,16 +737,16 @@ export const BarberPortal = () => {
       <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-industrial-800">
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-gold-500" />
+            <Clock className="w-5 h-5 text-slate-700 dark:text-gold-500" />
             <div>
               <h3 className="font-display font-bold text-slate-900 dark:text-white text-base">Mis Turnos de Hoy (Activar / Pausar)</h3>
               <p className="text-xs text-slate-500 dark:text-industrial-400">Toca cualquier hora para pausarla o activarla con 1 clic en tiempo real.</p>
             </div>
           </div>
-          <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2">
+          <div className="text-xs font-mono text-slate-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5 bg-slate-100 dark:bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-emerald-500/20">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{barberSlots.filter(s => s.available).length} turnos libres para agendar hoy</span>
-            {loadingBarberSlots && <span className="text-amber-500 animate-pulse text-[10px]">Actualizando...</span>}
+            <span>{barberSlots.filter(s => s.available).length} turnos libres hoy</span>
+            {loadingBarberSlots && <span className="text-amber-500 animate-pulse text-[10px] ml-1">Actualizando...</span>}
           </div>
         </div>
 
@@ -671,10 +756,10 @@ export const BarberPortal = () => {
           <button
             type="button"
             onClick={() => setAllowPastBarber(!allowPastBarber)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               allowPastBarber
                 ? 'bg-purple-600 text-white font-bold shadow-sm'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-gold-400'
+                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-gold-400'
             }`}
             title="Permite activar y probar turnos incluso fuera de jornada"
           >
@@ -687,7 +772,7 @@ export const BarberPortal = () => {
               const pausedTimes = barberSlots.filter(s => s.reason === 'BLOCKED_MANUALLY').map(s => s.time);
               handleToggleBatchBarberSlots(pausedTimes, false);
             }}
-            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500 hover:text-white text-xs font-semibold transition-all disabled:opacity-50"
+            className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
           >
             🟢 Activar Todo
           </button>
@@ -698,7 +783,7 @@ export const BarberPortal = () => {
               const morningTimes = barberSlots.filter(s => s.available && s.time < '13:30').map(s => s.time);
               handleToggleBatchBarberSlots(morningTimes, true);
             }}
-            className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 hover:bg-amber-500 hover:text-black text-xs font-semibold transition-all disabled:opacity-50"
+            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-amber-500/15 border border-slate-200 dark:border-amber-500/30 text-slate-700 dark:text-amber-300 hover:bg-slate-200 dark:hover:bg-amber-500 dark:hover:text-black text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
           >
             ⏸️ Pausar Mañana
           </button>
@@ -709,7 +794,7 @@ export const BarberPortal = () => {
               const afternoonTimes = barberSlots.filter(s => s.available && s.time >= '13:30').map(s => s.time);
               handleToggleBatchBarberSlots(afternoonTimes, true);
             }}
-            className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 hover:bg-amber-500 hover:text-black text-xs font-semibold transition-all disabled:opacity-50"
+            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-amber-500/15 border border-slate-200 dark:border-amber-500/30 text-slate-700 dark:text-amber-300 hover:bg-slate-200 dark:hover:bg-amber-500 dark:hover:text-black text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
           >
             ⏸️ Pausar Tarde
           </button>
@@ -720,7 +805,7 @@ export const BarberPortal = () => {
               const allOpenTimes = barberSlots.filter(s => s.available).map(s => s.time);
               handleToggleBatchBarberSlots(allOpenTimes, true);
             }}
-            className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white text-xs font-semibold transition-all disabled:opacity-50"
+            className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-600 hover:text-white text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
           >
             🔴 Pausar Todo
           </button>
@@ -739,16 +824,16 @@ export const BarberPortal = () => {
                 type="button"
                 disabled={isBooked || (!allowPastBarber && isPast) || isOutOfSchedule}
                 onClick={() => handleToggleBarberSlot(s.time, isManualBlocked)}
-                className={`p-3 rounded-xl text-xs font-mono font-bold transition-all text-center flex flex-col items-center justify-center gap-1 border ${
+                className={`p-3 rounded-xl text-xs font-mono font-bold transition-all text-center flex flex-col items-center justify-center gap-1 border cursor-pointer ${
                   isBooked
                     ? 'bg-slate-100 dark:bg-noir-950 border-slate-200 dark:border-industrial-850 text-slate-400 dark:text-industrial-500 cursor-not-allowed opacity-60'
                     : isManualBlocked
-                    ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20'
+                    ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100'
                     : (!allowPastBarber && isPast)
-                    ? 'bg-slate-100/60 dark:bg-noir-950/60 border-slate-200 dark:border-industrial-900 text-slate-400 dark:text-industrial-600 opacity-40 cursor-not-allowed'
+                    ? 'bg-slate-50 dark:bg-noir-950/60 border-slate-200 dark:border-industrial-900 text-slate-400 dark:text-industrial-600 opacity-40 cursor-not-allowed'
                     : isOutOfSchedule
-                    ? 'bg-slate-100/40 dark:bg-noir-950/40 border-slate-200 dark:border-industrial-900 text-slate-400 dark:text-industrial-600 opacity-30 cursor-not-allowed'
-                    : 'bg-emerald-50 dark:bg-noir-950 text-emerald-900 dark:text-slate-200 border-emerald-300 dark:border-industrial-800 hover:border-gold-500 hover:text-amber-600 dark:hover:text-gold-300 shadow-sm'
+                    ? 'bg-slate-50 dark:bg-noir-950/40 border-slate-200 dark:border-industrial-900 text-slate-400 dark:text-industrial-600 opacity-30 cursor-not-allowed'
+                    : 'bg-white dark:bg-noir-950 text-slate-900 dark:text-slate-200 border-slate-200 dark:border-industrial-800 hover:border-slate-900 hover:shadow-sm dark:hover:border-gold-500 dark:hover:text-gold-300 shadow-sm'
                 }`}
               >
                 <span className="text-sm font-bold">{s.time}</span>
