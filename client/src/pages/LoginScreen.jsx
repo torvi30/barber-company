@@ -61,7 +61,14 @@ export const LoginScreen = ({ onBarberLogin }) => {
   const [error, setError] = useState(null);
   const [resetSuccessMessage, setResetSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isBarberPinModalOpen, setIsBarberPinModalOpen] = useState(false);
+  const [isBarberPinModalOpen, setIsBarberPinModalOpen] = useState(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('barbero') === 'pin' || p.has('pin') || window.location.hash === '#barbero';
+    } catch {
+      return false;
+    }
+  });
 
   // Manejar Login con Google (Gmail)
   const handleGoogleLogin = async () => {
@@ -353,21 +360,6 @@ export const LoginScreen = ({ onBarberLogin }) => {
               </button>
             )}
           </form>
-        </div>
-
-        {/* Acceso Rápido para Barberos con PIN de 4 Dígitos */}
-        <div className="mt-4 p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm text-center animate-fadeIn">
-          <p className="text-xs font-semibold text-slate-700 dark:text-industrial-300 mb-2">
-            ¿Eres barbero de este equipo?
-          </p>
-          <button
-            type="button"
-            onClick={() => setIsBarberPinModalOpen(true)}
-            className="w-full py-2.5 px-4 rounded-xl bg-amber-500/15 hover:bg-amber-500 border border-amber-500/30 text-amber-800 dark:text-gold-300 hover:text-slate-950 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-          >
-            <Scissors className="w-4 h-4 text-amber-600 dark:text-gold-400" />
-            <span>Acceder a mi Sillón con PIN</span>
-          </button>
         </div>
 
         {/* Nota Multi-Tenant */}

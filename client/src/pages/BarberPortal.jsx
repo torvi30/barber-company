@@ -232,7 +232,8 @@ export const BarberPortal = ({
     const pin = b.pin || '1234';
     const phone = b.phone || b.whatsapp || '';
     const shopName = barbershopInfo?.name || 'Imperio Barbershop';
-    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\nDesde tu celular podrás ver tus turnos, marcar descansos y revisar tus comisiones y metas en tiempo real:\n👉 ${window.location.origin}`;
+    const accessUrl = `${window.location.origin}?barbero=pin`;
+    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\nDesde tu celular podrás ver tus turnos, marcar descansos y revisar tus comisiones y metas en tiempo real:\n👉 ${accessUrl}`;
     const link = buildWhatsAppLink(phone, text);
     window.open(link, '_blank');
   };

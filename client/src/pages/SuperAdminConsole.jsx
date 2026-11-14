@@ -554,78 +554,78 @@ export const SuperAdminConsole = ({
       {activeTab === 'companies' ? (
         <>
           {/* Tarjetas de Métricas Globales (MRR & Alertas) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
             {/* MRR Recurrente */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-noir-900 to-noir-950 border border-gold-500/30 shadow-glow-gold/10">
-              <div className="flex items-center justify-between text-industrial-400 text-xs font-mono uppercase mb-2">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-gold-500/30 shadow-sm transition-all hover:border-amber-500/50">
+              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 text-xs font-mono uppercase font-semibold mb-2">
                 <span>MRR Facturación Mes</span>
-                <DollarSign className="w-4 h-4 text-gold-400" />
+                <DollarSign className="w-4 h-4 text-amber-600 dark:text-gold-400" />
               </div>
-              <div className="text-2xl font-display font-black text-white">
+              <div className="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white">
                 ${metrics?.totalMRR_USD || 0}{' '}
-                <span className="text-xs font-mono text-industrial-400">USD</span>
+                <span className="text-xs font-mono text-slate-500 dark:text-industrial-400 font-normal">USD</span>
               </div>
-              <div className="text-[11px] text-gold-400/90 font-mono mt-1">
+              <div className="text-[11px] text-amber-700 dark:text-gold-400 font-mono font-bold mt-1">
                 ≈ ${(metrics?.totalMRR_COP || 0).toLocaleString('es-CO')} COP / mes
               </div>
             </div>
 
             {/* Total Barberías */}
-            <div className="p-5 rounded-2xl bg-noir-900 border border-industrial-800">
-              <div className="flex items-center justify-between text-industrial-400 text-xs font-mono uppercase mb-2">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm transition-all hover:border-slate-300 dark:hover:border-industrial-700">
+              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 text-xs font-mono uppercase font-semibold mb-2">
                 <span>Barberías Totales</span>
-                <Building2 className="w-4 h-4 text-slate-300" />
+                <Building2 className="w-4 h-4 text-slate-700 dark:text-slate-300" />
               </div>
-              <div className="text-2xl font-display font-black text-white">
+              <div className="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white">
                 {metrics?.totalTenants || 0}
               </div>
-              <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
-                <CheckCircle2 className="w-3 h-3" />
+              <div className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{metrics?.statusSummary?.active || 0} Activos • {metrics?.statusSummary?.trial || 0} en Prueba</span>
               </div>
             </div>
 
             {/* Alertas de Cobro (≤ 3 Días) */}
-            <div className="p-5 rounded-2xl bg-noir-900 border border-amber-500/30">
-              <div className="flex items-center justify-between text-amber-400 text-xs font-mono uppercase mb-2">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-noir-900 border border-amber-300 dark:border-amber-500/30 shadow-sm transition-all">
+              <div className="flex items-center justify-between text-amber-700 dark:text-amber-400 text-xs font-mono uppercase font-semibold mb-2">
                 <span>Próximos a Vencer (≤ 3d)</span>
-                <Clock className="w-4 h-4 text-amber-400" />
+                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               </div>
-              <div className="text-2xl font-display font-black text-amber-300">
+              <div className="text-2xl sm:text-3xl font-display font-black text-amber-600 dark:text-amber-400">
                 {metrics?.statusSummary?.expiringSoon || 0}
               </div>
-              <div className="text-[11px] text-industrial-400 mt-1">
+              <div className="text-[11px] text-slate-500 dark:text-industrial-400 font-medium mt-1">
                 Requieren mensaje de recordatorio preventivo
               </div>
             </div>
 
             {/* En Mora / Suspendidos */}
-            <div className="p-5 rounded-2xl bg-noir-900 border border-rose-500/30">
-              <div className="flex items-center justify-between text-rose-400 text-xs font-mono uppercase mb-2">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-noir-900 border border-rose-300 dark:border-rose-500/30 shadow-sm transition-all">
+              <div className="flex items-center justify-between text-rose-700 dark:text-rose-400 text-xs font-mono uppercase font-semibold mb-2">
                 <span>En Mora o Suspendidos</span>
-                <AlertTriangle className="w-4 h-4 text-rose-400" />
+                <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
               </div>
-              <div className="text-2xl font-display font-black text-rose-400">
+              <div className="text-2xl sm:text-3xl font-display font-black text-rose-600 dark:text-rose-400">
                 {(metrics?.statusSummary?.pastDue || 0) + (metrics?.statusSummary?.suspended || 0)}
               </div>
-              <div className="text-[11px] text-industrial-400 mt-1">
+              <div className="text-[11px] text-slate-500 dark:text-industrial-400 font-medium mt-1">
                 {metrics?.statusSummary?.pastDue || 0} en mora • {metrics?.statusSummary?.suspended || 0} suspendidos
               </div>
             </div>
           </div>
 
           {/* Barra de Filtros & Búsqueda */}
-          <div className="p-4 rounded-2xl bg-noir-900 border border-industrial-800 space-y-4">
+          <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm space-y-3.5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Input Buscador */}
               <div className="relative md:col-span-2">
-                <Search className="w-4 h-4 text-industrial-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 dark:text-industrial-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Buscar barbería por nombre, dueño, municipio (Marinilla, Rionegro...) o slug..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-noir-950 border border-industrial-700 rounded-xl text-xs text-white placeholder-industrial-500 focus:outline-none focus:border-gold-500"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-medium"
                 />
               </div>
 
@@ -633,7 +633,7 @@ export const SuperAdminConsole = ({
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 bg-noir-950 border border-industrial-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-gold-500"
+                className="px-3 py-2.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-700 rounded-xl text-xs text-slate-800 dark:text-slate-300 focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-medium cursor-pointer"
               >
                 <option value="all">Todos los Estados</option>
                 <option value="urgent">⚠️ Urgentes (Por Vencer / Mora)</option>
@@ -644,16 +644,18 @@ export const SuperAdminConsole = ({
             </div>
 
             {/* Chips de Municipios de Oriente Antioqueño / Medellín */}
-            <div className="flex items-center gap-2 pt-2 border-t border-industrial-800/80 overflow-x-auto text-xs">
-              <span className="text-industrial-500 font-mono text-[11px] flex items-center gap-1 flex-shrink-0">
-                <MapPin className="w-3.5 h-3.5" /> Municipios:
+            <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-industrial-800/80 overflow-x-auto scrollbar-none text-xs">
+              <span className="text-slate-500 dark:text-industrial-500 font-mono text-[11px] flex items-center gap-1 flex-shrink-0 font-semibold">
+                <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400" /> Municipios:
               </span>
               <button
+                type="button"
                 onClick={() => setSelectedMunicipality('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedMunicipality === 'all'
-                    ? 'bg-gold-500 text-noir-950 font-bold'
-                    : 'bg-noir-950 text-industrial-400 hover:text-white'
-                  }`}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex-shrink-0 cursor-pointer ${
+                  selectedMunicipality === 'all'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950'
+                    : 'bg-slate-100 dark:bg-noir-950 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-industrial-800'
+                }`}
               >
                 Todos ({tenants.length})
               </button>
@@ -662,11 +664,13 @@ export const SuperAdminConsole = ({
                 return (
                   <button
                     key={mun}
+                    type="button"
                     onClick={() => setSelectedMunicipality(mun)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedMunicipality === mun
-                        ? 'bg-gold-500 text-noir-950 font-bold'
-                        : 'bg-noir-950 text-industrial-400 hover:text-white'
-                      }`}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex-shrink-0 cursor-pointer ${
+                      selectedMunicipality === mun
+                        ? 'bg-amber-500 text-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950'
+                        : 'bg-slate-100 dark:bg-noir-950 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-industrial-800'
+                    }`}
                   >
                     {mun} ({count})
                   </button>
@@ -675,21 +679,119 @@ export const SuperAdminConsole = ({
             </div>
           </div>
 
-          {/* Tabla Nodriza de Negocios */}
-          <div className="rounded-2xl bg-noir-900 border border-industrial-800 overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-industrial-800 flex items-center justify-between">
-              <div className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-gold-400" />
+          {/* Tabla Nodriza & Vista Móvil Responsiva de Negocios */}
+          <div className="rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-100 dark:border-industrial-800 flex items-center justify-between">
+              <div className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-amber-600 dark:text-gold-400" />
                 Red de Barberías Registradas ({filteredTenants.length})
               </div>
-              <span className="text-[11px] text-industrial-500 font-mono">
+              <span className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono hidden sm:inline">
                 Acciones rápidas de cobranza por WhatsApp en 1 clic
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* VISTA MÓVIL EN TARJETAS (Elimina completamente el scroll horizontal molesto) */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-industrial-800">
+              {filteredTenants.length === 0 ? (
+                <div className="py-12 px-4 text-center text-slate-500 dark:text-industrial-400">
+                  <Building2 className="w-10 h-10 text-slate-400 dark:text-industrial-600 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">No hay barberías registradas</p>
+                </div>
+              ) : (
+                filteredTenants.map((t) => (
+                  <div key={t.id} className="p-4 space-y-3 hover:bg-slate-50 dark:hover:bg-noir-950 transition-colors">
+                    {/* Header de la barbería */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-gold-400 flex-shrink-0">
+                          {getBarberShopIcon()}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                            {t.name}
+                          </h4>
+                          <span className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 text-amber-600 dark:text-gold-400 flex-shrink-0" />
+                            <strong>{t.municipality}</strong> • {t.address}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase font-mono flex-shrink-0 ${
+                          t.billingStatus === 'ACTIVE'
+                            ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
+                            : t.billingStatus === 'TRIAL'
+                            ? 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30'
+                            : t.billingStatus === 'EXPIRING_SOON'
+                            ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 animate-pulse'
+                            : 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40'
+                        }`}
+                      >
+                        {t.billingStatus === 'EXPIRING_SOON'
+                          ? `≤ ${t.daysUntilCutoff} DÍAS`
+                          : t.billingStatus === 'PAST_DUE'
+                          ? 'EN MORA'
+                          : t.billingStatus}
+                      </span>
+                    </div>
+
+                    {/* Datos del dueño y plan */}
+                    <div className="grid grid-cols-2 gap-2 text-xs p-2.5 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800">
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-industrial-400 block font-semibold">Dueño:</span>
+                        <span className="font-bold text-slate-900 dark:text-white truncate block">{t.ownerName}</span>
+                        <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400">{t.whatsapp}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-500 dark:text-industrial-400 block font-semibold">Plan SaaS:</span>
+                        <span className="font-bold font-mono text-amber-700 dark:text-gold-400 text-xs block">${t.monthlyRate} USD/mes</span>
+                        <span className="text-[10px] text-slate-500 dark:text-industrial-400">Corte: {new Date(t.currentPeriodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}</span>
+                      </div>
+                    </div>
+
+                    {/* Acciones Rápidas Móviles */}
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsAppModal(t, t.urgencyLevel === 'DANGER' ? 'past_due' : 'expiring_soon')}
+                        className="py-1.5 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Send className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        <span>WhatsApp</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenInviteModal(t)}
+                        className="py-1.5 px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-gold-300 border border-amber-500/30 text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Mail className="w-3 h-3 text-amber-600 dark:text-gold-400" />
+                        <span>Invitar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          switchTenant(t);
+                          await showSuccessAlert('Conexión Activa', `Has ingresado al panel de "${t.name}".`);
+                        }}
+                        className="py-1.5 px-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer shadow-sm"
+                      >
+                        <span>Entrar</span>
+                        <ArrowUpRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* VISTA ESCRITORIO EN TABLA (Con contraste de lujo) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-noir-950/80 text-industrial-400 font-mono uppercase tracking-wider border-b border-industrial-800">
+                <thead className="bg-slate-50 dark:bg-noir-950/80 text-slate-600 dark:text-industrial-400 font-mono uppercase tracking-wider border-b border-slate-200 dark:border-industrial-800 font-bold">
                   <tr>
                     <th className="py-3.5 px-4">Barbería & Ubicación</th>
                     <th className="py-3.5 px-4">Dueño & Contacto</th>
@@ -698,19 +800,20 @@ export const SuperAdminConsole = ({
                     <th className="py-3.5 px-4 text-right">Cobranza & Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-industrial-800/60 text-slate-300">
+                <tbody className="divide-y divide-slate-100 dark:divide-industrial-800/60 text-slate-800 dark:text-slate-300">
                   {filteredTenants.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-16 text-center text-industrial-400">
+                      <td colSpan={5} className="py-16 text-center text-slate-500 dark:text-industrial-400">
                         <div className="flex flex-col items-center justify-center space-y-3">
-                          <Building2 className="w-10 h-10 text-industrial-600 animate-pulse" />
-                          <p className="text-sm font-semibold text-white">No hay barberías registradas en este momento</p>
-                          <p className="text-xs text-industrial-500 max-w-sm">
+                          <Building2 className="w-10 h-10 text-slate-400 dark:text-industrial-600 animate-pulse" />
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">No hay barberías registradas en este momento</p>
+                          <p className="text-xs text-slate-500 dark:text-industrial-500 max-w-sm">
                             Como Super Administrador, eres el único que puede crear empresas en la plataforma.
                           </p>
                           <button
+                            type="button"
                             onClick={() => setShowCreateCompanyModal(true)}
-                            className="mt-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all flex items-center gap-2"
+                            className="mt-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 cursor-pointer"
                           >
                             <Plus className="w-4 h-4" />
                             <span>+ Registrar Primera Barbería</span>
@@ -723,41 +826,42 @@ export const SuperAdminConsole = ({
                       return (
                         <tr
                           key={t.id}
-                          className={`hover:bg-noir-800/50 transition-colors ${t.urgencyLevel === 'CRITICAL'
-                              ? 'bg-rose-950/15'
+                          className={`hover:bg-slate-50 dark:hover:bg-noir-800/50 transition-colors ${
+                            t.urgencyLevel === 'CRITICAL'
+                              ? 'bg-rose-50/50 dark:bg-rose-950/15'
                               : t.urgencyLevel === 'DANGER'
-                                ? 'bg-rose-950/10'
-                                : t.urgencyLevel === 'WARNING'
-                                  ? 'bg-amber-950/10'
-                                  : ''
-                            }`}
+                              ? 'bg-rose-50/30 dark:bg-rose-950/10'
+                              : t.urgencyLevel === 'WARNING'
+                              ? 'bg-amber-50/30 dark:bg-amber-950/10'
+                              : ''
+                          }`}
                         >
                           {/* Barbería e Identificación */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-start gap-2.5">
-                              <div className="p-2 rounded-xl bg-noir-950 border border-gold-500/30 flex-shrink-0 mt-0.5">
+                              <div className="p-2 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-gold-500/30 flex-shrink-0 mt-0.5">
                                 {getBarberShopIcon()}
                               </div>
                               <div>
-                                <div className="font-bold text-white text-sm flex items-center gap-2">
+                                <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                                   {t.name}
-                                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-gold-500/15 text-gold-300 border-gold-500/30">
+                                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-amber-500/15 text-amber-800 dark:text-gold-300 border-amber-500/30">
                                     BARBERÍA
                                   </span>
                                 </div>
-                                <div className="text-[11px] text-industrial-400 flex items-center gap-1.5 mt-0.5">
-                                  <MapPin className="w-3 h-3 text-industrial-500" />
+                                <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-1.5 mt-0.5">
+                                  <MapPin className="w-3 h-3 text-amber-600 dark:text-gold-400" />
                                   <span>
                                     <strong>{t.municipality}</strong> • {t.address}
                                   </span>
                                 </div>
-                                <div className="text-[10px] text-industrial-500 font-mono mt-0.5 flex items-center gap-2">
+                                <div className="text-[10px] text-slate-400 dark:text-industrial-500 font-mono mt-0.5 flex items-center gap-2">
                                   <span>slug: /{t.slug} • ID: {t.id}</span>
                                   <a
                                     href={`/?slug=${t.slug}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-gold-400 hover:underline flex items-center gap-0.5"
+                                    className="text-amber-600 dark:text-gold-400 hover:underline flex items-center gap-0.5 font-bold"
                                   >
                                     <span>Web</span>
                                     <ArrowUpRight className="w-2.5 h-2.5" />
@@ -769,33 +873,34 @@ export const SuperAdminConsole = ({
 
                           {/* Dueño & Teléfono */}
                           <td className="py-3.5 px-4">
-                            <div className="font-medium text-white">{t.ownerName}</div>
-                            <div className="text-[11px] text-industrial-400 flex items-center gap-1 mt-0.5">
-                              <Phone className="w-3 h-3 text-emerald-400" />
-                              <span className="font-mono">{t.whatsapp}</span>
+                            <div className="font-bold text-slate-900 dark:text-white">{t.ownerName}</div>
+                            <div className="text-[11px] text-slate-600 dark:text-industrial-400 flex items-center gap-1 mt-0.5">
+                              <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span className="font-mono font-semibold">{t.whatsapp}</span>
                             </div>
-                            <div className="text-[10px] text-industrial-500 truncate max-w-[150px]">
+                            <div className="text-[10px] text-slate-400 dark:text-industrial-500 truncate max-w-[150px]">
                               {t.ownerEmail}
                             </div>
                           </td>
 
                           {/* Plan SaaS */}
                           <td className="py-3.5 px-4">
-                            <div className="font-bold text-white uppercase text-[11px]">
+                            <div className="font-bold text-slate-900 dark:text-white uppercase text-[11px]">
                               {t.subscriptionPlan === 'pro' ? 'Plan Pro Black' : 'Plan Básico'}
                             </div>
-                            <div className="text-xs font-mono text-gold-400 font-semibold">
-                              ${t.monthlyRate} USD <span className="text-[10px] text-industrial-500">/ mes</span>
+                            <div className="text-xs font-mono text-amber-600 dark:text-gold-400 font-bold">
+                              ${t.monthlyRate} USD <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-normal">/ mes</span>
                             </div>
                             <div className="mt-1 flex items-center gap-1.5">
                               <button
+                                type="button"
                                 onClick={() => handleToggleStoreTenant(t)}
-                                className={`text-[9px] font-mono px-2 py-0.5 rounded-full border transition-all flex items-center gap-1 ${
+                                className={`text-[9px] font-mono px-2 py-0.5 rounded-full border transition-all flex items-center gap-1 cursor-pointer font-bold ${
                                   t.storeEnabled !== false
-                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
-                                    : 'bg-industrial-800 text-industrial-400 border-industrial-700 hover:text-white hover:border-industrial-600'
+                                    ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
+                                    : 'bg-slate-100 text-slate-500 dark:bg-industrial-800 dark:text-industrial-400 border-slate-200 dark:border-industrial-700'
                                 }`}
-                                title={t.storeEnabled !== false ? 'Clic para pausar tienda boutique' : 'Clic para activar tienda boutique'}
+                                title={t.storeEnabled !== false ? 'Clic para pausar tienda' : 'Clic para activar tienda'}
                               >
                                 <ShoppingBag className="w-2.5 h-2.5" />
                                 <span>{t.storeEnabled !== false ? 'Tienda: ACTIVA' : 'Tienda: OFF'}</span>
@@ -807,28 +912,29 @@ export const SuperAdminConsole = ({
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2 mb-1">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase font-mono ${t.billingStatus === 'ACTIVE'
-                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase font-mono ${
+                                  t.billingStatus === 'ACTIVE'
+                                    ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
                                     : t.billingStatus === 'TRIAL'
-                                      ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
-                                      : t.billingStatus === 'EXPIRING_SOON'
-                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
-                                        : t.billingStatus === 'PAST_DUE'
-                                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                                          : 'bg-industrial-800 text-industrial-400 border-industrial-700'
-                                  }`}
+                                    ? 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30'
+                                    : t.billingStatus === 'EXPIRING_SOON'
+                                    ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 animate-pulse'
+                                    : t.billingStatus === 'PAST_DUE'
+                                    ? 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-industrial-800 dark:text-industrial-400 border-slate-200 dark:border-industrial-700'
+                                }`}
                               >
                                 {t.billingStatus === 'EXPIRING_SOON'
                                   ? `VENCE EN ${t.daysUntilCutoff} DÍAS`
                                   : t.billingStatus === 'PAST_DUE'
-                                    ? 'EN MORA (PAGO PENDIENTE)'
-                                    : t.billingStatus === 'TRIAL'
-                                      ? `PRUEBA (${t.daysUntilCutoff}D RESTANTES)`
-                                      : t.billingStatus}
+                                  ? 'EN MORA (PAGO PENDIENTE)'
+                                  : t.billingStatus === 'TRIAL'
+                                  ? `PRUEBA (${t.daysUntilCutoff}D RESTANTES)`
+                                  : t.billingStatus}
                               </span>
                             </div>
-                            <div className="text-[11px] text-industrial-400 font-mono flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-industrial-500" />
+                            <div className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono flex items-center gap-1 font-medium">
+                              <Calendar className="w-3 h-3 text-slate-400 dark:text-industrial-500" />
                               <span>
                                 Corte: {new Date(t.currentPeriodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
                               </span>
@@ -840,28 +946,31 @@ export const SuperAdminConsole = ({
                             <div className="flex items-center justify-end gap-1.5">
                               {/* Botón Invitar Administrador */}
                               <button
+                                type="button"
                                 onClick={() => handleOpenInviteModal(t)}
-                                className="px-2.5 py-1.5 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 border border-gold-500/30 text-gold-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                                title="Generar invitación privada para el administrador de este negocio"
+                                className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-gold-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="Generar invitación para el dueño"
                               >
-                                <Mail className="w-3 h-3 text-gold-400" />
-                                <span>Invitar Admin</span>
+                                <Mail className="w-3 h-3 text-amber-600 dark:text-gold-400" />
+                                <span>Invitar</span>
                               </button>
 
                               {/* Botón WhatsApp */}
                               <button
+                                type="button"
                                 onClick={() => handleOpenWhatsAppModal(t, t.urgencyLevel === 'DANGER' ? 'past_due' : 'expiring_soon')}
-                                className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                                 title="Contactar por WhatsApp"
                               >
-                                <Send className="w-3 h-3 text-emerald-400" />
+                                <Send className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 <span>WhatsApp</span>
                               </button>
 
                               {/* Botón Extender Suscripción */}
                               <button
+                                type="button"
                                 onClick={() => setSelectedTenantForExtend(t)}
-                                className="px-2.5 py-1.5 rounded-lg bg-noir-950 hover:bg-noir-800 border border-industrial-700 text-slate-300 text-xs font-medium transition-colors"
+                                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-noir-950 dark:hover:bg-noir-800 border border-slate-200 dark:border-industrial-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
                                 title="Extender Días de Suscripción"
                               >
                                 Extender
@@ -869,11 +978,13 @@ export const SuperAdminConsole = ({
 
                               {/* Botón Suspender / Reactivar */}
                               <button
+                                type="button"
                                 onClick={() => handleToggleSuspendTenant(t)}
-                                className={`p-1.5 rounded-lg border transition-colors ${t.subscriptionStatus === 'suspended'
-                                    ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50'
-                                    : 'bg-rose-950/40 border-rose-500/30 text-rose-400 hover:bg-rose-900/50'
-                                  }`}
+                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                  t.subscriptionStatus === 'suspended'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                                    : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400'
+                                }`}
                                 title={t.subscriptionStatus === 'suspended' ? 'Reactivar Barbería' : 'Suspender Barbería'}
                               >
                                 {t.subscriptionStatus === 'suspended' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
@@ -881,11 +992,12 @@ export const SuperAdminConsole = ({
 
                               {/* Botón Conectar como este Negocio */}
                               <button
+                                type="button"
                                 onClick={async () => {
                                   switchTenant(t);
                                   await showSuccessAlert('Conexión Activa', `Has ingresado al panel de "${t.name}".`);
                                 }}
-                                className="p-1.5 rounded-lg bg-noir-950 hover:bg-gold-500/20 border border-industrial-800 text-industrial-400 hover:text-gold-400 transition-colors"
+                                className="p-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 dark:bg-noir-950 dark:hover:bg-gold-500/20 border border-slate-700 dark:border-industrial-800 dark:text-industrial-400 dark:hover:text-gold-400 transition-colors cursor-pointer shadow-sm"
                                 title="Abrir esta barbería en el panel"
                               >
                                 <ArrowUpRight className="w-4 h-4" />
@@ -903,29 +1015,132 @@ export const SuperAdminConsole = ({
         </>
       ) : (
         /* Vista de Gestión de Usuarios y Asignación de Empresas */
-        <div className="rounded-2xl bg-noir-900 border border-industrial-800 overflow-hidden shadow-2xl animate-fadeIn">
-          <div className="p-4 border-b border-industrial-800 flex items-center justify-between">
+        <div className="rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 overflow-hidden shadow-sm animate-fadeIn">
+          <div className="p-4 border-b border-slate-100 dark:border-industrial-800 flex items-center justify-between">
             <div>
-              <div className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-                <User className="w-4 h-4 text-sky-400" />
+              <div className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <User className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 Control de Usuarios Registrados & Asignación ({platformUsers.length})
               </div>
-              <p className="text-[11px] text-industrial-400 mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-industrial-400 mt-0.5">
                 Los usuarios nuevos inician sin empresa asignada. Como Superadmin, asígnalos a su barbería para desbloquear su acceso.
               </p>
             </div>
             <button
+              type="button"
               onClick={loadPlatformUsers}
-              className="p-2 rounded-lg bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white"
+              className="p-2 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
               title="Refrescar usuarios"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${usersLoading ? 'animate-spin text-gold-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${usersLoading ? 'animate-spin text-amber-600 dark:text-gold-400' : ''}`} />
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* VISTA MÓVIL DE USUARIOS */}
+          <div className="md:hidden divide-y divide-slate-100 dark:divide-industrial-800">
+            {platformUsers.length === 0 ? (
+              <div className="py-12 px-4 text-center text-slate-500 dark:text-industrial-400">
+                <User className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                <p className="text-sm font-bold text-slate-900 dark:text-white">No hay usuarios registrados todavía</p>
+              </div>
+            ) : (
+              platformUsers.map((u) => {
+                const assignedCompany = tenants.find((t) => t.id === u.companyId);
+                const isSA = isPlatformSuperadminEmail(u.email) || u.role === 'superadmin';
+
+                return (
+                  <div key={u.uid} className="p-4 space-y-3 hover:bg-slate-50 dark:hover:bg-noir-950 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={
+                            u.avatarUrl ||
+                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+                          }
+                          alt={u.displayName}
+                          className="w-9 h-9 rounded-full border border-slate-300 dark:border-gold-500/30 object-cover flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                            {u.displayName || 'Sin Nombre'}
+                          </h4>
+                          <span className="text-[11px] font-mono text-slate-500 dark:text-industrial-400 truncate block">
+                            {u.email}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono uppercase border flex-shrink-0 ${
+                          isSA
+                            ? 'bg-amber-500/15 text-amber-900 dark:text-gold-300 border-amber-500/30'
+                            : u.role === 'admin'
+                            ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 border-emerald-500/30'
+                            : 'bg-slate-100 text-slate-600 dark:bg-industrial-800 dark:text-industrial-400 border-slate-200 dark:border-industrial-700'
+                        }`}
+                      >
+                        {isSA ? '👑 SUPER' : u.role === 'admin' ? '💈 ADMIN' : '👤 USER'}
+                      </span>
+                    </div>
+
+                    <div className="text-xs p-2 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-semibold">Empresa Asignada:</span>
+                      {isSA ? (
+                        <span className="font-bold text-amber-700 dark:text-gold-400 font-mono text-[11px]">Global Master</span>
+                      ) : assignedCompany ? (
+                        <span className="font-bold text-slate-900 dark:text-white truncate">{assignedCompany.name}</span>
+                      ) : (
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-lg">
+                          Sin Asignar (Cuarentena)
+                        </span>
+                      )}
+                    </div>
+
+                    {!isSA && (
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUserForAssign(u);
+                            setTargetCompanyId(u.companyId || (tenants[0]?.id || ''));
+                            setTargetRole(u.role === 'admin' ? 'admin' : 'user');
+                          }}
+                          className="flex-1 py-1.5 px-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-900 dark:text-gold-300 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>{u.companyId ? 'Reasignar' : 'Asignar Empresa'}</span>
+                        </button>
+
+                        {u.companyId && (
+                          <button
+                            type="button"
+                            onClick={() => handleUnassignUser(u)}
+                            className="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-industrial-800 dark:hover:bg-industrial-700 text-slate-700 dark:text-industrial-300 text-xs font-semibold cursor-pointer"
+                          >
+                            Desvincular
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUser(u)}
+                          className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 cursor-pointer"
+                          title="Eliminar usuario"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* VISTA ESCRITORIO DE USUARIOS */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-noir-950/80 text-industrial-400 font-mono uppercase tracking-wider border-b border-industrial-800">
+              <thead className="bg-slate-50 dark:bg-noir-950/80 text-slate-600 dark:text-industrial-400 font-mono uppercase tracking-wider border-b border-slate-200 dark:border-industrial-800 font-bold">
                 <tr>
                   <th className="py-3.5 px-4">Usuario</th>
                   <th className="py-3.5 px-4">Correo</th>
@@ -934,14 +1149,14 @@ export const SuperAdminConsole = ({
                   <th className="py-3.5 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-industrial-800/60 text-slate-300">
+              <tbody className="divide-y divide-slate-100 dark:divide-industrial-800/60 text-slate-800 dark:text-slate-300">
                 {platformUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center text-industrial-400">
+                    <td colSpan={5} className="py-16 text-center text-slate-500 dark:text-industrial-400">
                       <div className="flex flex-col items-center justify-center space-y-2">
-                        <User className="w-8 h-8 text-industrial-600" />
-                        <p className="text-sm font-semibold text-white">No hay usuarios registrados todavía</p>
-                        <p className="text-xs text-industrial-500">
+                        <User className="w-8 h-8 text-slate-400 dark:text-industrial-600" />
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">No hay usuarios registrados todavía</p>
+                        <p className="text-xs text-slate-500 dark:text-industrial-500">
                           Cualquier persona que inicie sesión con Google o Correo aparecerá aquí automáticamente.
                         </p>
                       </div>
@@ -953,7 +1168,7 @@ export const SuperAdminConsole = ({
                     const isSA = isPlatformSuperadminEmail(u.email) || u.role === 'superadmin';
 
                     return (
-                      <tr key={u.uid} className="hover:bg-noir-800/50 transition-colors">
+                      <tr key={u.uid} className="hover:bg-slate-50 dark:hover:bg-noir-800/50 transition-colors">
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2.5">
                             <img
@@ -962,25 +1177,25 @@ export const SuperAdminConsole = ({
                                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
                               }
                               alt={u.displayName}
-                              className="w-8 h-8 rounded-full border border-gold-500/30 object-cover"
+                              className="w-8 h-8 rounded-full border border-slate-300 dark:border-gold-500/30 object-cover"
                             />
                             <div>
-                              <div className="font-bold text-white text-xs">{u.displayName || 'Sin Nombre'}</div>
-                              <div className="text-[10px] text-industrial-500 font-mono">
+                              <div className="font-bold text-slate-900 dark:text-white text-xs">{u.displayName || 'Sin Nombre'}</div>
+                              <div className="text-[10px] text-slate-400 dark:text-industrial-500 font-mono">
                                 UID: {u.uid.slice(0, 10)}...
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-slate-300">{u.email}</td>
+                        <td className="py-3.5 px-4 font-mono text-slate-700 dark:text-slate-300 font-medium">{u.email}</td>
                         <td className="py-3.5 px-4">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase border ${
                               isSA
-                                ? 'bg-amber-500/15 text-gold-300 border-gold-500/30'
+                                ? 'bg-amber-500/15 text-amber-800 dark:text-gold-300 border-amber-500/30'
                                 : u.role === 'admin'
-                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                                : 'bg-industrial-800 text-industrial-400 border-industrial-700'
+                                ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-slate-100 text-slate-600 dark:bg-industrial-800 dark:text-industrial-400 border-slate-200 dark:border-industrial-700'
                             }`}
                           >
                             {isSA ? '👑 SUPERADMIN' : u.role === 'admin' ? '💈 ADMIN EMPRESA' : '👤 USUARIO'}
@@ -988,14 +1203,14 @@ export const SuperAdminConsole = ({
                         </td>
                         <td className="py-3.5 px-4">
                           {isSA ? (
-                            <span className="text-xs text-gold-400/80 font-mono">Global (Acceso a Todas)</span>
+                            <span className="text-xs text-amber-700 dark:text-gold-400/80 font-mono font-bold">Global (Acceso a Todas)</span>
                           ) : assignedCompany ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                              <span className="font-semibold text-white">{assignedCompany.name}</span>
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="font-bold text-slate-900 dark:text-white">{assignedCompany.name}</span>
                             </div>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit">
                               <Clock className="w-2.5 h-2.5" />
                               Sin Asignar (Cuarentena)
                             </span>
@@ -1005,12 +1220,13 @@ export const SuperAdminConsole = ({
                           {!isSA && (
                             <div className="flex items-center justify-end gap-1.5">
                               <button
+                                type="button"
                                 onClick={() => {
                                   setSelectedUserForAssign(u);
                                   setTargetCompanyId(u.companyId || (tenants[0]?.id || ''));
                                   setTargetRole(u.role === 'admin' ? 'admin' : 'user');
                                 }}
-                                className="px-2.5 py-1.5 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 border border-gold-500/30 text-gold-300 text-xs font-bold transition-colors flex items-center gap-1"
+                                className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-gold-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
                                 title="Asignar a Empresa"
                               >
                                 <Building2 className="w-3 h-3" />
@@ -1019,8 +1235,9 @@ export const SuperAdminConsole = ({
 
                               {u.companyId && (
                                 <button
+                                  type="button"
                                   onClick={() => handleUnassignUser(u)}
-                                  className="px-2 py-1.5 rounded-lg bg-industrial-800 hover:bg-industrial-700 text-industrial-300 text-xs transition-colors"
+                                  className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-industrial-800 dark:hover:bg-industrial-700 text-slate-700 dark:text-industrial-300 text-xs font-semibold transition-colors cursor-pointer"
                                   title="Desvincular de la empresa"
                                 >
                                   Desvincular
@@ -1028,8 +1245,9 @@ export const SuperAdminConsole = ({
                               )}
 
                               <button
+                                type="button"
                                 onClick={() => handleDeleteUser(u)}
-                                className="p-1.5 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-400 hover:bg-rose-900/50 transition-colors"
+                                className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
                                 title="Eliminar usuario de la plataforma"
                               >
                                 <XCircle className="w-3.5 h-3.5" />

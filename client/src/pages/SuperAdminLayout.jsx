@@ -43,30 +43,30 @@ export const SuperAdminLayout = ({ onExitSuperAdmin, embedded = true }) => {
   const content = (
     <div className="space-y-6 animate-fadeIn pb-10">
       {/* Control Plane Header Banner */}
-      <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-r from-noir-900 via-noir-900 to-noir-950 border border-gold-500/25 shadow-lg">
+      <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-gradient-to-r dark:from-noir-900 dark:via-noir-900 dark:to-noir-950 border border-slate-200 dark:border-gold-500/25 shadow-sm dark:shadow-lg transition-colors">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Título y Badge */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-lg shadow-glow-gold flex-shrink-0">
-              <Crown className="w-5 h-5 text-noir-950" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 dark:from-gold-600 dark:to-gold-400 flex items-center justify-center font-display font-black text-slate-950 text-lg shadow-sm dark:shadow-glow-gold flex-shrink-0">
+              <Crown className="w-5 h-5 text-slate-950" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display font-black text-white text-base md:text-lg tracking-wide">
+                <h1 className="font-display font-black text-slate-900 dark:text-white text-base md:text-lg tracking-wide">
                   Consola SuperAdmin
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-gold-500/15 border border-gold-500/30 text-gold-300 text-[10px] font-mono font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 dark:bg-gold-500/15 dark:border-gold-500/30 text-amber-800 dark:text-gold-300 text-[10px] font-mono font-bold flex items-center gap-1">
                   CASA NODRIZA
                 </span>
               </div>
-              <p className="text-[11px] text-industrial-400 font-mono mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono mt-0.5">
                 Control maestro de barberías, asignación de cuentas y métricas de red.
               </p>
             </div>
           </div>
 
-          {/* Pestañas de Sub-navegación */}
-          <nav className="flex items-center gap-1 bg-noir-950 border border-industrial-800 rounded-xl p-1 overflow-x-auto">
+          {/* Pestañas de Sub-navegación Responsivas (Sin scroll molesto) */}
+          <nav className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl p-1 w-full lg:w-auto">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
@@ -74,17 +74,17 @@ export const SuperAdminLayout = ({ onExitSuperAdmin, embedded = true }) => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
-                      : 'text-industrial-400 hover:text-white hover:bg-noir-900'
+                      ? 'bg-amber-500 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
+                      : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-noir-900'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-noir-950' : 'text-gold-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-amber-600 dark:text-gold-400'}`} />
                   <span>{item.label}</span>
                   {item.badge !== undefined && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                      isActive ? 'bg-noir-950 text-gold-300' : 'bg-industrial-800 text-industrial-300'
+                      isActive ? 'bg-slate-950 text-amber-300 dark:bg-noir-950 dark:text-gold-300' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-industrial-300'
                     }`}>
                       {item.badge}
                     </span>
@@ -95,27 +95,29 @@ export const SuperAdminLayout = ({ onExitSuperAdmin, embedded = true }) => {
           </nav>
 
           {/* Acciones Rápidas */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-noir-950 border border-gold-500/30 text-[11px] font-mono text-gold-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end flex-shrink-0">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-amber-500/30 dark:border-gold-500/30 text-[11px] font-mono text-amber-800 dark:text-gold-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Nodo: Colombia</span>
             </div>
 
-            <button
-              onClick={handleRefreshMaster}
-              title="Sincronizar toda la red"
-              className="p-2 rounded-xl bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white hover:border-gold-500/40 transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-gold-400' : ''}`} />
-            </button>
+            <div className="flex items-center gap-2 ml-auto sm:ml-0">
+              <button
+                onClick={handleRefreshMaster}
+                title="Sincronizar toda la red"
+                className="p-2 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white hover:border-amber-500/40 dark:hover:border-gold-500/40 transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-amber-600 dark:text-gold-400' : ''}`} />
+              </button>
 
-            <button
-              onClick={() => setShowCreateCompanyModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider transition-all shadow-glow-gold cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva Barbería</span>
-            </button>
+              <button
+                onClick={() => setShowCreateCompanyModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 text-slate-950 dark:text-noir-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm dark:shadow-glow-gold cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nueva Barbería</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -168,16 +170,16 @@ const AlertBar = ({ tenants }) => {
   if (critical.length === 0 && expiring.length === 0) return null;
 
   return (
-    <div className="bg-amber-950/40 border-b border-amber-500/30 px-6 py-2.5 flex items-center gap-4 overflow-x-auto text-xs">
-      <Bell className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 animate-bounce" />
+    <div className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-500/30 px-4 sm:px-6 py-2.5 flex items-center gap-3 overflow-x-auto scrollbar-none text-xs rounded-xl shadow-xs">
+      <Bell className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 animate-bounce" />
       {critical.length > 0 && (
-        <span className="text-rose-300 font-bold flex-shrink-0">
+        <span className="text-rose-800 dark:text-rose-300 font-bold flex-shrink-0">
           🚨 {critical.length} {critical.length === 1 ? 'barbería' : 'barberías'} en mora/suspendida:
           {critical.map(t => <span key={t.id} className="ml-1 font-mono bg-rose-500/20 px-1.5 py-0.5 rounded">{t.name}</span>)}
         </span>
       )}
       {expiring.length > 0 && (
-        <span className="text-amber-300 font-bold flex-shrink-0">
+        <span className="text-amber-800 dark:text-amber-300 font-bold flex-shrink-0">
           ⏰ {expiring.length} {expiring.length === 1 ? 'barbería vence' : 'barberías vencen'} en ≤ 3 días:
           {expiring.map(t => <span key={t.id} className="ml-1 font-mono bg-amber-500/20 px-1.5 py-0.5 rounded">{t.name}</span>)}
         </span>
@@ -215,43 +217,43 @@ const SuperAdminAnalytics = ({ tenants }) => {
   const statCards = [
     { label: 'MRR Total', value: `$${stats.mrr} USD`, sub: `≈ $${(stats.mrr * 4200).toLocaleString('es-CO')} COP`, color: 'gold' },
     { label: 'Barberías Activas', value: stats.active, sub: `${stats.trial} en período de prueba`, color: 'emerald' },
-    { label: 'Por Vencer ≤ 3 días', value: stats.expiringSoon, sub: 'Requieren recordatorio', color: 'amber' },
+    { label: 'Por Vencer ≤ 3 días', value: stats.expiringSoon, sub: 'Requieren recordatorio preventivo', color: 'amber' },
     { label: 'En Mora / Suspendidas', value: stats.pastDue + stats.suspended, sub: `${stats.pastDue} en mora · ${stats.suspended} suspendidas`, color: 'rose' },
   ];
 
   const colorMap = {
-    gold:    { border: 'border-gold-500/30',    text: 'text-gold-400',    bg: 'bg-gold-500/10' },
-    emerald: { border: 'border-emerald-500/30', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    amber:   { border: 'border-amber-500/30',   text: 'text-amber-400',   bg: 'bg-amber-500/10' },
-    rose:    { border: 'border-rose-500/30',    text: 'text-rose-400',    bg: 'bg-rose-500/10' },
+    gold:    { border: 'border-amber-300 dark:border-gold-500/30',    text: 'text-amber-800 dark:text-gold-400',    num: 'text-slate-900 dark:text-white' },
+    emerald: { border: 'border-emerald-300 dark:border-emerald-500/30', text: 'text-emerald-800 dark:text-emerald-400', num: 'text-slate-900 dark:text-white' },
+    amber:   { border: 'border-amber-300 dark:border-amber-500/30',   text: 'text-amber-700 dark:text-amber-400',   num: 'text-amber-600 dark:text-amber-400' },
+    rose:    { border: 'border-rose-300 dark:border-rose-500/30',    text: 'text-rose-700 dark:text-rose-400',    num: 'text-rose-600 dark:text-rose-400' },
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn">
       <div>
-        <h2 className="text-2xl font-display font-black text-white mb-1">Métricas Globales</h2>
-        <p className="text-sm text-industrial-400">Visión en tiempo real de toda la red de barberías BarberPulse.</p>
+        <h2 className="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white mb-1">Métricas Globales</h2>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-industrial-400">Visión en tiempo real de toda la red de barberías BarberPulse.</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {statCards.map(card => {
           const c = colorMap[card.color];
           return (
-            <div key={card.label} className={`p-5 rounded-2xl bg-noir-900 border ${c.border}`}>
-              <div className={`text-xs font-mono uppercase tracking-wider mb-2 ${c.text}`}>{card.label}</div>
-              <div className={`text-3xl font-display font-black ${c.text}`}>{card.value}</div>
-              <div className="text-[11px] text-industrial-400 mt-1">{card.sub}</div>
+            <div key={card.label} className={`p-4 sm:p-5 rounded-2xl bg-white dark:bg-noir-900 border ${c.border} shadow-sm`}>
+              <div className={`text-xs font-mono uppercase tracking-wider mb-2 font-bold ${c.text}`}>{card.label}</div>
+              <div className={`text-2xl sm:text-3xl font-display font-black ${c.num}`}>{card.value}</div>
+              <div className="text-[11px] text-slate-500 dark:text-industrial-400 mt-1">{card.sub}</div>
             </div>
           );
         })}
       </div>
 
       {/* Distribución por municipio */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-noir-900 border border-industrial-800 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-gold-400" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Scissors className="w-4 h-4 text-amber-600 dark:text-gold-400" />
             Distribución por Municipio
           </h3>
           <div className="space-y-3">

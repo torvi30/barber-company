@@ -315,3 +315,4 @@ export const BarberPinModal = ({
 };
 
 export default BarberPinModal;
+
