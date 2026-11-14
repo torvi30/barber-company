@@ -105,6 +105,7 @@ export const ReceptionQueue = () => {
   const [allowPast, setAllowPast] = useState(false);
   const [mobileTab, setMobileTab] = useState('waiting'); // 'waiting' | 'in_chair' | 'completed'
   const [selectedBarberFilter, setSelectedBarberFilter] = useState('ALL'); // 'ALL' | barberId
+  const [isSillonMenuOpen, setIsSillonMenuOpen] = useState(false);
 
   // Auto-switch de fecha y animación inmediata cuando entra una nueva reserva en tiempo real
   useEffect(() => {
@@ -570,6 +571,8 @@ export const ReceptionQueue = () => {
     ? dayAppointments
     : dayAppointments.filter(a => a.barberId === selectedBarberFilter || a.barberName === selectedBarberFilter);
 
+  const activeBarberObj = barbers.find(b => b.id === selectedBarberFilter || b.name === selectedBarberFilter);
+
   const waitingQueue = filteredAppointments.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
   const inChairList = filteredAppointments.filter(a => a.status === 'IN_CHAIR');
   const completedList = filteredAppointments.filter(a => a.status === 'COMPLETED');
@@ -802,58 +805,105 @@ export const ReceptionQueue = () => {
         )}
       </div>
 
-      {/* Barra de Sillones / Barberos (Para 2 o 3 barberos con control total e intuitivo) */}
+      {/* Filtro Compacto de Sillón / Barbero (Minimalista sin scroll molesto) */}
       {barbers && barbers.length > 0 && (
-        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-2 sm:p-2.5 shadow-sm flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-          <span className="text-[11px] font-bold text-slate-500 dark:text-industrial-400 px-2 whitespace-nowrap flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-gold-500" />
-            <span>Sillón:</span>
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setSelectedBarberFilter('ALL')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedBarberFilter === 'ALL'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm dark:bg-gold-500 dark:text-noir-950'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>👥 Todos</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-              selectedBarberFilter === 'ALL' ? 'bg-slate-950/15 text-slate-950 dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
-            }`}>
-              {dayAppointments.length}
-            </span>
-          </button>
-
-          {barbers.map((b) => {
-            const bApts = dayAppointments.filter(a => a.barberId === b.id || a.barberName === b.name);
-            const bWaiting = bApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED').length;
-            const isSelected = selectedBarberFilter === b.id || selectedBarberFilter === b.name;
-
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setSelectedBarberFilter(isSelected ? 'ALL' : b.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm dark:bg-gold-500 dark:text-noir-950'
-                    : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title={`Ver únicamente los turnos asignados a ${b.name}`}
-              >
-                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-slate-950 dark:bg-noir-950' : 'bg-emerald-500'} flex-shrink-0`}></span>
-                <span>{b.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                  isSelected ? 'bg-slate-950/15 text-slate-950 dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
-                }`}>
-                  {bWaiting}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsSillonMenuOpen(!isSillonMenuOpen)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-xs hover:border-amber-500 dark:hover:border-gold-500/50 transition-all cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+              <span className="text-slate-400 dark:text-industrial-400">Sillón:</span>
+              {selectedBarberFilter === 'ALL' ? (
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Todos</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-noir-950 text-slate-700 dark:text-slate-300 font-mono font-bold border border-slate-200 dark:border-industrial-800">
+                    {dayAppointments.length}
+                  </span>
                 </span>
-              </button>
-            );
-          })}
+              ) : (
+                <span className="font-bold text-amber-600 dark:text-gold-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>{activeBarberObj?.name || 'Barbero'}</span>
+                </span>
+              )}
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-industrial-500 ml-0.5" />
+            </button>
+
+            {/* Menú Desplegable Flotante */}
+            {isSillonMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsSillonMenuOpen(false)}
+                />
+                <div className="absolute left-0 mt-1.5 w-64 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-xl p-1.5 z-40 animate-fadeIn">
+                  <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-mono font-bold text-slate-400 dark:text-industrial-500 border-b border-slate-100 dark:border-industrial-800 mb-1">
+                    Filtrar por sillón / barbero
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedBarberFilter('ALL'); setIsSillonMenuOpen(false); }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      selectedBarberFilter === 'ALL'
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-noir-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>👥</span>
+                      <span>Todos los sillones</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold bg-slate-950/15">
+                      {dayAppointments.length}
+                    </span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100 dark:border-industrial-800" />
+
+                  {barbers.map((b) => {
+                    const bApts = dayAppointments.filter(a => a.barberId === b.id || a.barberName === b.name);
+                    const bWaiting = bApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED').length;
+                    const isSelected = selectedBarberFilter === b.id || selectedBarberFilter === b.name;
+
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => { setSelectedBarberFilter(b.id); setIsSillonMenuOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-noir-800'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                          <span className="truncate">{b.name}</span>
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold bg-slate-950/15">
+                          {bWaiting} en espera
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {selectedBarberFilter !== 'ALL' && (
+            <button
+              type="button"
+              onClick={() => setSelectedBarberFilter('ALL')}
+              className="text-xs text-amber-600 dark:text-gold-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <span>✕ Quitar filtro</span>
+            </button>
+          )}
         </div>
       )}
 
