@@ -510,6 +510,106 @@
   "appointments": {
     "tenant_imperio_barber_01": [
       {
+        "id": "apt-1794672424690",
+        "barberId": "barber_imp_1",
+        "barberName": "Mateo Restrepo",
+        "clientName": "bint yuii",
+        "clientPhone": "573225466673",
+        "clientEmail": "",
+        "serviceName": "Corte y Cera",
+        "durationMinutes": 35,
+        "price": 32000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "IN_CHAIR",
+        "date": "2026-11-14",
+        "time": "12:00",
+        "notes": "el 7",
+        "source": "PUBLIC_LANDING",
+        "createdAt": "2026-11-14T16:07:04.690Z",
+        "completedAt": null
+      },
+      {
+        "id": "apt-1794671081383",
+        "barberId": "barber_imp_2",
+        "barberName": "Sebastián Gómez",
+        "clientName": "andres felipe",
+        "clientPhone": "573225466673",
+        "clientEmail": "",
+        "serviceName": "Corte",
+        "durationMinutes": 45,
+        "price": 25000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "COMPLETED",
+        "date": "2026-11-14",
+        "time": "11:00",
+        "notes": "",
+        "createdAt": "2026-11-14T15:44:41.383Z",
+        "completedAt": "2026-11-14T16:00:57.332Z"
+      },
+      {
+        "id": "apt-1794671030712",
+        "barberId": "barber_imp_2",
+        "barberName": "Sebastián Gómez",
+        "clientName": "jaime andres",
+        "clientPhone": "573225466673",
+        "clientEmail": "",
+        "serviceName": "Barba",
+        "durationMinutes": 45,
+        "price": 18000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "WAITING",
+        "date": "2026-11-16",
+        "time": "09:30",
+        "notes": "",
+        "createdAt": "2026-11-14T15:43:50.712Z",
+        "completedAt": null
+      },
+      {
+        "id": "apt-1794668224723",
+        "barberId": "barber_imp_2",
+        "barberName": "Sebastián Gómez",
+        "clientName": "victor restrepo",
+        "clientPhone": "3225466673",
+        "clientEmail": "",
+        "serviceName": "Barba",
+        "durationMinutes": 20,
+        "price": 18000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "COMPLETED",
+        "date": "2026-11-14",
+        "time": "12:30",
+        "notes": "quiero el 7 ",
+        "source": "PUBLIC_LANDING",
+        "createdAt": "2026-11-14T14:57:04.723Z",
+        "completedAt": "2026-11-14T16:01:24.924Z",
+        "reminderSent": true,
+        "reminderSentAt": "2026-11-14T15:30:00.020Z",
+        "whatsappMessageId": "mock_wamid_1794670200020_86qpe"
+      },
+      {
+        "id": "apt-1794668165376",
+        "barberId": "barber_imp_1",
+        "barberName": "Mateo Restrepo",
+        "clientName": "andres pardo",
+        "clientPhone": "3225466673",
+        "clientEmail": "",
+        "serviceName": "Barba",
+        "durationMinutes": 45,
+        "price": 18000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "WAITING",
+        "date": "2026-11-16",
+        "time": "14:00",
+        "notes": "",
+        "createdAt": "2026-11-14T14:56:05.376Z",
+        "completedAt": null
+      },
+      {
         "id": "apt-1794640715332",
         "barberId": "barber_imp_1",
         "barberName": "Mateo Restrepo",
@@ -521,13 +621,16 @@
         "price": 18000,
         "tip": 0,
         "paymentMethod": "CASH",
-        "status": "SCHEDULED",
+        "status": "IN_CHAIR",
         "date": "2026-11-14",
         "time": "11:00",
         "notes": "quiero que sea el 7 como la otra vez ",
         "source": "PUBLIC_LANDING",
         "createdAt": "2026-11-14T07:18:35.332Z",
-        "completedAt": null
+        "completedAt": null,
+        "reminderSent": true,
+        "reminderSentAt": "2026-11-14T14:00:00.003Z",
+        "whatsappMessageId": "mock_wamid_1794664800003_1a4z7"
       },
       {
         "id": "apt-1794640564643",
@@ -541,12 +644,15 @@
         "price": 25000,
         "tip": 0,
         "paymentMethod": "CASH",
-        "status": "WAITING",
+        "status": "COMPLETED",
         "date": "2026-11-14",
         "time": "09:30",
         "notes": "",
         "createdAt": "2026-11-14T07:16:04.643Z",
-        "completedAt": null
+        "completedAt": "2026-11-14T16:01:08.034Z",
+        "reminderSent": true,
+        "reminderSentAt": "2026-11-14T12:30:00.005Z",
+        "whatsappMessageId": "mock_wamid_1794659400005_tebud"
       },
       {
         "id": "apt-1794638832523",
@@ -565,7 +671,10 @@
         "time": "09:00",
         "notes": "",
         "createdAt": "2026-11-14T06:47:12.523Z",
-        "completedAt": null
+        "completedAt": null,
+        "reminderSent": true,
+        "reminderSentAt": "2026-11-14T12:00:00.002Z",
+        "whatsappMessageId": "mock_wamid_1794657600002_60rcp"
       },
       {
         "id": "apt-1794636254416",
@@ -645,7 +754,27 @@
         "completedAt": null
       }
     ],
-    "tenant_la_fortaleza_02": [],
+    "tenant_la_fortaleza_02": [
+      {
+        "id": "apt-1794673654233",
+        "barberId": "barber_fort_1",
+        "barberName": "Camilo Valencia",
+        "clientName": "andres felipe",
+        "clientPhone": "",
+        "clientEmail": "",
+        "serviceName": "Corte",
+        "durationMinutes": 45,
+        "price": 25000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "WAITING",
+        "date": "2026-11-14",
+        "time": "12:00",
+        "notes": "",
+        "createdAt": "2026-11-14T16:27:34.233Z",
+        "completedAt": null
+      }
+    ],
     "tenant_netx_baber_483": []
   },
   "inventory": {
@@ -809,6 +938,86 @@
         "imageUrl": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=400&q=80",
         "isPublic": true
       }
+    ],
+    "tenant_la_fortaleza_02": [
+      {
+        "id": "prod-01",
+        "name": "Pomada Mate Fijación Fuerte (100ml)",
+        "sku": "POM-MAT-01",
+        "category": "Pomadas & Ceras",
+        "description": "Acabado natural sin brillo, fijación alta para peinados clásicos y degradados todo el día.",
+        "unitPrice": 35000,
+        "costPrice": 18000,
+        "stock": 15,
+        "minStock": 4,
+        "imageUrl": "https://images.unsplash.com/photo-1597852074816-d933c4d2b988?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-02",
+        "name": "Aceite Orgánico Barba & Madera de Cedro (30ml)",
+        "sku": "OIL-BAR-02",
+        "category": "Cuidado Barba",
+        "description": "Nutre la fibra capilar, hidrata la piel bajo la barba y aporta brillo con aroma a cedro.",
+        "unitPrice": 32000,
+        "costPrice": 15000,
+        "stock": 12,
+        "minStock": 3,
+        "imageUrl": "https://images.unsplash.com/photo-1621607512214-68297480165e?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-03",
+        "name": "Bálsamo Calmante Post-Afeitado Eucalipto (150ml)",
+        "sku": "BAL-AFT-03",
+        "category": "Afeitado & Afters",
+        "description": "Fórmula refrescante con aloe vera y eucalipto que cierra poros y previene irritación tras la navaja.",
+        "unitPrice": 28000,
+        "costPrice": 14000,
+        "stock": 10,
+        "minStock": 3,
+        "imageUrl": "https://images.unsplash.com/photo-1556228720-195a672e8a03?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-04",
+        "name": "Cera en Polvo Voluminizadora Matte Dust (20g)",
+        "sku": "POW-VOL-04",
+        "category": "Pomadas & Ceras",
+        "description": "Volumen instantáneo y textura mate ideal para cabellos finos o peinados desestructurados.",
+        "unitPrice": 25000,
+        "costPrice": 12000,
+        "stock": 18,
+        "minStock": 5,
+        "imageUrl": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-05",
+        "name": "Shaving Gel Precisión Transparente (250ml)",
+        "sku": "GEL-SHV-05",
+        "category": "Afeitado & Afters",
+        "description": "Gel no espumante que permite visibilidad perfecta para delineados precisos de barba y patillas.",
+        "unitPrice": 24000,
+        "costPrice": 11000,
+        "stock": 14,
+        "minStock": 4,
+        "imageUrl": "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?fit=crop&w=400&q=80",
+        "isPublic": true
+      },
+      {
+        "id": "prod-06",
+        "name": "Navaja Tradicional Barbería Acero Inoxidable",
+        "sku": "NAV-ACE-06",
+        "category": "Herramientas & Navajas",
+        "description": "Mango ergonómico con sujeción firme de media cuchilla estándar para rituales clásicos.",
+        "unitPrice": 45000,
+        "costPrice": 22000,
+        "stock": 8,
+        "minStock": 2,
+        "imageUrl": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=400&q=80",
+        "isPublic": true
+      }
     ]
   },
   "cashClosures": {},
@@ -821,11 +1030,11 @@
         "phone": "3225466673",
         "email": "victortamayopine@gmail.com",
         "tier": "FREQUENT",
-        "totalVisits": 2,
-        "totalSpent": 12000,
-        "lastVisit": "2026-11-13",
-        "preferredBarberId": "barber-01",
-        "preferredBarberName": "Barbero Asignado",
+        "totalVisits": 3,
+        "totalSpent": 30000,
+        "lastVisit": "2026-11-14",
+        "preferredBarberId": "barber_imp_2",
+        "preferredBarberName": "Sebastián Gómez",
         "styleProfile": {
           "haircutType": "Corte",
           "guardSides": "A convenir en cita",
@@ -835,6 +1044,26 @@
           "technicalNotes": "Cliente registrado automáticamente al agendar turno (2026-11-14 15:30)"
         },
         "visitHistory": [
+          {
+            "id": "vis-1794672084924",
+            "date": "2026-11-14",
+            "time": "12:30",
+            "service": "Barba",
+            "barber": "Sebastián Gómez",
+            "price": 18000,
+            "status": "COMPLETED",
+            "recordedAt": "2026-11-14T16:01:24.924Z"
+          },
+          {
+            "id": "vis-1794668165378",
+            "date": "2026-11-16",
+            "time": "14:00",
+            "service": "Barba",
+            "barber": "Mateo Restrepo",
+            "price": 18000,
+            "status": "WAITING",
+            "recordedAt": "2026-11-14T14:56:05.378Z"
+          },
           {
             "id": "vis-1794636254416",
             "date": "2026-11-13",
@@ -877,7 +1106,7 @@
           }
         ],
         "createdAt": "2026-11-14T04:18:59.151Z",
-        "updatedAt": "2026-11-14T06:04:14.416Z"
+        "updatedAt": "2026-11-14T16:01:24.924Z"
       },
       {
         "id": "cli-1794638832524",
@@ -915,14 +1144,14 @@
       {
         "id": "cli-1794640564644",
         "name": "victor tamayo",
-        "phone": "322222222222",
+        "phone": "3225466733",
         "email": "",
-        "tier": "NEW",
-        "totalVisits": 1,
-        "totalSpent": 0,
+        "tier": "FREQUENT",
+        "totalVisits": 2,
+        "totalSpent": 25000,
         "lastVisit": "2026-11-14",
-        "preferredBarberId": "barber_imp_1",
-        "preferredBarberName": "Mateo Restrepo",
+        "preferredBarberId": "barber_imp_2",
+        "preferredBarberName": "Sebastián Gómez",
         "styleProfile": {
           "haircutType": "Barba y Cejas",
           "guardSides": "A convenir en cita",
@@ -943,18 +1172,72 @@
             "recordedAt": "2026-11-14T07:18:35.333Z"
           },
           {
-            "id": "vis-1794640564644",
+            "id": "vis-1794672068034",
             "date": "2026-11-14",
             "time": "09:30",
             "service": "Barba y Cejas",
             "barber": "Sebastián Gómez",
             "price": 25000,
-            "status": "WAITING",
-            "recordedAt": "2026-11-14T07:16:04.644Z"
+            "status": "COMPLETED",
+            "recordedAt": "2026-11-14T16:01:08.034Z"
           }
         ],
         "createdAt": "2026-11-14T07:16:04.644Z",
-        "updatedAt": "2026-11-14T07:18:35.333Z"
+        "updatedAt": "2026-11-14T16:01:08.034Z"
+      },
+      {
+        "id": "cli-1794671030714",
+        "name": "jaime andres",
+        "phone": "573225466673",
+        "email": "",
+        "tier": "FREQUENT",
+        "totalVisits": 2,
+        "totalSpent": 25000,
+        "lastVisit": "2026-11-14",
+        "preferredBarberId": "barber_imp_1",
+        "preferredBarberName": "Mateo Restrepo",
+        "styleProfile": {
+          "haircutType": "Barba",
+          "guardSides": "A convenir en cita",
+          "topLength": "Tijera normal",
+          "beardNotes": "Sin notas aún",
+          "productPreference": "Pomada Mate",
+          "technicalNotes": "Cliente registrado automáticamente al agendar turno (2026-11-16 09:30)"
+        },
+        "visitHistory": [
+          {
+            "id": "vis-1794672424690",
+            "date": "2026-11-14",
+            "time": "12:00",
+            "service": "Corte y Cera",
+            "barber": "Mateo Restrepo",
+            "price": 32000,
+            "status": "SCHEDULED",
+            "recordedAt": "2026-11-14T16:07:04.690Z"
+          },
+          {
+            "id": "vis-1794672057332",
+            "date": "2026-11-14",
+            "time": "11:00",
+            "service": "Corte",
+            "barber": "Sebastián Gómez",
+            "price": 25000,
+            "status": "COMPLETED",
+            "recordedAt": "2026-11-14T16:00:57.332Z"
+          },
+          {
+            "id": "vis-1794671030714",
+            "date": "2026-11-16",
+            "time": "09:30",
+            "service": "Barba",
+            "barber": "Sebastián Gómez",
+            "price": 18000,
+            "status": "WAITING",
+            "recordedAt": "2026-11-14T15:43:50.714Z"
+          }
+        ],
+        "createdAt": "2026-11-14T15:43:50.714Z",
+        "updatedAt": "2026-11-14T16:07:04.690Z"
       }
     ]
   },

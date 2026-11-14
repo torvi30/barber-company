@@ -8,7 +8,8 @@ import {
   getBarberPersonalDashboard,
   updateBarberStatus,
   updateBarberSchedule,
-  getCommissionSummary
+  getCommissionSummary,
+  verifyBarberPin
 } from '../controllers/commissionController.js';
 
 const router = Router();
@@ -16,6 +17,7 @@ const router = Router();
 // Barberos del tenant (CRUD Completo)
 router.get('/barbers', getBarbers);
 router.post('/barbers', createBarber);
+router.post('/barbers/verify-pin', verifyBarberPin);
 router.get('/barbers/:id', getBarberById);
 router.patch('/barbers/:id', updateBarber);
 router.delete('/barbers/:id', deleteBarber);

@@ -38,6 +38,7 @@ export const api = {
   createPublicBooking: (slug, bookingData) => apiClient(`/public/barbershop/${slug}/book`, { method: 'POST', body: bookingData }, null),
   getPublicProducts: (slug) => apiClient(`/public/barbershop/${slug}/products`, { method: 'GET' }, null),
   createPublicOrder: (slug, orderData) => apiClient(`/public/barbershop/${slug}/orders`, { method: 'POST', body: orderData }, null),
+  barberPinLogin: (slug, barberId, pin) => apiClient(slug ? `/public/barbershop/${slug}/barber-pin-login` : '/public/barber-pin-login', { method: 'POST', body: { barberId, pin } }, null),
 
   // --- Citas / Turnos (Staff / Operativo) ---
   getAppointments: (tenantId, date) => apiClient(`/appointments${date ? `?date=${date}` : ''}`, { method: 'GET' }, tenantId),
@@ -58,6 +59,7 @@ export const api = {
   // --- Barberos, Portal Staff & Horarios (Rostering & CRUD) ---
   getBarbers: (tenantId) => apiClient('/commissions/barbers', { method: 'GET' }, tenantId),
   getBarberById: (tenantId, id) => apiClient(`/commissions/barbers/${id}`, { method: 'GET' }, tenantId),
+  verifyBarberPin: (tenantId, barberId, pin) => apiClient('/commissions/barbers/verify-pin', { method: 'POST', body: { barberId, pin } }, tenantId),
   createBarber: (tenantId, barberData) => apiClient('/commissions/barbers', { method: 'POST', body: barberData }, tenantId),
   updateBarber: (tenantId, id, barberData) => apiClient(`/commissions/barbers/${id}`, { method: 'PATCH', body: barberData }, tenantId),
   deleteBarber: (tenantId, id) => apiClient(`/commissions/barbers/${id}`, { method: 'DELETE' }, tenantId),

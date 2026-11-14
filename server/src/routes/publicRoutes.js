@@ -4,7 +4,8 @@ import {
   getPublicSlots,
   createPublicBooking,
   getPublicProducts,
-  createPublicOrder
+  createPublicOrder,
+  publicBarberPinLogin
 } from '../controllers/publicController.js';
 import { registerNewBusiness } from '../controllers/onboarding.controller.js';
 
@@ -12,6 +13,10 @@ const router = Router();
 
 // Alta y Registro de Nuevos Negocios (Wizard Onboarding con 14 días gratis)
 router.post('/onboarding', registerNewBusiness);
+
+// Acceso / Login de Barbero con PIN (Móvil)
+router.post('/barbershop/:slug/barber-pin-login', publicBarberPinLogin);
+router.post('/barber-pin-login', publicBarberPinLogin);
 
 // Resolver barbería por su slug (ej: /black-gold o general)
 router.get('/barbershop', getBarbershopBySlug);

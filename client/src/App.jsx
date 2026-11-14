@@ -28,6 +28,25 @@ const AppContent = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState('profile');
 
+  // Sesión Aislada de Barbero (Acceso por PIN de 4 Dígitos sin credenciales de Admin)
+  const [barberSession, setBarberSession] = useState(() => {
+    try {
+      const saved = localStorage.getItem('barberpulse_barber_session');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleBarberLogin = (session) => {
+    setBarberSession(session);
+  };
+
+  const handleLogoutBarber = () => {
+    localStorage.removeItem('barberpulse_barber_session');
+    setBarberSession(null);
+  };
+
   const handleOpenSettings = (tab = 'profile') => {
     setSettingsInitialTab(tab);
     setShowSettingsModal(true);
@@ -52,14 +71,34 @@ const AppContent = () => {
     );
   }
 
-  // Modo público directo para clientes (sin requerir login)
-  if (isLandingMode) {
-    return <Landing onEnterAdmin={() => setIsLandingMode(false)} />;
+  // 1. SI HAY SESIÓN DE BARBERO ACTIVA (PIN): Portal Exclusivo y Blindado del Sillón
+  if (barberSession) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-x-hidden">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto">
+          <BarberPortal
+            standaloneBarberMode={true}
+            barberSession={barberSession}
+            onLogoutBarber={handleLogoutBarber}
+          />
+        </main>
+      </div>
+    );
   }
 
-  // Si no está autenticado, mostramos la pantalla de login con Firebase
+  // 2. Modo público directo para clientes (sin requerir login)
+  if (isLandingMode) {
+    return (
+      <Landing
+        onEnterAdmin={() => setIsLandingMode(false)}
+        onBarberLogin={handleBarberLogin}
+      />
+    );
+  }
+
+  // 3. Si no está autenticado, mostramos la pantalla de login con Firebase
   if (!isAuthenticated) {
-    return <LoginScreen />;
+    return <LoginScreen onBarberLogin={handleBarberLogin} />;
   }
 
   // Si el usuario no es SuperAdmin y no tiene empresa asignada -> Cuarentena (ADR 003)

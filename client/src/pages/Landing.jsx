@@ -3,6 +3,7 @@ import { useBarbershop } from '../context/BarbershopContext';
 import { useTheme } from '../context/ThemeContext';
 import { PublicBookingWizard } from '../components/PublicBookingWizard';
 import { PublicStore } from '../components/PublicStore';
+import { BarberPinModal } from '../components/BarberPinModal';
 import {
   Scissors,
   Award,
@@ -19,11 +20,12 @@ import {
   Moon
 } from 'lucide-react';
 
-export const Landing = ({ onEnterAdmin }) => {
-  const { barbershopInfo, availableTenants, switchTenant } = useBarbershop();
+export const Landing = ({ onEnterAdmin, onBarberLogin }) => {
+  const { barbershopInfo, availableTenants, switchTenant, barbers, tenantId } = useBarbershop();
   const { theme, toggleTheme, isDark } = useTheme();
   const [activeSlug, setActiveSlug] = useState(barbershopInfo?.slug || barbershopInfo?.id || '');
   const [activeTab, setActiveTab] = useState('booking'); // 'booking' | 'store'
+  const [isBarberPinModalOpen, setIsBarberPinModalOpen] = useState(false);
 
   // Sincronizar reactivamente el slug cuando cargue o cambie barbershopInfo
   useEffect(() => {
@@ -78,6 +80,18 @@ export const Landing = ({ onEnterAdmin }) => {
               title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
             >
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+            </button>
+
+            {/* Acceso Barbero con PIN */}
+            <button
+              type="button"
+              onClick={() => setIsBarberPinModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-gold-300 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer shadow-sm"
+              title="Acceso exclusivo al sillón con tu PIN personal"
+            >
+              <Scissors className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400" />
+              <span className="hidden sm:inline">Soy Barbero</span>
+              <span>PIN</span>
             </button>
 
             <button
@@ -194,6 +208,18 @@ export const Landing = ({ onEnterAdmin }) => {
           Powered by BarberPulse OS Multi-Tenant Cloud
         </p>
       </footer>
+
+      {/* Modal de Acceso por PIN del Barbero */}
+      <BarberPinModal
+        isOpen={isBarberPinModalOpen}
+        onClose={() => setIsBarberPinModalOpen(false)}
+        tenantId={tenantId}
+        slug={effectiveSlug}
+        barbers={barbers}
+        onLoginSuccess={(session) => {
+          if (onBarberLogin) onBarberLogin(session);
+        }}
+      />
     </div>
   );
 };

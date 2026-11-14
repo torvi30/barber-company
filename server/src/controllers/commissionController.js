@@ -270,9 +270,10 @@ export const createBarber = async (req, res) => {
       name,
       phone = '',
       email = '',
+      pin = '1234',
       commissionRate = 0.50,
       retailCommissionRate = 0.15,
-      dailyTarget = 120000,
+      dailyTarget = 150000,
       specialties = ['Skin Fade', 'Ritual de Barba'],
       avatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80',
       schedule
@@ -297,9 +298,11 @@ export const createBarber = async (req, res) => {
       name: name.trim(),
       phone: phone ? phone.trim() : '',
       email: email ? email.trim() : '',
+      pin: pin ? String(pin).trim() : '1234',
       commissionRate: Number(commissionRate),
       retailCommissionRate: Number(retailCommissionRate),
       dailyTarget: Number(dailyTarget),
+      dailyGoal: Number(dailyTarget),
       active: true,
       status: 'AVAILABLE',
       avatar: avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80',
@@ -349,6 +352,7 @@ export const updateBarber = async (req, res) => {
       name,
       phone,
       email,
+      pin,
       commissionRate,
       retailCommissionRate,
       dailyTarget,
@@ -373,9 +377,10 @@ export const updateBarber = async (req, res) => {
         ...(name !== undefined && { name: name.trim() }),
         ...(phone !== undefined && { phone: phone.trim() }),
         ...(email !== undefined && { email: email.trim() }),
+        ...(pin !== undefined && { pin: String(pin).trim() }),
         ...(commissionRate !== undefined && { commissionRate: Number(commissionRate) }),
         ...(retailCommissionRate !== undefined && { retailCommissionRate: Number(retailCommissionRate) }),
-        ...(dailyTarget !== undefined && { dailyTarget: Number(dailyTarget) }),
+        ...(dailyTarget !== undefined && { dailyTarget: Number(dailyTarget), dailyGoal: Number(dailyTarget) }),
         ...(specialties !== undefined && { specialties: Array.isArray(specialties) ? specialties : specialties.split(',').map(s => s.trim()) }),
         ...(avatar !== undefined && { avatar }),
         ...(active !== undefined && { active: Boolean(active) }),
@@ -401,9 +406,13 @@ export const updateBarber = async (req, res) => {
       if (name !== undefined) updates.name = name.trim();
       if (phone !== undefined) updates.phone = phone.trim();
       if (email !== undefined) updates.email = email.trim();
+      if (pin !== undefined) updates.pin = String(pin).trim();
       if (commissionRate !== undefined) updates.commissionRate = Number(commissionRate);
       if (retailCommissionRate !== undefined) updates.retailCommissionRate = Number(retailCommissionRate);
-      if (dailyTarget !== undefined) updates.dailyTarget = Number(dailyTarget);
+      if (dailyTarget !== undefined) {
+        updates.dailyTarget = Number(dailyTarget);
+        updates.dailyGoal = Number(dailyTarget);
+      }
       if (specialties !== undefined) updates.specialties = Array.isArray(specialties) ? specialties : specialties.split(',').map(s => s.trim());
       if (avatar !== undefined) updates.avatar = avatar;
       if (active !== undefined) updates.active = Boolean(active);
@@ -456,6 +465,58 @@ export const deleteBarber = async (req, res) => {
     }
   } catch (error) {
     console.error('Error al eliminar barbero:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Validar PIN de acceso rápido del Barbero (4 Dígitos)
+ */
+export const verifyBarberPin = async (req, res) => {
+  try {
+    const barbershopId = req.barbershopId || req.headers['x-barbershop-id'] || req.body.barbershopId;
+    const { barberId, pin } = req.body;
+
+    if (!barberId || !pin) {
+      return res.status(400).json({ success: false, error: 'Barbero y PIN son obligatorios.' });
+    }
+
+    const barbersCollection = getTenantCollection(barbershopId, 'barbers');
+    let barber = null;
+
+    if (isMock) {
+      barber = (barbersCollection.data || []).find(b => b.id === barberId);
+    } else {
+      const doc = await barbersCollection.doc(barberId).get();
+      if (doc.exists) barber = { id: doc.id, ...doc.data() };
+    }
+
+    if (!barber) {
+      return res.status(404).json({ success: false, error: 'Barbero no encontrado.' });
+    }
+
+    // PIN configurado o default 1234
+    const expectedPin = barber.pin || '1234';
+    if (String(pin).trim() !== String(expectedPin).trim()) {
+      return res.status(401).json({ success: false, error: 'PIN incorrecto. Consulta con administración.' });
+    }
+
+    return res.json({
+      success: true,
+      message: `¡Bienvenido ${barber.name}!`,
+      data: {
+        id: barber.id,
+        name: barber.name,
+        avatar: barber.avatar,
+        phone: barber.phone || barber.whatsapp || '',
+        commissionRate: barber.commissionRate || 0.5,
+        dailyTarget: barber.dailyTarget || barber.dailyGoal || 150000,
+        role: 'barber',
+        barbershopId
+      }
+    });
+  } catch (error) {
+    console.error('Error al verificar PIN de barbero:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 };

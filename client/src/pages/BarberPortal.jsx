@@ -38,7 +38,11 @@ import {
   Users,
   AlertCircle,
   Upload,
-  Camera
+  Camera,
+  Lock,
+  KeyRound,
+  LogOut,
+  Target
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -47,18 +51,30 @@ const AVATAR_PRESETS = [
   { label: 'Afro / Rizado', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=300&q=80' }
 ];
 
-export const BarberPortal = () => {
-  const { tenantId, barbers, updateStatus, addBarber, editBarber, removeBarber } = useBarbershop();
-  const [selectedBarberId, setSelectedBarberId] = useState('');
+export const BarberPortal = ({
+  standaloneBarberMode = false,
+  barberSession = null,
+  onLogoutBarber = null
+}) => {
+  const { tenantId, barbers, updateStatus, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
+  const [selectedBarberId, setSelectedBarberId] = useState(
+    standaloneBarberMode && (barberSession?.id || barberSession?.barberId)
+      ? (barberSession.id || barberSession.barberId)
+      : ''
+  );
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('jornada'); // 'jornada' | 'schedule' | 'team'
   const [isBarberDropdownOpen, setIsBarberDropdownOpen] = useState(false);
+  const [visiblePins, setVisiblePins] = useState({});
 
   // Mantener actualizado el barbero seleccionado cuando cambien los barberos del tenant
   useEffect(() => {
+    if (standaloneBarberMode && (barberSession?.id || barberSession?.barberId)) {
+      setSelectedBarberId(barberSession.id || barberSession.barberId);
+      return;
+    }
     if (barbers && barbers.length > 0) {
-      // Si el seleccionado actual no existe en la lista de barberos de este tenant, seleccionar el primero
       const exists = barbers.some(b => b.id === selectedBarberId);
       if (!exists) {
         setSelectedBarberId(barbers[0].id);
@@ -68,7 +84,7 @@ export const BarberPortal = () => {
       setDashboardData(null);
       setLoading(false);
     }
-  }, [barbers, tenantId]);
+  }, [barbers, tenantId, standaloneBarberMode, barberSession]);
 
   // Modal / Drawer de Horarios (Rostering)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -187,8 +203,9 @@ export const BarberPortal = () => {
       name: '',
       phone: '',
       email: '',
+      pin: String(Math.floor(1000 + Math.random() * 9000)),
       commissionRate: 50,
-      dailyTarget: 120000,
+      dailyTarget: 150000,
       specialties: 'Skin Fade, Barba Ritual',
       avatar: AVATAR_PRESETS[0].url
     });
@@ -202,12 +219,38 @@ export const BarberPortal = () => {
       name: b.name || '',
       phone: b.phone || '',
       email: b.email || '',
+      pin: b.pin || '1234',
       commissionRate: Math.round((Number(b.commissionRate) || 0.5) * 100),
-      dailyTarget: b.dailyTarget || 120000,
+      dailyTarget: b.dailyTarget || b.dailyGoal || 150000,
       specialties: Array.isArray(b.specialties) ? b.specialties.join(', ') : (b.specialties || ''),
       avatar: b.avatar || AVATAR_PRESETS[0].url
     });
     setIsBarberFormOpen(true);
+  };
+
+  const handleSendWhatsAppPin = (b) => {
+    const pin = b.pin || '1234';
+    const phone = b.phone || b.whatsapp || '';
+    const shopName = barbershopInfo?.name || 'Imperio Barbershop';
+    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\nDesde tu celular podrás ver tus turnos, marcar descansos y revisar tus comisiones y metas en tiempo real:\n👉 ${window.location.origin}`;
+    const link = buildWhatsAppLink(phone, text);
+    window.open(link, '_blank');
+  };
+
+  const handlePreviewBarberMobile = (b) => {
+    const previewSession = {
+      id: b.id,
+      name: b.name,
+      avatar: b.avatar,
+      phone: b.phone,
+      commissionRate: b.commissionRate,
+      dailyTarget: b.dailyTarget || b.dailyGoal || 150000,
+      role: 'barber',
+      barbershopId: tenantId,
+      barbershopName: barbershopInfo?.name || 'Barbería'
+    };
+    localStorage.setItem('barberpulse_barber_session', JSON.stringify(previewSession));
+    window.location.reload();
   };
 
   const handleSaveBarber = async (e) => {
@@ -220,6 +263,7 @@ export const BarberPortal = () => {
         name: barberFormData.name.trim(),
         phone: barberFormData.phone.trim(),
         email: barberFormData.email.trim(),
+        pin: barberFormData.pin ? String(barberFormData.pin).trim() : '1234',
         commissionRate: Number(barberFormData.commissionRate) / 100,
         dailyTarget: Number(barberFormData.dailyTarget),
         specialties: barberFormData.specialties.split(',').map(s => s.trim()).filter(Boolean),
@@ -239,7 +283,7 @@ export const BarberPortal = () => {
       fetchBarberData();
       await showSuccessAlert(
         editingBarber ? '¡Barbero Actualizado!' : '¡Barbero Registrado!',
-        `El perfil de "${formData.name}" ha sido guardado exitosamente.`
+        `El perfil de "${barberFormData.name}" ha sido guardado exitosamente.`
       );
     } catch (err) {
       await showErrorAlert('Error al Guardar Especialista', err.message);
@@ -446,6 +490,102 @@ export const BarberPortal = () => {
 
   return (
     <div className="space-y-4 animate-fadeIn max-w-6xl mx-auto w-full min-w-0">
+      {/* Cabecera Exclusiva Modo Sillón (Aislado y Seguro para el Barbero) */}
+      {standaloneBarberMode && (
+        <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img
+                src={barber?.avatar || AVATAR_PRESETS[0].url}
+                alt={barber?.name}
+                className="w-13 h-13 rounded-2xl object-cover border-2 border-amber-500 shadow-sm"
+              />
+              <span
+                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-noir-900 ${
+                  barber?.status === 'AVAILABLE' ? 'bg-emerald-500' :
+                  barber?.status === 'IN_SERVICE' ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'
+                }`}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-gold-300 border border-amber-500/30">
+                  Sillón Activo • {commissionDisplay}% Com.
+                </span>
+                <span className="text-xs text-slate-400">|</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-industrial-400">
+                  {barbershopInfo?.name || barberSession?.barbershopName || 'Imperio Barbershop'}
+                </span>
+              </div>
+              <h1 className="text-xl font-display font-black text-slate-900 dark:text-white mt-0.5">
+                {barber?.name || barberSession?.name}
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end">
+            {/* Control de Estado en Vivo (Libre, Sillón, Pausa) */}
+            <div className="flex items-center p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-800 gap-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => handleStatusChange('AVAILABLE')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  barber?.status === 'AVAILABLE'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                🟢 Libre
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStatusChange('IN_SERVICE')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  barber?.status === 'IN_SERVICE'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                🔵 En Sillón
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStatusChange('BREAK')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  barber?.status === 'BREAK'
+                    ? 'bg-slate-700 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                ⚪ Pausa
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await showConfirmDialog({
+                  title: '¿Cerrar Sesión del Sillón?',
+                  text: 'Para volver a ingresar deberás digitar nuevamente tu PIN de 4 dígitos.',
+                  confirmText: 'Sí, cerrar turno',
+                  cancelText: 'Seguir atendiendo',
+                  icon: 'info'
+                });
+                if (res.isConfirmed && onLogoutBarber) {
+                  onLogoutBarber();
+                }
+              }}
+              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+              title="Cerrar turno y bloquear panel"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cerrar</span>
+              <span>Salir</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sub-Navegación y Switcher Profesional de Barbero (Totalmente Responsive) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-sm">
         {/* Pestañas de Sección */}
@@ -460,7 +600,7 @@ export const BarberPortal = () => {
             }`}
           >
             <Scissors className="w-3.5 h-3.5" />
-            <span>Jornada</span>
+            <span>Jornada & Turnos</span>
           </button>
 
           <button
@@ -473,197 +613,237 @@ export const BarberPortal = () => {
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Turnos</span>
+            <span>Horarios</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveSection('team')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeSection === 'team'
-                ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
-                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Equipo ({barbers.length})</span>
-          </button>
-        </div>
-
-        {/* Custom Luxury Barber Switcher Dropdown (No salta fuera de pantalla) */}
-        <div className="relative w-full sm:w-auto">
-          <button
-            type="button"
-            onClick={() => setIsBarberDropdownOpen(prev => !prev)}
-            className="w-full sm:w-auto flex items-center justify-between gap-2.5 px-3 py-2 bg-slate-50 dark:bg-noir-950 hover:bg-slate-100 dark:hover:bg-noir-850 border border-slate-200 dark:border-industrial-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white transition-all cursor-pointer shadow-sm"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <img
-                src={barber.avatar}
-                alt={barber.name}
-                className="w-6 h-6 rounded-full object-cover border border-slate-300 dark:border-industrial-700 flex-shrink-0"
-              />
-              <span className="text-slate-400 dark:text-industrial-500 text-[10px] uppercase font-bold tracking-wider hidden sm:inline">
-                Especialista:
-              </span>
-              <span className="font-bold text-slate-900 dark:text-white truncate">
-                {barber.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className={`w-2 h-2 rounded-full ${
-                barber.status === 'AVAILABLE' ? 'bg-emerald-500' : barber.status === 'IN_SERVICE' ? 'bg-blue-500' : 'bg-slate-400'
-              }`} />
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBarberDropdownOpen ? 'rotate-180' : ''}`} />
-            </div>
-          </button>
-
-          {/* Menú Desplegable Flotante de Selección Elegante */}
-          {isBarberDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setIsBarberDropdownOpen(false)}
-              />
-              <div className="absolute top-full left-0 right-0 sm:left-auto sm:right-0 sm:w-72 mt-1.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-xl z-50 p-1.5 animate-fadeIn space-y-1">
-                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-industrial-500 border-b border-slate-100 dark:border-industrial-800/80">
-                  Seleccionar Barbero
-                </div>
-                <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5">
-                  {barbers.map((b) => {
-                    const isSelected = b.id === selectedBarberId;
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedBarberId(b.id);
-                          setIsBarberDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-500 text-slate-950 font-bold dark:bg-gold-500/20 dark:text-gold-300'
-                            : 'hover:bg-slate-100 dark:hover:bg-noir-950 text-slate-800 dark:text-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <img
-                            src={b.avatar || AVATAR_PRESETS[0].url}
-                            alt={b.name}
-                            className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-industrial-700 flex-shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold truncate block">{b.name}</span>
-                            <span className={`text-[10px] font-mono block ${isSelected ? 'text-amber-950 font-semibold dark:text-gold-400' : 'text-slate-400 dark:text-industrial-500'}`}>
-                              {b.status === 'AVAILABLE' ? '🟢 Disponible' : b.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
-                            </span>
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <CheckCircle2 className="w-4 h-4 text-slate-950 dark:text-gold-400 flex-shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
+          {!standaloneBarberMode && (
+            <button
+              type="button"
+              onClick={() => setActiveSection('team')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeSection === 'team'
+                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
+                  : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Equipo ({barbers.length})</span>
+            </button>
           )}
         </div>
+
+        {/* Custom Luxury Barber Switcher Dropdown (Solo en modo Admin) */}
+        {!standaloneBarberMode && (
+          <div className="relative w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsBarberDropdownOpen(prev => !prev)}
+              className="w-full sm:w-auto flex items-center justify-between gap-2.5 px-3 py-2 bg-slate-50 dark:bg-noir-950 hover:bg-slate-100 dark:hover:bg-noir-850 border border-slate-200 dark:border-industrial-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white transition-all cursor-pointer shadow-sm"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <img
+                  src={barber.avatar}
+                  alt={barber.name}
+                  className="w-6 h-6 rounded-full object-cover border border-slate-300 dark:border-industrial-700 flex-shrink-0"
+                />
+                <span className="text-slate-400 dark:text-industrial-500 text-[10px] uppercase font-bold tracking-wider hidden sm:inline">
+                  Especialista:
+                </span>
+                <span className="font-bold text-slate-900 dark:text-white truncate">
+                  {barber.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={`w-2 h-2 rounded-full ${
+                  barber.status === 'AVAILABLE' ? 'bg-emerald-500' : barber.status === 'IN_SERVICE' ? 'bg-blue-500' : 'bg-slate-400'
+                }`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBarberDropdownOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {/* Menú Desplegable Flotante de Selección Elegante */}
+            {isBarberDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsBarberDropdownOpen(false)}
+                />
+                <div className="absolute top-full left-0 right-0 sm:left-auto sm:right-0 sm:w-72 mt-1.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-xl z-50 p-1.5 animate-fadeIn space-y-1">
+                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-industrial-500 border-b border-slate-100 dark:border-industrial-800/80">
+                    Seleccionar Barbero
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5">
+                    {barbers.map((b) => {
+                      const isSelected = b.id === selectedBarberId;
+                      return (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedBarberId(b.id);
+                            setIsBarberDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-amber-500 text-slate-950 font-bold dark:bg-gold-500/20 dark:text-gold-300'
+                              : 'hover:bg-slate-100 dark:hover:bg-noir-950 text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img
+                              src={b.avatar || AVATAR_PRESETS[0].url}
+                              alt={b.name}
+                              className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-industrial-700 flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold truncate block">{b.name}</span>
+                              <span className={`text-[10px] font-mono block ${isSelected ? 'text-amber-950 font-semibold dark:text-gold-400' : 'text-slate-400 dark:text-industrial-500'}`}>
+                                {b.status === 'AVAILABLE' ? '🟢 Disponible' : b.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
+                              </span>
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <CheckCircle2 className="w-4 h-4 text-slate-950 dark:text-gold-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {activeSection === 'jornada' && (
         <div className="space-y-4 animate-fadeIn">
-          {/* Header Unificado de Barbero + Control de Estado en Vivo */}
-          <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Perfil del Barbero */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                onClick={() => setIsBarberDropdownOpen(prev => !prev)}
-                className="relative flex-shrink-0 cursor-pointer group"
-                title="Toca para cambiar de barbero"
-              >
-                <img
-                  src={barber.avatar}
-                  alt={barber.name}
-                  className="w-11 h-11 rounded-xl object-cover border-2 border-slate-900 dark:border-gold-500 shadow-sm group-hover:scale-105 transition-transform"
-                />
-                <span
-                  className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-noir-900 ${
-                    barber.status === 'AVAILABLE' ? 'bg-emerald-500' :
-                    barber.status === 'IN_SERVICE' ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'
+          {/* Header Unificado de Barbero + Control de Estado en Vivo (Solo en modo Admin) */}
+          {!standaloneBarberMode && (
+            <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Perfil del Barbero */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  onClick={() => setIsBarberDropdownOpen(prev => !prev)}
+                  className="relative flex-shrink-0 cursor-pointer group"
+                  title="Toca para cambiar de barbero"
+                >
+                  <img
+                    src={barber.avatar}
+                    alt={barber.name}
+                    className="w-11 h-11 rounded-xl object-cover border-2 border-slate-900 dark:border-gold-500 shadow-sm group-hover:scale-105 transition-transform"
+                  />
+                  <span
+                    className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-noir-900 ${
+                      barber.status === 'AVAILABLE' ? 'bg-emerald-500' :
+                      barber.status === 'IN_SERVICE' ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'
+                    }`}
+                    title={barber.status === 'AVAILABLE' ? 'Disponible' : barber.status === 'IN_SERVICE' ? 'En Sillón' : 'Descanso'}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-white truncate">
+                      {barber.name}
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => setIsBarberDropdownOpen(prev => !prev)}
+                      className="text-[10px] text-slate-500 hover:text-slate-900 dark:text-industrial-400 dark:hover:text-white underline font-semibold cursor-pointer"
+                    >
+                      Cambiar
+                    </button>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gold-500/15 text-slate-700 dark:text-gold-400 border border-slate-200 dark:border-gold-500/30 flex-shrink-0">
+                      {commissionDisplay}% com.
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-2 truncate mt-0.5">
+                    <span>Meta: <strong className="font-mono text-slate-700 dark:text-slate-200">${Math.round(dailyTargetDisplay).toLocaleString('es-CO')}</strong></span>
+                    <span>•</span>
+                    <span className="font-mono text-[10px]">
+                      {barber.status === 'AVAILABLE' ? '🟢 Disponible' : barber.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Segmented Control de Estado (3 Píldoras Compactas) */}
+              <div className="flex items-center p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-800 self-stretch sm:self-auto justify-between sm:justify-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange('AVAILABLE')}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    barber.status === 'AVAILABLE'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
-                  title={barber.status === 'AVAILABLE' ? 'Disponible' : barber.status === 'IN_SERVICE' ? 'En Sillón' : 'Descanso'}
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-white truncate">
-                    {barber.name}
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setIsBarberDropdownOpen(prev => !prev)}
-                    className="text-[10px] text-slate-500 hover:text-slate-900 dark:text-industrial-400 dark:hover:text-white underline font-semibold cursor-pointer"
-                  >
-                    Cambiar
-                  </button>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gold-500/15 text-slate-700 dark:text-gold-400 border border-slate-200 dark:border-gold-500/30 flex-shrink-0">
-                    {commissionDisplay}% com.
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-2 truncate mt-0.5">
-                  <span>Meta: <strong className="font-mono text-slate-700 dark:text-slate-200">${Math.round(dailyTargetDisplay).toLocaleString('es-CO')}</strong></span>
-                  <span>•</span>
-                  <span className="font-mono text-[10px]">
-                    {barber.status === 'AVAILABLE' ? '🟢 Disponible' : barber.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
-                  </span>
-                </div>
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                  <span>Libre</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange('IN_SERVICE')}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    barber.status === 'IN_SERVICE'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Scissors className="w-3 h-3" />
+                  <span>En Sillón</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange('BREAK')}
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    barber.status === 'BREAK'
+                      ? 'bg-slate-700 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Coffee className="w-3.5 h-3.5" />
+                  <span>Pausa</span>
+                </button>
               </div>
             </div>
+          )}
 
-            {/* Segmented Control de Estado (3 Píldoras Compactas) */}
-            <div className="flex items-center p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-800 self-stretch sm:self-auto justify-between sm:justify-end gap-1">
-              <button
-                type="button"
-                onClick={() => handleStatusChange('AVAILABLE')}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  barber.status === 'AVAILABLE'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                <span>Libre</span>
-              </button>
+          {/* Banner Motivacional de Meta Diaria del Barbero */}
+          {dailyTargetDisplay > 0 && (
+            <div className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all ${
+              (metrics.targetProgressPercent || 0) >= 100
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-gold-300'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl flex-shrink-0">
+                  {(metrics.targetProgressPercent || 0) >= 100 ? '🏆' : '🎯'}
+                </span>
+                <div>
+                  <div className="font-bold text-sm">
+                    {(metrics.targetProgressPercent || 0) >= 100
+                      ? '¡FELICITACIONES! Has alcanzado tu meta del día en el sillón 🔥'
+                      : `Meta del Día: ${metrics.targetProgressPercent || 0}% completado`}
+                  </div>
+                  <p className="text-[11px] opacity-80 mt-0.5">
+                    {(metrics.targetProgressPercent || 0) >= 100
+                      ? 'Cada corte o producto extra sumará directo a tus comisiones récord del mes.'
+                      : `Faltan $${Math.max(0, Math.round(dailyTargetDisplay - (metrics.grossServices || 0))).toLocaleString('es-CO')} para alcanzar el 100% de tu objetivo.`}
+                  </p>
+                </div>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => handleStatusChange('IN_SERVICE')}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  barber.status === 'IN_SERVICE'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Scissors className="w-3 h-3" />
-                <span>En Sillón</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStatusChange('BREAK')}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  barber.status === 'BREAK'
-                    ? 'bg-slate-700 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Coffee className="w-3.5 h-3.5" />
-                <span>Pausa</span>
-              </button>
+              <div className="flex items-center gap-2 self-end sm:self-auto font-mono">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-industrial-400">Objetivo:</span>
+                <span className="font-bold text-sm text-slate-900 dark:text-white px-2.5 py-1 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800">
+                  ${Math.round(dailyTargetDisplay).toLocaleString('es-CO')}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Métricas Financieras del Barbero: Limpias, Elegantes y en Porcelana Blanca en Modo Claro */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
@@ -1178,9 +1358,55 @@ export const BarberPortal = () => {
                       </Badge>
                     </div>
 
-                    <div className="text-xs text-slate-500 dark:text-industrial-400 space-y-1 font-mono">
-                      {b.phone && <div className="flex items-center gap-1.5">📞 {b.phone}</div>}
-                      {b.dailyTarget && <div className="flex items-center gap-1.5">🎯 Meta: ${b.dailyTarget}</div>}
+                    <div className="text-xs text-slate-500 dark:text-industrial-400 space-y-1.5 font-mono">
+                      {b.phone && <div className="flex items-center gap-1.5">📞 {formatDisplayPhone(b.phone)}</div>}
+                      <div className="flex items-center gap-1.5 text-amber-700 dark:text-gold-300 font-semibold">
+                        🎯 Meta: ${Number(b.dailyTarget || b.dailyGoal || 150000).toLocaleString('es-CO')} / día
+                      </div>
+                    </div>
+
+                    {/* Badge PIN de Acceso Rápido del Barbero */}
+                    <div className="mt-2.5 p-2 rounded-xl bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 flex items-center justify-between text-xs font-mono">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1">
+                        <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                        PIN Sillón:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-amber-600 dark:text-gold-400 tracking-widest text-sm">
+                          {visiblePins[b.id] ? (b.pin || '1234') : '••••'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setVisiblePins(prev => ({ ...prev, [b.id]: !prev[b.id] }))}
+                          className="text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-white px-1 cursor-pointer"
+                          title={visiblePins[b.id] ? 'Ocultar PIN' : 'Ver PIN'}
+                        >
+                          {visiblePins[b.id] ? '🙈' : '👁️'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Acciones Rápidas: Enviar PIN por WhatsApp & Ver Vista Móvil */}
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSendWhatsAppPin(b)}
+                        className="py-1.5 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        title="Enviar PIN y enlace de acceso por WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Enviar PIN</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handlePreviewBarberMobile(b)}
+                        className="py-1.5 px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-gold-300 border border-amber-500/30 text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        title="Abrir vista que verá este barbero en su celular"
+                      >
+                        <Scissors className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Ver Sillón</span>
+                      </button>
                     </div>
 
                     {b.specialties && (
@@ -1295,10 +1521,40 @@ export const BarberPortal = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
+                  PIN (4 Dígitos) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rnd = String(Math.floor(1000 + Math.random() * 9000));
+                    setBarberFormData({ ...barberFormData, pin: rnd });
+                  }}
+                  className="text-[10px] text-amber-600 dark:text-gold-400 font-bold hover:underline cursor-pointer"
+                >
+                  ⚡ Generar
+                </button>
+              </div>
+              <input
+                type="text"
+                maxLength={4}
+                required
+                placeholder="1234"
+                value={barberFormData.pin || ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setBarberFormData({ ...barberFormData, pin: val });
+                }}
+                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono font-bold tracking-widest text-center focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
-                % Comisión por Servicios
+                % Comisión
               </label>
               <div className="relative">
                 <input
@@ -1320,11 +1576,31 @@ export const BarberPortal = () => {
               </label>
               <input
                 type="number"
+                step="10000"
                 value={barberFormData.dailyTarget}
                 onChange={(e) => setBarberFormData({ ...barberFormData, dailyTarget: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
               />
             </div>
+          </div>
+
+          {/* Botones de Meta Diaria Rápida */}
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-mono">Metas rápidas:</span>
+            {[100000, 150000, 200000, 250000].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setBarberFormData({ ...barberFormData, dailyTarget: val })}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                  Number(barberFormData.dailyTarget) === val
+                    ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
+                    : 'bg-slate-100 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:border-amber-500/40'
+                }`}
+              >
+                ${val / 1000}k
+              </button>
+            ))}
           </div>
 
           <div>

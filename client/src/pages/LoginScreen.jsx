@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useBarbershop } from '../context/BarbershopContext';
+import { BarberPinModal } from '../components/BarberPinModal';
 import {
   Mail,
   Lock,
@@ -14,7 +16,8 @@ import {
   Sun,
   Moon,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Scissors
 } from 'lucide-react';
 
 function getFriendlyFirebaseErrorMessage(errorMsg = '') {
@@ -46,9 +49,10 @@ function getFriendlyFirebaseErrorMessage(errorMsg = '') {
   return errorMsg;
 }
 
-export const LoginScreen = () => {
+export const LoginScreen = ({ onBarberLogin }) => {
   const { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword, isLoading } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
+  const { barbers, tenantId, barbershopInfo } = useBarbershop();
 
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [displayName, setDisplayName] = useState('');
@@ -57,6 +61,7 @@ export const LoginScreen = () => {
   const [error, setError] = useState(null);
   const [resetSuccessMessage, setResetSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBarberPinModalOpen, setIsBarberPinModalOpen] = useState(false);
 
   // Manejar Login con Google (Gmail)
   const handleGoogleLogin = async () => {
@@ -350,6 +355,21 @@ export const LoginScreen = () => {
           </form>
         </div>
 
+        {/* Acceso Rápido para Barberos con PIN de 4 Dígitos */}
+        <div className="mt-4 p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm text-center animate-fadeIn">
+          <p className="text-xs font-semibold text-slate-700 dark:text-industrial-300 mb-2">
+            ¿Eres barbero de este equipo?
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsBarberPinModalOpen(true)}
+            className="w-full py-2.5 px-4 rounded-xl bg-amber-500/15 hover:bg-amber-500 border border-amber-500/30 text-amber-800 dark:text-gold-300 hover:text-slate-950 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+          >
+            <Scissors className="w-4 h-4 text-amber-600 dark:text-gold-400" />
+            <span>Acceder a mi Sillón con PIN</span>
+          </button>
+        </div>
+
         {/* Nota Multi-Tenant */}
         <div className="mt-4 text-center">
           <p className="text-[11px] text-slate-400 dark:text-industrial-500 flex items-center justify-center gap-1">
@@ -362,6 +382,18 @@ export const LoginScreen = () => {
       <footer className="py-2 text-center text-[10px] text-slate-400 dark:text-industrial-600 font-mono">
         BarberPulse OS • 2026
       </footer>
+
+      {/* Modal de Acceso por PIN del Barbero */}
+      <BarberPinModal
+        isOpen={isBarberPinModalOpen}
+        onClose={() => setIsBarberPinModalOpen(false)}
+        tenantId={tenantId}
+        slug={barbershopInfo?.slug || ''}
+        barbers={barbers}
+        onLoginSuccess={(session) => {
+          if (onBarberLogin) onBarberLogin(session);
+        }}
+      />
     </div>
   );
 };

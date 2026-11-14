@@ -572,3 +572,85 @@ export const createPublicOrder = async (req, res) => {
   }
 };
 
+/**
+ * Autenticación Rápida de Barbero por PIN (Pública / Móvil)
+ */
+export const publicBarberPinLogin = async (req, res) => {
+  try {
+    const slug = req.params.slug || req.query.slug || '';
+    const { barberId, pin } = req.body;
+
+    if (!barberId || !pin) {
+      return res.status(400).json({ success: false, error: 'Barbero y PIN son obligatorios.' });
+    }
+
+    let barbershop = null;
+    if (isMock) {
+      if (slug && slug.trim()) {
+        const cleanSlug = slug.trim().toLowerCase();
+        barbershop = Object.values(mockStore.barbershops).find(b =>
+          (b.slug && b.slug.toLowerCase() === cleanSlug) ||
+          (b.id && b.id.toLowerCase() === cleanSlug)
+        );
+      }
+      if (!barbershop && Object.values(mockStore.barbershops).length > 0) {
+        barbershop = Object.values(mockStore.barbershops)[0];
+      }
+    } else {
+      if (slug && slug.trim()) {
+        const snap = await db.collection('barbershops').where('slug', '==', slug.trim()).limit(1).get();
+        if (!snap.empty) {
+          barbershop = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        }
+      }
+      if (!barbershop) {
+        const snap = await db.collection('barbershops').limit(1).get();
+        if (!snap.empty) barbershop = { id: snap.docs[0].id, ...snap.docs[0].data() };
+      }
+    }
+
+    if (!barbershop) {
+      return res.status(404).json({ success: false, error: 'Barbería no encontrada.' });
+    }
+
+    const tenantId = barbershop.id;
+    const barbersCollection = getTenantCollection(tenantId, 'barbers');
+    let barber = null;
+
+    if (isMock) {
+      barber = (barbersCollection.data || []).find(b => b.id === barberId);
+    } else {
+      const doc = await barbersCollection.doc(barberId).get();
+      if (doc.exists) barber = { id: doc.id, ...doc.data() };
+    }
+
+    if (!barber) {
+      return res.status(404).json({ success: false, error: 'Barbero no encontrado.' });
+    }
+
+    const expectedPin = barber.pin || '1234';
+    if (String(pin).trim() !== String(expectedPin).trim()) {
+      return res.status(401).json({ success: false, error: 'PIN incorrecto. Consulta con tu administrador.' });
+    }
+
+    return res.json({
+      success: true,
+      message: `¡Bienvenido ${barber.name}!`,
+      data: {
+        id: barber.id,
+        name: barber.name,
+        avatar: barber.avatar,
+        phone: barber.phone || barber.whatsapp || '',
+        commissionRate: barber.commissionRate || 0.5,
+        dailyTarget: barber.dailyTarget || barber.dailyGoal || 150000,
+        role: 'barber',
+        barbershopId: tenantId,
+        barbershopName: barbershop.name
+      }
+    });
+  } catch (error) {
+    console.error('Error al autenticar barbero con PIN:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
