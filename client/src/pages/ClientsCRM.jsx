@@ -611,7 +611,7 @@ export const ClientsCRM = () => {
                   </div>
 
                   {/* Chips de Servicios Tradicionales */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-40 overflow-y-auto pr-1">
                     {TRADITIONAL_SERVICES.map((srv) => (
                       <button
                         key={srv.id}

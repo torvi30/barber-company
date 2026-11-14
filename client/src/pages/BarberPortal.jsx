@@ -1208,12 +1208,46 @@ export const BarberPortal = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
-              Especialidades (Separadas por coma)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-industrial-400 uppercase">
+                Servicios y Especialidades
+              </label>
+              <span className="text-[10px] text-industrial-500 font-mono">1 Clic o Escribe</span>
+            </div>
+            {/* Chips rápidos de servicios básicos */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {['Corte', 'Barba', 'Cejas', 'Cera', 'Corte y Barba', 'Corte y Cejas', 'Barba y Cejas', 'Barba con Cera', 'Combo Completo'].map((spec) => {
+                const currentSpecs = barberFormData.specialties
+                  ? barberFormData.specialties.split(',').map(s => s.trim())
+                  : [];
+                const isActive = currentSpecs.includes(spec);
+                return (
+                  <button
+                    key={spec}
+                    type="button"
+                    onClick={() => {
+                      let next;
+                      if (isActive) {
+                        next = currentSpecs.filter(s => s !== spec);
+                      } else {
+                        next = [...currentSpecs, spec];
+                      }
+                      setBarberFormData({ ...barberFormData, specialties: next.join(', ') });
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${
+                      isActive
+                        ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                        : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
+                    }`}
+                  >
+                    {isActive ? `✓ ${spec}` : `+ ${spec}`}
+                  </button>
+                );
+              })}
+            </div>
             <input
               type="text"
-              placeholder="Skin Fade, Barba Ritual, Freestyle, Tijera Clásica"
+              placeholder="Corte, Barba, Cejas, Cera..."
               value={barberFormData.specialties}
               onChange={(e) => setBarberFormData({ ...barberFormData, specialties: e.target.value })}
               className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500"

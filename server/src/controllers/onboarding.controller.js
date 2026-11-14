@@ -4,12 +4,18 @@ import { isMock, mockStore, db, persistStore } from '../config/firebase.js';
 const BARBERSHOP_DEFAULTS = {
   staffTitle: 'Barbero Principal',
   services: [
-    { id: 'srv-1', name: 'Corte de Cabello (Fade / Clásico)', duration: 35, price: 25000, commissionRate: 0.50 },
-    { id: 'srv-2', name: 'Arreglo & Ritual de Barba', duration: 25, price: 18000, commissionRate: 0.50 },
-    { id: 'srv-3', name: 'Perfilado de Cejas con Navaja', duration: 15, price: 10000, commissionRate: 0.50 },
-    { id: 'srv-4', name: 'Combo Tradicional: Corte + Barba', duration: 50, price: 38000, commissionRate: 0.50 },
-    { id: 'srv-5', name: 'Combo: Corte + Cejas', duration: 40, price: 30000, commissionRate: 0.50 },
-    { id: 'srv-6', name: 'Combo VIP: Corte + Barba + Cejas', duration: 60, price: 45000, commissionRate: 0.50 }
+    { id: 'srv-1', name: 'Corte', duration: 30, price: 25000, commissionRate: 0.50 },
+    { id: 'srv-2', name: 'Barba', duration: 20, price: 18000, commissionRate: 0.50 },
+    { id: 'srv-3', name: 'Cejas', duration: 15, price: 10000, commissionRate: 0.50 },
+    { id: 'srv-4', name: 'Cera', duration: 15, price: 12000, commissionRate: 0.50 },
+    { id: 'srv-5', name: 'Corte y Barba', duration: 45, price: 38000, commissionRate: 0.50 },
+    { id: 'srv-6', name: 'Corte y Cejas', duration: 35, price: 30000, commissionRate: 0.50 },
+    { id: 'srv-7', name: 'Corte y Cera', duration: 35, price: 32000, commissionRate: 0.50 },
+    { id: 'srv-8', name: 'Barba y Cejas', duration: 25, price: 25000, commissionRate: 0.50 },
+    { id: 'srv-9', name: 'Barba con Cera', duration: 25, price: 25000, commissionRate: 0.50 },
+    { id: 'srv-10', name: 'Corte, Barba y Cejas', duration: 50, price: 45000, commissionRate: 0.50 },
+    { id: 'srv-11', name: 'Corte, Barba y Cera', duration: 50, price: 48000, commissionRate: 0.50 },
+    { id: 'srv-12', name: 'Combo Completo', duration: 60, price: 55000, commissionRate: 0.50 }
   ],
   products: [
     { id: 'prod-1', name: 'Cera Fijadora Mate Suavecito 120g', price: 45000, costPrice: 24000, stock: 15 },

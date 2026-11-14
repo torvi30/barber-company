@@ -689,11 +689,13 @@ export const ReceptionQueue = () => {
 
           {/* Selector de Servicios Tradicionales */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-industrial-400 uppercase flex items-center justify-between">
-              <span>Servicios Tradicionales de Barbería</span>
-              <span className="text-[10px] text-gold-400 font-mono">1 Clic</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-industrial-400 uppercase">
+                Servicios Básicos de Barbería
+              </label>
+              <span className="text-[10px] text-gold-400 font-mono">1 Clic o Personaliza</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
               {TRADITIONAL_SERVICES.map((srv) => {
                 const isSelected = serviceName === srv.name;
                 return (
@@ -722,20 +724,23 @@ export const ReceptionQueue = () => {
 
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <label className="block text-[10px] text-industrial-400 uppercase mb-1">
-                  Servicio Seleccionado
+                <label className="block text-[10px] text-industrial-400 uppercase mb-1 flex items-center justify-between">
+                  <span>Servicio</span>
+                  <span className="text-[9px] text-industrial-500 font-normal">Puedes editarlo libremente</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={serviceName}
                   onChange={(e) => setServiceName(e.target.value)}
+                  placeholder="Ej: Corte, Barba, Cejas..."
                   className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-industrial-400 uppercase mb-1">
-                  Precio ($ COP)
+                <label className="block text-[10px] text-industrial-400 uppercase mb-1 flex items-center justify-between">
+                  <span>Precio ($ COP)</span>
+                  <span className="text-[9px] text-industrial-500 font-normal">Modificable</span>
                 </label>
                 <input
                   type="number"

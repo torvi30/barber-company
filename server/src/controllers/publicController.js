@@ -4,14 +4,20 @@ import { OPERATING_SLOTS, toMinutes, checkSlotCollision, getLocalDateString } fr
 import { dispatchNotification } from '../services/notificationService.js';
 import { recordClientAppointment } from './clientController.js';
 
-// Catálogo maestro tradicional de servicios de barbería
+// Catálogo tradicional de servicios básicos de barbería
 const DEFAULT_SERVICES = [
-  { id: 'srv-01', name: 'Corte de Cabello (Fade / Clásico)', durationMinutes: 35, price: 25000, description: 'Corte clásico o degradado (Fade / Skin Fade) con acabado profesional y peinado.' },
-  { id: 'srv-02', name: 'Arreglo & Ritual de Barba', durationMinutes: 25, price: 18000, description: 'Perfilado con navaja tradicional, toalla caliente y aplicación de bálsamo/óleo.' },
-  { id: 'srv-03', name: 'Perfilado de Cejas con Navaja', durationMinutes: 15, price: 10000, description: 'Diseño y limpieza de cejas masculinas con navaja descartable.' },
-  { id: 'srv-04', name: 'Combo Tradicional: Corte + Barba', durationMinutes: 50, price: 38000, description: 'Servicio combinado clásico: corte de cabello completo y ritual de toalla para barba.' },
-  { id: 'srv-05', name: 'Combo: Corte + Cejas', durationMinutes: 40, price: 30000, description: 'Corte de precisión y alineación milimétrica de cejas.' },
-  { id: 'srv-06', name: 'Combo VIP: Corte + Barba + Cejas', durationMinutes: 60, price: 45000, description: 'La experiencia completa tradicional: corte, barba y cejas en una sola sesión.' }
+  { id: 'srv-01', name: 'Corte', durationMinutes: 30, price: 25000, description: 'Corte clásico o degradado (Fade / Skin Fade) con peinado y acabado.' },
+  { id: 'srv-02', name: 'Barba', durationMinutes: 20, price: 18000, description: 'Arreglo, toalla caliente y perfilado de barba con navaja.' },
+  { id: 'srv-03', name: 'Cejas', durationMinutes: 15, price: 10000, description: 'Limpieza y diseño de cejas masculinas con navaja.' },
+  { id: 'srv-04', name: 'Cera', durationMinutes: 15, price: 12000, description: 'Depilación con cera en nariz, oídos o pómulos.' },
+  { id: 'srv-05', name: 'Corte y Barba', durationMinutes: 45, price: 38000, description: 'Combo clásico: corte completo de cabello y ritual de barba.' },
+  { id: 'srv-06', name: 'Corte y Cejas', durationMinutes: 35, price: 30000, description: 'Corte completo de cabello más diseño y perfilado de cejas.' },
+  { id: 'srv-07', name: 'Corte y Cera', durationMinutes: 35, price: 32000, description: 'Corte de cabello completo con aplicación de cera depilatoria facial.' },
+  { id: 'srv-08', name: 'Barba y Cejas', durationMinutes: 25, price: 25000, description: 'Arreglo de barba con navaja más limpieza y perfilado de cejas.' },
+  { id: 'srv-09', name: 'Barba con Cera', durationMinutes: 25, price: 25000, description: 'Ritual de barba con toalla caliente y depilación de vellos con cera.' },
+  { id: 'srv-10', name: 'Corte, Barba y Cejas', durationMinutes: 50, price: 45000, description: 'Combo tradicional completo: cabello, barba ritual y cejas.' },
+  { id: 'srv-11', name: 'Corte, Barba y Cera', durationMinutes: 50, price: 48000, description: 'Corte de cabello, arreglo de barba y depilación facial con cera.' },
+  { id: 'srv-12', name: 'Combo Completo', durationMinutes: 60, price: 55000, description: 'La experiencia total: Corte, Barba, Cejas y Cera en una sola sesión.' }
 ];
 
 /**

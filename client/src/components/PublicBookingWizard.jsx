@@ -375,7 +375,7 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-base font-bold font-mono text-slate-900 dark:text-white">${srv.price}</div>
+                      <div className="text-base font-bold font-mono text-slate-900 dark:text-white">${Number(srv.price).toLocaleString('es-CO')}</div>
                       <div className="text-[11px] text-slate-400 dark:text-industrial-500 flex items-center gap-1 justify-end mt-0.5">
                         <Clock className="w-3 h-3" /> {srv.durationMinutes} min
                       </div>
