@@ -427,40 +427,40 @@ export const BarberPortal = () => {
   const { barber, metrics, appointments } = dashboardData;
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto">
-      {/* Sub-Navegación Intuitiva: Selección dinámica según donde estés ubicado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-850 w-full sm:w-auto">
+    <div className="space-y-4 animate-fadeIn max-w-6xl mx-auto">
+      {/* Sub-Navegación Compacta */}
+      <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-850">
           <button
             type="button"
             onClick={() => setActiveSection('jornada')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'jornada'
                 ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Scissors className="w-3.5 h-3.5" />
-            <span>Mi Jornada ({barber.name})</span>
+            <span>Jornada</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSection('schedule')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'schedule'
                 ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Turnos & Metas</span>
+            <span>Turnos</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSection('team')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'team'
                 ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
@@ -472,159 +472,173 @@ export const BarberPortal = () => {
         </div>
 
         {/* Switcher rápido de barbero */}
-        <div className="flex items-center gap-2 justify-between sm:justify-end">
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs shadow-sm">
-            <span className="text-slate-500 dark:text-industrial-400 text-[11px] hidden sm:inline">Ver como:</span>
-            <select
-              value={selectedBarberId}
-              onChange={(e) => setSelectedBarberId(e.target.value)}
-              className="bg-transparent font-semibold text-slate-900 dark:text-white focus:outline-none cursor-pointer text-xs"
-            >
-              {barbers.map((b) => (
-                <option key={b.id} value={b.id} className="bg-white dark:bg-noir-950 text-slate-900 dark:text-white">
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs shadow-sm">
+          <span className="text-slate-400 dark:text-industrial-500 text-[10px] hidden sm:inline uppercase font-bold tracking-wider">Barbero:</span>
+          <select
+            value={selectedBarberId}
+            onChange={(e) => setSelectedBarberId(e.target.value)}
+            className="bg-transparent font-semibold text-slate-900 dark:text-white focus:outline-none cursor-pointer text-xs"
+          >
+            {barbers.map((b) => (
+              <option key={b.id} value={b.id} className="bg-white dark:bg-noir-950 text-slate-900 dark:text-white">
+                {b.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {activeSection === 'jornada' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Header Resumen del Barbero Activo */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
-            <div className="flex items-center gap-4">
-              <img
-                src={barber.avatar}
-                alt={barber.name}
-                className="w-14 h-14 rounded-2xl object-cover border-2 border-gold-500 shadow-glow-gold"
-              />
-              <div>
+        <div className="space-y-4 animate-fadeIn">
+          {/* Header Unificado de Barbero + Control de Estado en Vivo (1 sola fila limpia) */}
+          <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Perfil del Barbero */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative flex-shrink-0">
+                <img
+                  src={barber.avatar}
+                  alt={barber.name}
+                  className="w-11 h-11 rounded-xl object-cover border-2 border-gold-500 shadow-glow-gold"
+                />
+                <span
+                  className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-noir-900 ${
+                    barber.status === 'AVAILABLE' ? 'bg-emerald-500' :
+                    barber.status === 'IN_SERVICE' ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'
+                  }`}
+                  title={barber.status === 'AVAILABLE' ? 'Disponible' : barber.status === 'IN_SERVICE' ? 'En Sillón' : 'Descanso'}
+                />
+              </div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
+                  <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-white truncate">
                     {barber.name}
                   </h2>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-gold-400 border border-amber-500/30 dark:border-gold-500/30">
-                    Tasa: {barber.commissionPercent}%
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-gold-500/15 text-gold-400 border border-gold-500/30 flex-shrink-0">
+                    {barber.commissionPercent}% com.
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5 flex items-center gap-2">
-                  <span>Portal Móvil Staff</span>
+                <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-2 truncate">
+                  <span>Meta: <strong className="font-mono text-slate-700 dark:text-slate-200">${Math.round(barber.dailyTarget || 0).toLocaleString('es-CO')}</strong></span>
                   <span>•</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">Meta Diaria: ${barber.dailyTarget}</span>
-                </p>
+                  <span className="text-emerald-500 dark:text-emerald-400 font-mono text-[10px]">
+                    {barber.status === 'AVAILABLE' ? '🟢 Disponible' : barber.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={() => setActiveSection('schedule')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 hover:border-gold-500 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
-            >
-              <Sliders className="w-3.5 h-3.5 text-gold-500" />
-              <span>Ajustar Horarios & Metas</span>
-            </button>
-          </div>
+            {/* Segmented Control de Estado (3 Píldoras Compactas) */}
+            <div className="flex items-center p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-800 self-stretch sm:self-auto justify-between sm:justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => handleStatusChange('AVAILABLE')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  barber.status === 'AVAILABLE'
+                    ? 'bg-emerald-500 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                <span>Libre</span>
+              </button>
 
-          {/* Control Rápido de Estado en Vivo (Sillón / Descanso) */}
-      <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-industrial-400 block mb-1">
-            Tu Estado Actual en el Salón
-          </span>
-          <div className="flex items-center gap-2">
-            <Badge status={barber.status}>
-              {barber.status === 'AVAILABLE' ? '🟢 Disponible para recibir cliente' :
-               barber.status === 'IN_SERVICE' ? '🔵 Atendiendo en Sillón' : '⚪ En Pausa / Descanso'}
-            </Badge>
-            <span className="text-xs text-slate-400 dark:text-industrial-500">
-              (Se sincroniza en tiempo real con recepción)
-            </span>
-          </div>
-        </div>
+              <button
+                type="button"
+                onClick={() => handleStatusChange('IN_SERVICE')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  barber.status === 'IN_SERVICE'
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Scissors className="w-3 h-3" />
+                <span>En Sillón</span>
+              </button>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleStatusChange('AVAILABLE')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              barber.status === 'AVAILABLE'
-                ? 'bg-emerald-500 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Disponible
-          </button>
-
-          <button
-            onClick={() => handleStatusChange('IN_SERVICE')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              barber.status === 'IN_SERVICE'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            En Sillón
-          </button>
-
-          <button
-            onClick={() => handleStatusChange('BREAK')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              barber.status === 'BREAK'
-                ? 'bg-slate-500 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Coffee className="w-3.5 h-3.5" />
-            Descanso
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards Personales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Mi Comisión de Hoy"
-          value={`$${metrics.commissionEarned.toFixed(2)}`}
-          highlight={true}
-          icon={DollarSign}
-          subtitle={`${barber.commissionPercent}% de $${metrics.grossServices.toFixed(2)} facturados`}
-        />
-
-        <StatCard
-          title="Mis Propinas (100%)"
-          value={`$${metrics.tipsEarned.toFixed(2)}`}
-          icon={Award}
-          subtitle="Directo a tu liquidación"
-        />
-
-        <StatCard
-          title="Total Ganado Hoy"
-          value={`$${metrics.totalPersonalEarnings.toFixed(2)}`}
-          change="+ Comisiones + Tips"
-          icon={TrendingUp}
-          subtitle={`${metrics.servicesCount} cortes completados`}
-        />
-
-        {/* Card Progreso de Meta Diaria */}
-        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div>
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-industrial-400 mb-2">
-              <span className="font-semibold uppercase tracking-wider">Meta del Día</span>
-              <span className="font-mono text-amber-600 dark:text-gold-400 font-bold">{metrics.targetProgressPercent}%</span>
-            </div>
-            <div className="text-xl font-bold font-display text-slate-900 dark:text-white">
-              ${metrics.grossServices.toFixed(2)} <span className="text-xs text-slate-400 dark:text-industrial-500 font-normal">/ ${barber.dailyTarget}</span>
+              <button
+                type="button"
+                onClick={() => handleStatusChange('BREAK')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  barber.status === 'BREAK'
+                    ? 'bg-slate-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Coffee className="w-3.5 h-3.5" />
+                <span>Pausa</span>
+              </button>
             </div>
           </div>
 
-          <div className="mt-3 w-full bg-slate-100 dark:bg-noir-950 rounded-full h-2.5 overflow-hidden border border-slate-200 dark:border-industrial-800">
-            <div
-              className="bg-gradient-to-r from-amber-500 to-gold-400 h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${metrics.targetProgressPercent}%` }}
-            ></div>
+          {/* Métricas Financieras del Barbero: Cuadrícula Compacta 2x2 en Móvil / 4 columnas en Desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            {/* Total Ganado Hoy */}
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-gold-500/10 via-noir-900 to-noir-950 border border-gold-500/30 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gold-400">Total Ganado</span>
+                <TrendingUp className="w-3.5 h-3.5 text-gold-400" />
+              </div>
+              <div className="mt-1">
+                <div className="text-base sm:text-xl font-bold font-mono text-white">
+                  ${Math.round(metrics.totalPersonalEarnings || 0).toLocaleString('es-CO')}
+                </div>
+                <span className="text-[10px] text-industrial-400 font-mono">
+                  {metrics.servicesCount || 0} {metrics.servicesCount === 1 ? 'corte' : 'cortes'}
+                </span>
+              </div>
+            </div>
+
+            {/* Mi Comisión */}
+            <div className="p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Mi Comisión</span>
+                <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <div className="mt-1">
+                <div className="text-base sm:text-xl font-bold font-mono text-slate-900 dark:text-white">
+                  ${Math.round(metrics.commissionEarned || 0).toLocaleString('es-CO')}
+                </div>
+                <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-mono">
+                  {barber.commissionPercent}% de ${Math.round(metrics.grossServices || 0).toLocaleString('es-CO')}
+                </span>
+              </div>
+            </div>
+
+            {/* Propinas */}
+            <div className="p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Mis Propinas</span>
+                <Award className="w-3.5 h-3.5 text-gold-400" />
+              </div>
+              <div className="mt-1">
+                <div className="text-base sm:text-xl font-bold font-mono text-slate-900 dark:text-white">
+                  ${Math.round(metrics.tipsEarned || 0).toLocaleString('es-CO')}
+                </div>
+                <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono">
+                  100% tuyas
+                </span>
+              </div>
+            </div>
+
+            {/* Meta Diaria y Progreso */}
+            <div className="p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Meta Diaria</span>
+                <span className="text-[10px] font-mono font-bold text-gold-400">{metrics.targetProgressPercent || 0}%</span>
+              </div>
+              <div className="mt-1">
+                <div className="text-xs sm:text-sm font-bold font-mono text-slate-900 dark:text-white truncate">
+                  ${Math.round(metrics.grossServices || 0).toLocaleString('es-CO')} <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-normal">/ ${Math.round(barber.dailyTarget || 0).toLocaleString('es-CO')}</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-noir-950 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-amber-500 to-gold-400 h-1.5 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(metrics.targetProgressPercent || 0, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* Control Rápido de Turnos de Hoy (1 Click para Activar/Pausar) */}
       <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3.5">
