@@ -80,6 +80,7 @@ export const ReceptionQueue = () => {
   const [selectedTime, setSelectedTime] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [isManageSlotsOpen, setIsManageSlotsOpen] = useState(false);
   const [allowPast, setAllowPast] = useState(false);
   const [mobileTab, setMobileTab] = useState('waiting'); // 'waiting' | 'in_chair' | 'completed'
@@ -273,6 +274,8 @@ export const ReceptionQueue = () => {
 
   const handleCreateWalkin = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     const assignedBarber = barbers.find(b => b.id === barberId);
 
     const timeToUse = selectedTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -311,6 +314,8 @@ export const ReceptionQueue = () => {
       );
     } catch (err) {
       showErrorAlert('Horario No Disponible', err.message || 'Error al agendar cita.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
