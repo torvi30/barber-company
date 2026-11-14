@@ -658,7 +658,7 @@
         "description": "Acabado natural sin brillo, fijación alta para peinados clásicos y degradados todo el día.",
         "unitPrice": 35000,
         "costPrice": 18000,
-        "stock": 15,
+        "stock": 14,
         "minStock": 4,
         "imageUrl": "https://res.cloudinary.com/bchdrvef/image/upload/v1794641752/barber-company/productos/tqm2fdbylhwoxlpul7bl.webp",
         "isPublic": true,
@@ -672,7 +672,7 @@
         "description": "Nutre la fibra capilar, hidrata la piel bajo la barba y aporta brillo con aroma a cedro.",
         "unitPrice": 32000,
         "costPrice": 15000,
-        "stock": 12,
+        "stock": 11,
         "minStock": 3,
         "imageUrl": "https://images.unsplash.com/photo-1621607512214-68297480165e?fit=crop&w=400&q=80",
         "isPublic": true
@@ -685,7 +685,7 @@
         "description": "Fórmula refrescante con aloe vera y eucalipto que cierra poros y previene irritación tras la navaja.",
         "unitPrice": 28000,
         "costPrice": 14000,
-        "stock": 10,
+        "stock": 6,
         "minStock": 3,
         "imageUrl": "https://images.unsplash.com/photo-1556228720-195a672e8a03?fit=crop&w=400&q=80",
         "isPublic": true
@@ -698,7 +698,7 @@
         "description": "Volumen instantáneo y textura mate ideal para cabellos finos o peinados desestructurados.",
         "unitPrice": 25000,
         "costPrice": 12000,
-        "stock": 18,
+        "stock": 17,
         "minStock": 5,
         "imageUrl": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?fit=crop&w=400&q=80",
         "isPublic": true
@@ -724,7 +724,7 @@
         "description": "Mango ergonómico con sujeción firme de media cuchilla estándar para rituales clásicos.",
         "unitPrice": 45000,
         "costPrice": 22000,
-        "stock": 8,
+        "stock": 7,
         "minStock": 2,
         "imageUrl": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=400&q=80",
         "isPublic": true

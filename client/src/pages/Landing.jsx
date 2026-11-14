@@ -97,7 +97,7 @@ export const Landing = ({ onEnterAdmin }) => {
               onClick={() => setActiveTab('booking')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'booking'
-                  ? 'bg-gold-500 text-noir-950 shadow-glow-gold font-bold'
+                  ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold font-bold'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -109,7 +109,7 @@ export const Landing = ({ onEnterAdmin }) => {
               onClick={() => setActiveTab('store')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'store'
-                  ? 'bg-gold-500 text-noir-950 shadow-glow-gold font-bold'
+                  ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold font-bold'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >

@@ -13,17 +13,22 @@
     touch-action: pan-y;
   }
 
-  /* Modo Claro Elegante & Armonioso (Executive Ivory & Slate) */
+  /* ==========================================================================
+     MODO CLARO DE ALTA GAMA (EXECUTIVE OBSIDIAN & PORCELAIN ATELIER)
+     Diseño sobrio, minimalista y de lujo: sin saturación de colores,
+     alto contraste legible, superficies limpias y acentos dorados refinados.
+     ========================================================================== */
+
   html.light body {
     background-color: #f8fafc !important;
     color: #0f172a !important;
   }
 
-  /* Fondo principal y contenedores */
+  /* Fondos principales, paneles y tarjetas limpias */
   html.light .bg-noir-950,
   html.light .bg-noir-950\/80,
   html.light .bg-noir-950\/40 {
-    background-color: #f1f5f9 !important;
+    background-color: #f8fafc !important;
   }
 
   html.light .bg-noir-900,
@@ -42,7 +47,7 @@
   html.light .bg-noir-800\/60,
   html.light .bg-noir-800\/50,
   html.light .bg-noir-800\/40 {
-    background-color: #f8fafc !important;
+    background-color: #f1f5f9 !important;
   }
 
   /* Bordes suaves y limpios */
@@ -52,12 +57,13 @@
   html.light .border-industrial-800\/60,
   html.light .border-industrial-800\/50,
   html.light .border-industrial-800\/40,
+  html.light .border-industrial-750,
   html.light .border-industrial-700,
   html.light .border-industrial-700\/80 {
     border-color: #e2e8f0 !important;
   }
 
-  /* Tipografías de alto contraste y legibilidad */
+  /* Tipografías: Alto contraste en negro obsidiana y gris grafito */
   html.light .text-white {
     color: #0f172a !important;
   }
@@ -65,7 +71,7 @@
   html.light .text-slate-100,
   html.light .text-slate-200,
   html.light .text-slate-300 {
-    color: #334155 !important;
+    color: #1e293b !important;
   }
 
   html.light .text-industrial-400,
@@ -74,88 +80,124 @@
     color: #64748b !important;
   }
 
-  /* El selector de sucursal en el header */
-  html.light header .bg-noir-950\/80 {
-    background-color: #f1f5f9 !important;
-    border-color: #cbd5e1 !important;
+  /* Cabeceras fijas */
+  html.light header,
+  html.light nav.sticky {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    border-color: #e2e8f0 !important;
   }
 
-  /* Botón de cambio de sucursal texto */
-  html.light header .text-white {
+  html.light header .bg-noir-950\/80,
+  html.light header .bg-slate-100 {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  /* Pestañas Activas y Píldoras Seleccionadas: Negro Obsidiana Ejecutivo */
+  html.light .bg-amber-500,
+  html.light .bg-gold-500 {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+  }
+
+  html.light .bg-amber-500 span,
+  html.light .bg-gold-500 span {
+    color: #ffffff !important;
+  }
+
+  /* Botones primarios dorados de autor */
+  html.light .bg-gradient-to-r.from-gold-500.to-amber-500,
+  html.light .bg-gradient-to-r.from-gold-600.to-gold-400 {
+    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.25) !important;
+  }
+
+  /* Píldoras y Badges suaves: Neutros elegantes */
+  html.light .bg-amber-500\/10,
+  html.light .bg-amber-500\/15,
+  html.light .bg-amber-500\/20,
+  html.light .bg-gold-500\/10,
+  html.light .bg-gold-500\/15,
+  html.light .bg-gold-500\/20 {
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  html.light .text-amber-500,
+  html.light .text-amber-600,
+  html.light .text-gold-500,
+  html.light .text-gold-600 {
     color: #0f172a !important;
   }
 
-  /* Badges y botones verdes en modo claro */
-  html.light .bg-emerald-500 {
-    background-color: #059669 !important;
-    color: #ffffff !important;
+  html.light .text-amber-400,
+  html.light .text-gold-400,
+  html.light .text-gold-300 {
+    color: #92400e !important;
   }
 
-  html.light .text-emerald-400 {
-    color: #059669 !important;
-  }
-
-  html.light .bg-emerald-500\/10,
-  html.light .bg-emerald-500\/15,
-  html.light .bg-emerald-500\/20 {
-    background-color: #ecfdf5 !important;
-    color: #047857 !important;
-    border-color: #a7f3d0 !important;
-  }
-
-  /* Badges ámbar en modo claro */
-  html.light .bg-amber-500 {
-    background-color: #d97706 !important;
-    color: #ffffff !important;
-  }
-
-  html.light .text-amber-300,
-  html.light .text-amber-400 {
-    color: #b45309 !important;
-  }
-
-  html.light .bg-amber-500\/10,
-  html.light .bg-amber-500\/15,
-  html.light .bg-amber-500\/20 {
-    background-color: #fffbeb !important;
-    color: #b45309 !important;
-    border-color: #fde68a !important;
-  }
-
-  /* Badges azules en modo claro */
-  html.light .bg-blue-500 {
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-  }
-
-  html.light .text-blue-400 {
-    color: #1d4ed8 !important;
-  }
-
+  /* Botón "Al Sillón" y estados en azul -> Sobrio y profesional */
   html.light .bg-blue-500\/10,
   html.light .bg-blue-500\/15,
   html.light .bg-blue-500\/20 {
-    background-color: #eff6ff !important;
-    color: #1d4ed8 !important;
-    border-color: #bfdbfe !important;
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
   }
 
-  /* Oro y ámbar equilibrado */
-  html.light .text-gold-400,
-  html.light .text-gold-300 {
-    color: #b45309 !important;
+  html.light .bg-blue-500 {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
   }
 
-  /* Barra inferior móvil en modo claro */
+  html.light .text-blue-500,
+  html.light .text-blue-600 {
+    color: #0f172a !important;
+  }
+
+  /* WhatsApp y estados verdes -> Sage sutil y delicado */
+  html.light .bg-emerald-500\/10,
+  html.light .bg-emerald-500\/15,
+  html.light .bg-emerald-500\/20 {
+    background-color: #f0fdf4 !important;
+    color: #15803d !important;
+    border-color: #bbf7d0 !important;
+  }
+
+  html.light .bg-emerald-500 {
+    background-color: #15803d !important;
+    color: #ffffff !important;
+  }
+
+  /* Barra inferior móvil en modo claro: Minimalista blanca con bordes sutiles */
   html.light nav.fixed.bottom-0 {
-    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04) !important;
   }
 
-  /* Sombras y profundidad en modo claro */
+  html.light nav.fixed.bottom-0 button {
+    color: #64748b;
+  }
+
+  html.light nav.fixed.bottom-0 button[class*="text-amber-"],
+  html.light nav.fixed.bottom-0 button[class*="text-gold-"] {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  /* Sombras de diseño */
+  html.light .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+  }
+
+  html.light .shadow-md,
   html.light .shadow-lg,
   html.light .shadow-xl,
   html.light .shadow-2xl {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.03) !important;
   }
 
   /* Custom scrollbars */

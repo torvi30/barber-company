@@ -172,8 +172,8 @@ export const PublicStore = ({ slug }) => {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 isSelected
-                  ? 'bg-gold-500 text-black shadow-glow-gold font-bold'
-                  : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white hover:border-industrial-700'
+                  ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-black shadow-sm dark:shadow-glow-gold font-bold'
+                  : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {cat}
@@ -249,8 +249,8 @@ export const PublicStore = ({ slug }) => {
                         isOutOfStock
                           ? 'bg-industrial-800 text-industrial-500 cursor-not-allowed'
                           : inCartItem
-                          ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
-                          : 'bg-gold-500 hover:bg-gold-400 text-black shadow-glow-gold'
+                          ? 'bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300'
+                          : 'bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-black shadow-sm dark:shadow-glow-gold'
                       }`}
                     >
                       {isOutOfStock ? (

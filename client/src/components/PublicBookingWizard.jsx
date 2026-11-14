@@ -509,7 +509,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => setServiceCategory('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 serviceCategory === 'ALL'
-                  ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
                   : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -520,7 +520,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => setServiceCategory('INDIVIDUAL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 serviceCategory === 'INDIVIDUAL'
-                  ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
                   : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -531,7 +531,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => setServiceCategory('COMBOS')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 serviceCategory === 'COMBOS'
-                  ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
                   : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -549,8 +549,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   onClick={() => setSelectedService(srv)}
                   className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-2.5 ${
                     isSelected
-                      ? 'bg-amber-500/10 dark:bg-gold-500/15 border-amber-500 dark:border-gold-500 shadow-sm dark:shadow-glow-gold ring-1 ring-gold-500/50'
-                      : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800/80 hover:border-amber-400 dark:hover:border-industrial-700'
+                      ? 'bg-slate-900/5 dark:bg-gold-500/15 border-slate-900 dark:border-gold-500 shadow-sm dark:shadow-glow-gold ring-1 ring-slate-900/20 dark:ring-gold-500/50'
+                      : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800/80 hover:border-slate-400 dark:hover:border-industrial-700'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -608,7 +608,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               type="button"
               onClick={() => setStep(2)}
               disabled={!selectedService}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
             >
               <span>Continuar a Barbero</span>
               <ChevronRight className="w-4 h-4" />
@@ -633,8 +633,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   onClick={() => setSelectedBarber(barber)}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
                     isSelected
-                      ? 'bg-amber-500/10 dark:bg-gold-500/15 border-amber-500 dark:border-gold-500 shadow-sm dark:shadow-glow-gold'
-                      : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 hover:border-amber-400 dark:hover:border-industrial-700'
+                      ? 'bg-slate-900/5 dark:bg-gold-500/15 border-slate-900 dark:border-gold-500 shadow-sm dark:shadow-glow-gold'
+                      : 'bg-white dark:bg-noir-950 border-slate-200 dark:border-industrial-800 hover:border-slate-400 dark:hover:border-industrial-700'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -654,7 +654,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                     </div>
                   </div>
 
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-amber-500 dark:border-gold-500 bg-amber-500 dark:bg-gold-500 text-noir-950' : 'border-slate-300 dark:border-industrial-700'}`}>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-slate-900 bg-slate-900 text-white dark:border-gold-500 dark:bg-gold-500 dark:text-noir-950' : 'border-slate-300 dark:border-industrial-700'}`}>
                     {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
                   </div>
                 </div>
@@ -665,14 +665,14 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
           <div className="pt-4 flex justify-between">
             <button
               onClick={() => setStep(1)}
-              className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition-colors"
+              className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" /> Volver
             </button>
             <button
               onClick={() => setStep(3)}
               disabled={!selectedBarber}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all cursor-pointer disabled:opacity-40"
             >
               Elegir Horario
               <ChevronRight className="w-4 h-4" />
@@ -688,7 +688,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase tracking-wider">
               3. Fecha y Hora Disponible (Sin Esperas)
             </label>
-            <div className="text-xs font-mono text-amber-600 dark:text-gold-400 font-bold flex items-center gap-1.5">
+            <div className="text-xs font-mono text-slate-900 dark:text-gold-400 font-bold flex items-center gap-1.5">
               <span>Barbero: {selectedBarber?.name}</span>
             </div>
           </div>
@@ -700,7 +700,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => { setSelectedDate(todayStr); setEnableTestSlots(false); }}
               className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedDate === todayStr
-                  ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -711,7 +711,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => { setSelectedDate(tomorrowStr); setEnableTestSlots(false); }}
               className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedDate === tomorrowStr
-                  ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -722,7 +722,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => { setSelectedDate(dayAfterStr); setEnableTestSlots(false); }}
               className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 selectedDate === dayAfterStr
-                  ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -733,7 +733,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               min={todayStr}
               value={selectedDate}
               onChange={(e) => { setSelectedDate(e.target.value); setEnableTestSlots(false); }}
-              className="bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-800 rounded-xl px-2.5 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"
+              className="bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-800 rounded-xl px-2.5 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
             />
           </div>
 
@@ -780,7 +780,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
               return (
                 <div className="py-8 text-center p-6 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl space-y-3">
-                  <Clock className="w-8 h-8 text-amber-500 dark:text-gold-400 mx-auto opacity-70" />
+                  <Clock className="w-8 h-8 text-slate-700 dark:text-gold-400 mx-auto opacity-70" />
                   <h4 className="text-slate-900 dark:text-white text-sm font-bold">
                     {selectedDate === todayStr ? 'El salón ya finalizó su jornada por hoy' : 'Sin citas disponibles para esta fecha'}
                   </h4>
@@ -796,7 +796,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                         setSelectedDate(nextTargetDate);
                         setEnableTestSlots(false);
                       }}
-                      className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all cursor-pointer"
                     >
                       {nextLabel}
                     </button>
@@ -804,9 +804,9 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                       href={waLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <MessageCircle className="w-4 h-4 text-noir-950" />
+                      <MessageCircle className="w-4 h-4 text-white" />
                       <span>Hablar por WhatsApp</span>
                     </a>
                   </div>
@@ -837,8 +837,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                         onClick={() => setSelectedTime(slot.time)}
                         className={`py-3 px-2 rounded-xl text-xs font-mono font-bold transition-all relative ${
                           isSelected
-                            ? 'bg-gold-500 text-noir-950 border border-gold-400 shadow-glow-gold scale-105'
-                            : 'bg-slate-50 dark:bg-noir-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-industrial-800 hover:border-gold-500 hover:text-amber-700 dark:hover:text-gold-300'
+                            ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 border border-slate-900 dark:border-gold-400 shadow-sm dark:shadow-glow-gold scale-105'
+                            : 'bg-white dark:bg-noir-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-industrial-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-gold-300'
                         }`}
                       >
                         {slot.time}
@@ -852,7 +852,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                     ✓ {freeSlots.length} horarios 100% libres disponibles
                   </span>
                   {selectedTime && (
-                    <span className="text-amber-600 dark:text-gold-400 font-bold">
+                    <span className="text-slate-900 dark:text-gold-400 font-bold">
                       Seleccionado: {selectedTime} hrs
                     </span>
                   )}
@@ -864,14 +864,14 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
           <div className="pt-4 flex justify-between">
             <button
               onClick={() => setStep(2)}
-              className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold"
+              className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" /> Volver
             </button>
             <button
               onClick={() => setStep(4)}
               disabled={!selectedTime}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-50 cursor-pointer"
             >
               Completar Datos
               <ChevronRight className="w-4 h-4" />
@@ -887,14 +887,14 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             4. Tus Datos para Confirmación Inmediata
           </label>
 
-          <div className="bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 flex items-center justify-between text-xs">
+          <div className="bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 flex items-center justify-between text-xs">
             <div>
               <span className="text-slate-500 dark:text-industrial-400 block">{selectedService?.name}</span>
               <span className="text-slate-900 dark:text-white font-bold">{selectedBarber?.name}</span>
             </div>
             <div className="text-right">
-              <span className="font-mono text-amber-600 dark:text-gold-400 font-bold block">{selectedDate} — {selectedTime} hrs</span>
-              <span className="text-slate-900 dark:text-white font-mono font-bold">${selectedService?.price}</span>
+              <span className="font-mono text-slate-900 dark:text-gold-400 font-bold block">{selectedDate} — {selectedTime} hrs</span>
+              <span className="text-slate-900 dark:text-white font-mono font-bold">${Number(selectedService?.price).toLocaleString('es-CO')}</span>
             </div>
           </div>
 
@@ -908,7 +908,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                 placeholder="Ej. Roberto Morales"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                className="w-full bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
               />
             </div>
           </div>
@@ -924,7 +924,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   placeholder="+34 600 000 000"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"
+                  className="w-full bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
                 />
               </div>
             </div>
@@ -938,7 +938,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   placeholder="roberto@email.com"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                  className="w-full bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
                 />
               </div>
             </div>
@@ -951,7 +951,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               placeholder="Ej. Prefiero barba perfilada un poco más baja..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
             ></textarea>
           </div>
 
@@ -959,7 +959,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             <button
               type="button"
               onClick={() => setStep(3)}
-              className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-industrial-400 hover:text-white text-xs font-semibold"
+              className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" /> Volver
             </button>
@@ -967,7 +967,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 text-black font-bold text-xs shadow-glow-gold hover:opacity-95 transition-opacity disabled:opacity-50"
+              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gradient-to-r dark:from-gold-500 dark:to-amber-500 dark:text-noir-950 font-bold text-xs shadow-md dark:shadow-glow-gold hover:opacity-95 transition-opacity disabled:opacity-50 cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4" />
               {submitting ? 'Confirmando Turno...' : 'Confirmar Reserva Ahora'}

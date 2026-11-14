@@ -581,7 +581,7 @@ export const ReceptionQueue = () => {
             <h2 className="text-xl md:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
               Agenda del Salón
             </h2>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-mono font-bold">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-amber-500/10 border border-slate-200 dark:border-amber-500/20 text-slate-700 dark:text-amber-400 text-xs font-mono font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
               {filteredAppointments.length} {filteredAppointments.length === 1 ? 'turno' : 'turnos'}
             </span>
@@ -607,7 +607,7 @@ export const ReceptionQueue = () => {
               setSelectedDate(agendaDate);
               setIsAddModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>+ Cita / Turno</span>
@@ -778,7 +778,7 @@ export const ReceptionQueue = () => {
                   onClick={() => setAgendaDate(d.date)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                      ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
                       : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title={`Ver turnos del ${d.date}`}
@@ -787,7 +787,7 @@ export const ReceptionQueue = () => {
                   {d.count > 0 && (
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                       isSelected
-                        ? 'bg-noir-950/25 text-noir-950'
+                        ? 'bg-white/20 text-white dark:bg-noir-950/25 dark:text-noir-950'
                         : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
                     }`}>
                       {d.count}
@@ -813,13 +813,13 @@ export const ReceptionQueue = () => {
             onClick={() => setSelectedBarberFilter('ALL')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
               selectedBarberFilter === 'ALL'
-                ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
                 : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <span>👥 Todos</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-              selectedBarberFilter === 'ALL' ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800'
+              selectedBarberFilter === 'ALL' ? 'bg-white/20 text-white dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
             }`}>
               {dayAppointments.length}
             </span>
@@ -837,7 +837,7 @@ export const ReceptionQueue = () => {
                 onClick={() => setSelectedBarberFilter(isSelected ? 'ALL' : b.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
                     : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
                 title={`Ver únicamente los turnos asignados a ${b.name}`}
@@ -845,7 +845,7 @@ export const ReceptionQueue = () => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
                 <span>{b.name}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                  isSelected ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+                  isSelected ? 'bg-white/20 text-white dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
                 }`}>
                   {bWaiting}
                 </span>
@@ -861,12 +861,12 @@ export const ReceptionQueue = () => {
           onClick={() => setMobileTab('waiting')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             mobileTab === 'waiting'
-              ? 'bg-amber-500 text-noir-950 shadow-sm'
+              ? 'bg-white dark:bg-noir-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-industrial-700'
               : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <span>En Espera</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${mobileTab === 'waiting' ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-amber-700 dark:text-amber-300'}`}>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${mobileTab === 'waiting' ? 'bg-slate-100 dark:bg-noir-950 text-slate-900 dark:text-white font-bold' : 'bg-slate-200/70 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'}`}>
             {waitingQueue.length}
           </span>
         </button>
@@ -875,12 +875,12 @@ export const ReceptionQueue = () => {
           onClick={() => setMobileTab('in_chair')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             mobileTab === 'in_chair'
-              ? 'bg-blue-500 text-white shadow-sm'
+              ? 'bg-white dark:bg-noir-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-industrial-700'
               : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <span>En Sillón</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${mobileTab === 'in_chair' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-industrial-800 text-blue-700 dark:text-blue-300'}`}>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${mobileTab === 'in_chair' ? 'bg-slate-100 dark:bg-noir-950 text-slate-900 dark:text-white font-bold' : 'bg-slate-200/70 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'}`}>
             {inChairList.length}
           </span>
         </button>
@@ -889,12 +889,12 @@ export const ReceptionQueue = () => {
           onClick={() => setMobileTab('completed')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             mobileTab === 'completed'
-              ? 'bg-emerald-500 text-white shadow-sm'
+              ? 'bg-white dark:bg-noir-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-industrial-700'
               : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <span>Listos</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${mobileTab === 'completed' ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-industrial-800 text-emerald-700 dark:text-emerald-300'}`}>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${mobileTab === 'completed' ? 'bg-slate-100 dark:bg-noir-950 text-slate-900 dark:text-white font-bold' : 'bg-slate-200/70 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'}`}>
             {completedList.length}
           </span>
         </button>
@@ -949,9 +949,9 @@ export const ReceptionQueue = () => {
 
                       {/* Barbero Asignado Destacado & WhatsApp */}
                       <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 dark:bg-gold-500/15 border border-amber-500/30 dark:border-gold-500/30 text-amber-700 dark:text-gold-400 text-xs font-semibold">
-                          <User className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
-                          <span>Barbero: <strong className="text-slate-900 dark:text-white">{apt.barberName || 'Por Asignar'}</strong></span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-gold-500/15 border border-slate-200 dark:border-gold-500/30 text-slate-700 dark:text-gold-400 text-xs font-medium">
+                          <User className="w-3.5 h-3.5 text-slate-400 dark:text-gold-400" />
+                          <span>Barbero: <strong className="text-slate-900 dark:text-white font-bold">{apt.barberName || 'Por Asignar'}</strong></span>
                         </span>
 
                         {apt.clientPhone && (
@@ -960,10 +960,10 @@ export const ReceptionQueue = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold transition-colors"
                             title="Chat de WhatsApp con el cliente"
                           >
-                            <MessageSquare className="w-3 h-3" />
+                            <MessageSquare className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                             <span>WhatsApp</span>
                           </a>
                         )}
@@ -971,19 +971,19 @@ export const ReceptionQueue = () => {
                     </div>
 
                     <div className="text-right flex-shrink-0">
-                      <span className="font-mono text-sm sm:text-base text-gold-600 dark:text-gold-400 font-bold block">
+                      <span className="font-mono text-sm sm:text-base text-slate-900 dark:text-gold-400 font-bold block">
                         ${Number(apt.price).toLocaleString('es-CO')}
                       </span>
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-industrial-800 flex items-center justify-between text-xs">
-                    <span className="text-slate-600 dark:text-industrial-300 font-mono font-bold flex items-center gap-1 bg-slate-200/60 dark:bg-noir-900 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-industrial-800">
+                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-industrial-800 flex items-center justify-between text-xs">
+                    <span className="text-slate-600 dark:text-industrial-300 font-mono font-medium flex items-center gap-1 bg-slate-100 dark:bg-noir-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-industrial-800">
                       <Clock className="w-3.5 h-3.5 text-gold-500" /> {apt.time} hrs
                     </span>
                     <button
                       onClick={() => handleStartService(apt.id)}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all text-xs font-bold shadow-sm cursor-pointer"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-blue-500/20 dark:text-blue-400 dark:border dark:border-blue-500/30 dark:hover:bg-blue-500 dark:hover:text-white transition-all text-xs font-bold shadow-sm cursor-pointer"
                     >
                       <PlayCircle className="w-3.5 h-3.5" /> Al Sillón
                     </button>
@@ -1121,7 +1121,7 @@ export const ReceptionQueue = () => {
       >
         <form onSubmit={handleCreateWalkin} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
               Nombre del Cliente
             </label>
             <input
@@ -1130,12 +1130,12 @@ export const ReceptionQueue = () => {
               placeholder="Ej. David Fernández"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
               Teléfono (Opcional)
             </label>
             <input
@@ -1143,17 +1143,17 @@ export const ReceptionQueue = () => {
               placeholder="+34 611 222 333"
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-mono"
             />
           </div>
 
           {/* Selector de Servicios Tradicionales */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-industrial-400 uppercase">
+              <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
                 Servicios Básicos de Barbería
               </label>
-              <span className="text-[10px] text-gold-400 font-mono">1 Clic o Personaliza</span>
+              <span className="text-[10px] text-slate-500 dark:text-gold-400 font-mono">1 Clic o Personaliza</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
               {TRADITIONAL_SERVICES.map((srv) => {
@@ -1168,14 +1168,14 @@ export const ReceptionQueue = () => {
                     }}
                     className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-gold-500 bg-gold-500/15 text-gold-300 shadow-sm'
-                        : 'border-industrial-800 hover:border-industrial-700 bg-noir-950 text-industrial-300'
+                        ? 'border-slate-900 bg-slate-900 text-white dark:border-gold-500 dark:bg-gold-500/15 dark:text-gold-300 shadow-sm'
+                        : 'border-slate-200 dark:border-industrial-800 hover:border-slate-400 dark:hover:border-industrial-700 bg-slate-50 dark:bg-noir-950 text-slate-700 dark:text-industrial-300'
                     }`}
                   >
                     <span className="text-sm flex-shrink-0">{srv.icon}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-bold truncate">{srv.shortName}</div>
-                      <div className="text-[9px] text-gold-400 font-mono">${srv.price.toLocaleString('es-CO')}</div>
+                      <div className={`text-[9px] font-mono ${isSelected ? 'text-slate-300 dark:text-gold-400' : 'text-slate-500 dark:text-gold-400'}`}>${srv.price.toLocaleString('es-CO')}</div>
                     </div>
                   </button>
                 );
@@ -1184,7 +1184,7 @@ export const ReceptionQueue = () => {
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1">
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 dark:text-industrial-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-industrial-300 uppercase mb-1">
                   Servicio
                 </label>
                 <input
@@ -1193,11 +1193,11 @@ export const ReceptionQueue = () => {
                   value={serviceName}
                   onChange={(e) => setServiceName(e.target.value)}
                   placeholder="Ej: Corte, Barba..."
-                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500 font-medium"
+                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-medium"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 dark:text-industrial-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-industrial-300 uppercase mb-1">
                   Precio ($ COP)
                 </label>
                 <input
@@ -1205,7 +1205,7 @@ export const ReceptionQueue = () => {
                   required
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-gold-400 font-mono font-bold focus:outline-none focus:border-gold-500"
+                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-gold-400 font-mono font-bold focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
                 />
               </div>
             </div>
@@ -1214,10 +1214,10 @@ export const ReceptionQueue = () => {
           {/* Asignación de Barbero (Selector Visual Táctil sin Desfase de Pantalla) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-industrial-400 uppercase">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
                 Asignar a Barbero
               </label>
-              <span className="text-[10px] text-industrial-500 font-medium">1 Clic para cambiar</span>
+              <span className="text-[10px] text-slate-500 dark:text-industrial-500 font-medium">1 Clic para cambiar</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
               {barbers.map((b) => {
@@ -1229,16 +1229,16 @@ export const ReceptionQueue = () => {
                     onClick={() => setBarberId(b.id)}
                     className={`p-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-gold-500 bg-gold-500/15 text-gold-300 ring-1 ring-gold-500 shadow-sm'
-                        : 'border-industrial-800 bg-noir-950 text-industrial-300 hover:border-industrial-700 hover:bg-noir-900'
+                        ? 'border-slate-900 bg-slate-900 text-white dark:border-gold-500 dark:bg-gold-500/15 dark:text-gold-300 ring-1 ring-slate-900 dark:ring-gold-500 shadow-sm'
+                        : 'border-slate-200 dark:border-industrial-800 bg-slate-50 dark:bg-noir-950 text-slate-700 dark:text-industrial-300 hover:border-slate-400 dark:hover:border-industrial-700'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                      <span className="text-xs font-bold text-white truncate">{b.name}</span>
+                      <span className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{b.name}</span>
                     </div>
                     {isSelected && (
-                      <span className="text-[9px] font-mono font-bold text-gold-400 px-1.5 py-0.5 rounded bg-gold-500/20">
+                      <span className="text-[9px] font-mono font-bold text-white dark:text-gold-400 px-1.5 py-0.5 rounded bg-white/20 dark:bg-gold-500/20">
                         Elegido
                       </span>
                     )}
@@ -1249,8 +1249,8 @@ export const ReceptionQueue = () => {
           </div>
 
           {/* Fecha del Turno (Selector en Cuadrícula 100% Responsive) */}
-          <div className="space-y-2 pt-1 border-t border-industrial-800/60">
-            <label className="block text-xs font-semibold text-industrial-400 uppercase">
+          <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-industrial-800/60">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
               Fecha del Turno
             </label>
             
@@ -1260,8 +1260,8 @@ export const ReceptionQueue = () => {
                 onClick={() => { setSelectedDate(todayStr); setAllowPast(false); }}
                 className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedDate === todayStr
-                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
-                    : 'bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white'
+                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-black shadow-sm'
+                    : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Hoy ({todayStr.slice(8, 10)}/{todayStr.slice(5, 7)})
@@ -1271,8 +1271,8 @@ export const ReceptionQueue = () => {
                 onClick={() => { setSelectedDate(tomorrowStr); setAllowPast(false); }}
                 className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedDate === tomorrowStr
-                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
-                    : 'bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white'
+                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-black shadow-sm'
+                    : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
@@ -1282,8 +1282,8 @@ export const ReceptionQueue = () => {
                 onClick={() => { setSelectedDate(dayAfterStr); setAllowPast(false); }}
                 className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedDate === dayAfterStr
-                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
-                    : 'bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white'
+                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-black shadow-sm'
+                    : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 {dayAfterStr.slice(8, 10)}/{dayAfterStr.slice(5, 7)}
@@ -1291,12 +1291,12 @@ export const ReceptionQueue = () => {
             </div>
 
             {allowPast && (
-              <div className="px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-[11px] text-purple-300 font-medium flex items-center justify-between">
+              <div className="px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-[11px] text-purple-700 dark:text-purple-300 font-medium flex items-center justify-between">
                 <span>⚡ Modo Ensayo activo: Mostrando todas las franjas horarias de hoy</span>
                 <button
                   type="button"
                   onClick={() => setAllowPast(false)}
-                  className="text-purple-400 hover:text-white underline text-[10px] ml-2"
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-white underline text-[10px] ml-2 cursor-pointer"
                 >
                   Restablecer
                 </button>
@@ -1304,9 +1304,9 @@ export const ReceptionQueue = () => {
             )}
 
             <div>
-              <label className="block text-[11px] text-industrial-400 uppercase mb-1.5 flex items-center justify-between">
+              <label className="block text-[11px] text-slate-600 dark:text-industrial-400 uppercase mb-1.5 flex items-center justify-between">
                 <span>Horarios Disponibles (Solo Libres)</span>
-                {loadingSlots && <span className="text-[10px] text-gold-400 animate-pulse">Consultando agenda...</span>}
+                {loadingSlots && <span className="text-[10px] text-slate-500 dark:text-gold-400 animate-pulse">Consultando agenda...</span>}
               </label>
 
               {(() => {
@@ -1332,8 +1332,8 @@ export const ReceptionQueue = () => {
                   const waLink = `https://wa.me/${cleanPhone || '573001234567'}?text=${waMsg}`;
 
                   return (
-                    <div className="p-3.5 text-center bg-noir-950 border border-amber-500/20 text-xs rounded-2xl space-y-3">
-                      <p className="text-amber-300 font-medium">
+                    <div className="p-3.5 text-center bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-amber-500/20 text-xs rounded-2xl space-y-3">
+                      <p className="text-slate-700 dark:text-amber-300 font-medium">
                         {isCurrentDayToday
                           ? '⚠️ Los turnos diurnos de hoy ya finalizaron (cierre comercial 20:00).'
                           : `⚠️ No hay turnos disponibles para este barbero el ${selectedDate}.`}
@@ -1346,7 +1346,7 @@ export const ReceptionQueue = () => {
                             setSelectedDate(nextTargetDate);
                             setAllowPast(false);
                           }}
-                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs transition-all shadow-glow-gold cursor-pointer"
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs transition-all shadow-sm dark:shadow-glow-gold cursor-pointer"
                         >
                           👉 {nextTargetLabel}
                         </button>
@@ -1356,9 +1356,9 @@ export const ReceptionQueue = () => {
                           href={waLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          <MessageSquare className="w-3.5 h-3.5 text-noir-950" />
+                          <MessageSquare className="w-3.5 h-3.5 text-white" />
                           <span>Hablar por WhatsApp</span>
                         </a>
                       </div>
@@ -1367,7 +1367,7 @@ export const ReceptionQueue = () => {
                         <button
                           type="button"
                           onClick={() => setAllowPast(true)}
-                          className="text-[11px] text-purple-400 hover:text-purple-300 underline font-medium cursor-pointer"
+                          className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline font-medium cursor-pointer"
                         >
                           ⚡ Habilitar turnos para ensayo (Modo Test)
                         </button>
@@ -1377,7 +1377,7 @@ export const ReceptionQueue = () => {
                 }
 
                 return (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 p-1.5 bg-noir-950 rounded-xl border border-industrial-850 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 p-1.5 bg-slate-50 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-850 max-h-48 overflow-y-auto">
                     {freeSlots.map((s) => (
                       <button
                         key={s.time}
@@ -1385,8 +1385,8 @@ export const ReceptionQueue = () => {
                         onClick={() => setSelectedTime(s.time)}
                         className={`py-2 px-1 rounded-lg text-xs font-mono font-bold transition-all text-center cursor-pointer ${
                           selectedTime === s.time
-                            ? 'bg-gold-500 text-noir-950 font-black shadow-glow-gold'
-                            : 'bg-noir-900 border border-industrial-800 text-slate-300 hover:border-gold-500/50'
+                            ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 font-black shadow-sm dark:shadow-glow-gold'
+                            : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-800 dark:text-slate-300 hover:border-slate-400 dark:hover:border-gold-500/50'
                         }`}
                       >
                         {s.time}
@@ -1401,9 +1401,9 @@ export const ReceptionQueue = () => {
           <div className="pt-3 pb-2 flex items-center justify-between gap-2 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
             <div className="min-w-0 flex-shrink-0">
               {!selectedTime ? (
-                <span className="text-[11px] text-amber-400 font-medium whitespace-nowrap">👆 Elige hora</span>
+                <span className="text-[11px] text-slate-500 dark:text-amber-400 font-medium whitespace-nowrap">👆 Elige hora</span>
               ) : (
-                <span className="text-xs text-emerald-400 font-mono font-bold whitespace-nowrap bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg">
+                <span className="text-xs text-slate-900 dark:text-emerald-400 font-mono font-bold whitespace-nowrap bg-slate-100 dark:bg-emerald-500/10 border border-slate-200 dark:border-emerald-500/20 px-2 py-1 rounded-lg">
                   {selectedTime} hrs
                 </span>
               )}
@@ -1412,14 +1412,14 @@ export const ReceptionQueue = () => {
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="px-3 py-2 rounded-xl border border-industrial-800 text-industrial-400 hover:text-white text-xs font-semibold cursor-pointer"
+                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting || !selectedTime}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 {submitting ? 'Agregando...' : 'Agregar Fila'}
               </button>
