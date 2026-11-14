@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
@@ -28,7 +28,9 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   User,
+  Users,
   MessageSquare,
   Phone
 } from 'lucide-react';
@@ -97,31 +99,51 @@ export const ReceptionQueue = () => {
     }
   }, [realtimeAppointment]);
 
-  // Fechas que tienen citas activas para acceso directo
-  const datesWithAppointments = React.useMemo(() => {
-    const map = new Map();
-    (appointments || []).forEach(a => {
-      if (!a) return;
-      const d = String(a.date || todayStr || '');
-      if (!d) return;
-      map.set(d, (map.get(d) || 0) + 1);
-    });
-    return Array.from(map.entries())
-      .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
-      .map(([date, count]) => {
-        const parts = String(date).split('-');
-        const day = parts[2] || parts[0] || '';
-        const m = parts[1] || '';
-        return {
-          date,
-          label: m ? `${day}/${m}` : day,
-          count
-        };
-      });
-  }, [appointments, todayStr]);
+  // Ref para abrir el selector nativo de fecha con 1 clic en cualquier dispositivo
+  const dateInputRef = useRef(null);
 
-  // Formato de fecha amigable en español
-  const formatFriendlyDate = (dateStr) => {
+  const handleOpenDatePicker = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        try {
+          dateInputRef.current.showPicker();
+          return;
+        } catch (e) {
+          // fallback
+        }
+      }
+      dateInputRef.current.focus();
+      dateInputRef.current.click();
+    }
+  };
+
+  // Formato compacto para botón selector (ej: "Hoy, 14 Nov" o "Vie, 13 Nov")
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const parts = String(dateStr).split('-').map(Number);
+      if (parts.length < 3 || isNaN(parts[0])) return String(dateStr);
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const dayName = days[d.getDay()];
+      const dayNum = parts[2];
+      const monthName = months[d.getMonth()];
+
+      if (dateStr === todayStr) {
+        return `Hoy, ${dayNum} ${monthName}`;
+      }
+      if (dateStr === tomorrowStr) {
+        return `Mañana, ${dayNum} ${monthName}`;
+      }
+      return `${dayName}, ${dayNum} ${monthName}`;
+    } catch {
+      return String(dateStr);
+    }
+  };
+
+  // Formato completo en español para subtítulo
+  const formatFullDate = (dateStr) => {
     if (!dateStr) return '';
     try {
       const parts = String(dateStr).split('-').map(Number);
@@ -134,6 +156,72 @@ export const ReceptionQueue = () => {
       return String(dateStr);
     }
   };
+
+  // Días rápidos e interactivos para navegación inmediata con 1 tap
+  const quickDays = useMemo(() => {
+    const map = new Map();
+    (appointments || []).forEach(a => {
+      if (!a) return;
+      const d = String(a.date || todayStr);
+      if (d) map.set(d, (map.get(d) || 0) + 1);
+    });
+
+    const dayItems = [];
+    const addedDates = new Set();
+
+    const addDay = (dateStr, fixedLabel = null) => {
+      if (!dateStr || addedDates.has(dateStr)) return;
+      addedDates.add(dateStr);
+      const count = map.get(dateStr) || 0;
+      let label = fixedLabel;
+      if (!label) {
+        if (dateStr === todayStr) label = 'Hoy';
+        else if (dateStr === tomorrowStr) label = 'Mañana';
+        else {
+          try {
+            const parts = dateStr.split('-').map(Number);
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            label = `${days[d.getDay()]} ${parts[2]}`;
+          } catch {
+            label = dateStr;
+          }
+        }
+      }
+      dayItems.push({ date: dateStr, label, count });
+    };
+
+    // Ayer si tiene citas o está seleccionado
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = getLocalDate(yesterday);
+    if (map.has(yesterdayStr) || agendaDate === yesterdayStr) {
+      addDay(yesterdayStr, 'Ayer');
+    }
+
+    // Hoy
+    addDay(todayStr, 'Hoy');
+
+    // Mañana
+    addDay(tomorrowStr, 'Mañana');
+
+    // Pasado mañana si tiene citas o está seleccionado
+    if (map.has(dayAfterStr) || agendaDate === dayAfterStr) {
+      addDay(dayAfterStr);
+    }
+
+    // Otras fechas con citas
+    Array.from(map.keys()).sort().forEach(d => {
+      addDay(d);
+    });
+
+    // Si la fecha actual seleccionada no está en la lista, agregarla
+    if (!addedDates.has(agendaDate)) {
+      addDay(agendaDate);
+    }
+
+    return dayItems.sort((a, b) => a.date.localeCompare(b.date));
+  }, [appointments, todayStr, tomorrowStr, dayAfterStr, agendaDate]);
 
   // Mover fecha hacia adelante o hacia atrás en el calendario
   const shiftAgendaDate = (days) => {
@@ -400,11 +488,17 @@ export const ReceptionQueue = () => {
       {/* Header Adaptado para Móvil y Desktop */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl md:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
-            Agenda del Salón
-          </h2>
-          <p className="text-[11px] text-slate-500 dark:text-industrial-400 mt-0.5">
-            Turnos en tiempo real, calendario interactivo y asignación rápida de sillones.
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl md:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
+              Agenda del Salón
+            </h2>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-mono font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              {filteredAppointments.length} {filteredAppointments.length === 1 ? 'turno' : 'turnos'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5 capitalize">
+            {formatFullDate(agendaDate)}
           </p>
         </div>
 
@@ -412,7 +506,7 @@ export const ReceptionQueue = () => {
           <button
             onClick={() => setIsManageSlotsOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-50 dark:hover:bg-noir-800 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all cursor-pointer"
-            title="Activar o desactivar turnos de los barberos con 1 click"
+            title="Activar o pausar turnos y franjas"
           >
             <Clock className="w-3.5 h-3.5 text-gold-500" />
             <span className="hidden sm:inline">Pausar / Activar Turnos</span>
@@ -432,177 +526,153 @@ export const ReceptionQueue = () => {
         </div>
       </div>
 
-      {/* Barra de Navegación del Calendario del Salón (Funcional 100%) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
-        {/* Fecha activa e indicador */}
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-400">
-            <Calendar className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm sm:text-base capitalize">
-                {formatFriendlyDate(agendaDate)}
-              </h3>
-              {agendaDate === todayStr ? (
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  HOY
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setAgendaDate(todayStr)}
-                  className="text-[10px] font-mono text-gold-400 hover:underline cursor-pointer"
-                >
-                  (Volver a Hoy)
-                </button>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-industrial-400">
-              {filteredAppointments.length} {filteredAppointments.length === 1 ? 'servicio agendado' : 'servicios agendados'} para este día
-            </p>
-          </div>
-        </div>
-
-        {/* Controles de Día: Ayer, Hoy, Mañana y Selector de Calendario */}
-        <div className="flex items-center gap-1.5 self-stretch sm:self-auto justify-between sm:justify-end">
+      {/* Barra de Control de Fecha (Diseño Pro, Limpio y 100% Modificable con 1 Click) */}
+      <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        
+        {/* Selector de Fecha Principal e Interactivo */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
             type="button"
             onClick={() => shiftAgendaDate(-1)}
-            className="p-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-noir-950 hover:bg-slate-200 dark:hover:bg-industrial-850 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 transition-colors cursor-pointer"
             title="Día anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setAgendaDate(todayStr)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              agendaDate === todayStr
-                ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
-            }`}
-          >
-            Hoy
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const tom = new Date();
-              tom.setDate(tom.getDate() + 1);
-              setAgendaDate(getLocalDate(tom));
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              (() => {
-                const tom = new Date();
-                tom.setDate(tom.getDate() + 1);
-                return agendaDate === getLocalDate(tom);
-              })()
-                ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
-                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
-            }`}
-          >
-            Mañana
-          </button>
+          {/* Botón Central con fecha e input nativo transparente que responde en todo dispositivo */}
+          <div className="relative inline-flex items-center">
+            <div
+              onClick={handleOpenDatePicker}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 hover:border-gold-500/50 text-slate-900 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-sm select-none"
+            >
+              <Calendar className="w-4 h-4 text-gold-500 flex-shrink-0" />
+              <span className="capitalize">{formatDateDisplay(agendaDate)}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+            {/* Input nativo transparente para que en móvil y desktop abra el calendario al instante */}
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={agendaDate}
+              onChange={(e) => {
+                if (e.target.value) setAgendaDate(e.target.value);
+              }}
+              className="absolute inset-0 opacity-0 pointer-events-auto cursor-pointer w-full h-full"
+              title="Cambiar fecha en el calendario"
+            />
+          </div>
 
           <button
             type="button"
             onClick={() => shiftAgendaDate(1)}
-            className="p-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-noir-950 hover:bg-slate-200 dark:hover:bg-industrial-850 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 transition-colors cursor-pointer"
             title="Día siguiente"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {/* Selector de Fecha Nativo de Calendario */}
-          <div className="relative">
-            <input
-              type="date"
-              value={agendaDate}
-              onChange={(e) => e.target.value && setAgendaDate(e.target.value)}
-              className="bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-gold-500 cursor-pointer"
-              title="Seleccionar fecha en el calendario"
-            />
-          </div>
-        </div>
-
-        {/* Acceso Rápido a Días con Citas Programadas */}
-        {datesWithAppointments.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pt-2.5 pb-0.5 scrollbar-none w-full border-t border-slate-100 dark:border-industrial-850">
-            <span className="text-[10px] uppercase font-mono text-slate-400 dark:text-industrial-400 font-bold whitespace-nowrap flex items-center gap-1">
-              📅 Días con Citas:
-            </span>
-            {datesWithAppointments.map((d) => (
-              <button
-                key={d.date}
-                type="button"
-                onClick={() => setAgendaDate(d.date)}
-                className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                  agendaDate === d.date
-                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
-                    : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title={`Ver citas del día ${d.date}`}
-              >
-                <span>{d.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-sans font-bold ${
-                  agendaDate === d.date ? 'bg-noir-950/25 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
-                }`}>
-                  {d.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Selector de Barberos (Filtro Inteligente para Salón Multi-Barbero) */}
-        {barbers && barbers.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 scrollbar-none w-full border-t border-slate-100 dark:border-industrial-850">
-            <span className="text-[10px] uppercase font-mono text-slate-400 dark:text-industrial-400 font-bold whitespace-nowrap flex items-center gap-1">
-              💈 Sillón:
-            </span>
+          {agendaDate !== todayStr && (
             <button
               type="button"
-              onClick={() => setSelectedBarberFilter('ALL')}
-              className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                selectedBarberFilter === 'ALL'
-                  ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
-                  : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
-              }`}
+              onClick={() => setAgendaDate(todayStr)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 border border-gold-500/30 text-gold-600 dark:text-gold-400 text-xs font-bold transition-colors cursor-pointer ml-0.5"
+              title="Volver a la fecha de hoy"
             >
-              <span>👥 Todos ({dayAppointments.length})</span>
+              <RotateCcw className="w-3 h-3" />
+              <span>Hoy</span>
             </button>
-            {barbers.map((b) => {
-              const bApts = dayAppointments.filter(a => a.barberId === b.id || a.barberName === b.name);
-              const bWaiting = bApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED').length;
-              const isSelected = selectedBarberFilter === b.id || selectedBarberFilter === b.name;
+          )}
+        </div>
+
+        {/* Chips de Días Rápidos (Hoy, Mañana, Días con Citas Registradas) */}
+        {quickDays.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none sm:justify-end">
+            {quickDays.map((d) => {
+              const isSelected = agendaDate === d.date;
               return (
                 <button
-                  key={b.id}
+                  key={d.date}
                   type="button"
-                  onClick={() => setSelectedBarberFilter(isSelected ? 'ALL' : b.id)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  onClick={() => setAgendaDate(d.date)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold shadow-glow-gold'
-                      : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                      : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
-                  title={`Filtrar para ver solo turnos de ${b.name}`}
+                  title={`Ver turnos del ${d.date}`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                  <span className="truncate">{b.name}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                    isSelected ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
-                  }`}>
-                    {bWaiting}
-                  </span>
+                  <span>{d.label}</span>
+                  {d.count > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      isSelected
+                        ? 'bg-noir-950/25 text-noir-950'
+                        : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+                    }`}>
+                      {d.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Barra de Sillones / Barberos (Para 2 o 3 barberos con control total e intuitivo) */}
+      {barbers && barbers.length > 0 && (
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-2 sm:p-2.5 shadow-sm flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-industrial-400 px-2 whitespace-nowrap flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-gold-500" />
+            <span>Sillón:</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setSelectedBarberFilter('ALL')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedBarberFilter === 'ALL'
+                ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>👥 Todos</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+              selectedBarberFilter === 'ALL' ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800'
+            }`}>
+              {dayAppointments.length}
+            </span>
+          </button>
+
+          {barbers.map((b) => {
+            const bApts = dayAppointments.filter(a => a.barberId === b.id || a.barberName === b.name);
+            const bWaiting = bApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED').length;
+            const isSelected = selectedBarberFilter === b.id || selectedBarberFilter === b.name;
+
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => setSelectedBarberFilter(isSelected ? 'ALL' : b.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                    : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title={`Ver únicamente los turnos asignados a ${b.name}`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                <span>{b.name}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                  isSelected ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+                }`}>
+                  {bWaiting}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Selector de pestañas para celular (Mobile Segmented Control) */}
       <div className="flex lg:hidden bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 p-1 rounded-2xl gap-1">
