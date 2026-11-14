@@ -4,11 +4,12 @@ import { isMock, mockStore, db } from '../config/firebase.js';
 const BARBERSHOP_DEFAULTS = {
   staffTitle: 'Barbero Principal',
   services: [
-    { id: 'srv-1', name: 'Skin Fade + Ritual de Toalla Caliente', duration: 45, price: 35000, commissionRate: 0.50 },
-    { id: 'srv-2', name: 'Corte Clásico a Tijera & Peinado', duration: 40, price: 30000, commissionRate: 0.50 },
-    { id: 'srv-3', name: 'Perfilado de Barba con Navaja & Óleo', duration: 25, price: 20000, commissionRate: 0.50 },
-    { id: 'srv-4', name: 'Black Mask Facial Puntos Negros', duration: 20, price: 18000, commissionRate: 0.40 },
-    { id: 'srv-5', name: 'Combo Fade + Barba + Cejas', duration: 60, price: 50000, commissionRate: 0.50 }
+    { id: 'srv-1', name: 'Corte de Cabello (Fade / Clásico)', duration: 35, price: 25000, commissionRate: 0.50 },
+    { id: 'srv-2', name: 'Arreglo & Ritual de Barba', duration: 25, price: 18000, commissionRate: 0.50 },
+    { id: 'srv-3', name: 'Perfilado de Cejas con Navaja', duration: 15, price: 10000, commissionRate: 0.50 },
+    { id: 'srv-4', name: 'Combo Tradicional: Corte + Barba', duration: 50, price: 38000, commissionRate: 0.50 },
+    { id: 'srv-5', name: 'Combo: Corte + Cejas', duration: 40, price: 30000, commissionRate: 0.50 },
+    { id: 'srv-6', name: 'Combo VIP: Corte + Barba + Cejas', duration: 60, price: 45000, commissionRate: 0.50 }
   ],
   products: [
     { id: 'prod-1', name: 'Cera Fijadora Mate Suavecito 120g', price: 45000, costPrice: 24000, stock: 15 },

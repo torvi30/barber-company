@@ -4,12 +4,14 @@ import { OPERATING_SLOTS, toMinutes, checkSlotCollision } from './appointmentCon
 import { dispatchNotification } from '../services/notificationService.js';
 import { recordClientAppointment } from './clientController.js';
 
-// Catálogo maestro de servicios que cada barbería ofrece
+// Catálogo maestro tradicional de servicios de barbería
 const DEFAULT_SERVICES = [
-  { id: 'srv-01', name: 'Skin Fade + Toalla Caliente', durationMinutes: 45, price: 35.00, description: 'Degradado quirúrgico a navaja con ritual de vapor y bálsamo hidratante.' },
-  { id: 'srv-02', name: 'Corte Clásico Ejecutivo', durationMinutes: 30, price: 25.00, description: 'Tijera o máquina tradicional con peinado estructurado y secado.' },
-  { id: 'srv-03', name: 'Ritual de Barba & Navaja Japonesa', durationMinutes: 30, price: 22.00, description: 'Perfilado milimétrico, toalla caliente, aceite de argán y masaje facial.' },
-  { id: 'srv-04', name: 'Full Grooming Experience (Corte + Barba + Mascarilla)', durationMinutes: 60, price: 55.00, description: 'Tratamiento VIP completo: corte personalizado, barba ritual y mascarilla de carbón activo.' }
+  { id: 'srv-01', name: 'Corte de Cabello (Fade / Clásico)', durationMinutes: 35, price: 25000, description: 'Corte clásico o degradado (Fade / Skin Fade) con acabado profesional y peinado.' },
+  { id: 'srv-02', name: 'Arreglo & Ritual de Barba', durationMinutes: 25, price: 18000, description: 'Perfilado con navaja tradicional, toalla caliente y aplicación de bálsamo/óleo.' },
+  { id: 'srv-03', name: 'Perfilado de Cejas con Navaja', durationMinutes: 15, price: 10000, description: 'Diseño y limpieza de cejas masculinas con navaja descartable.' },
+  { id: 'srv-04', name: 'Combo Tradicional: Corte + Barba', durationMinutes: 50, price: 38000, description: 'Servicio combinado clásico: corte de cabello completo y ritual de toalla para barba.' },
+  { id: 'srv-05', name: 'Combo: Corte + Cejas', durationMinutes: 40, price: 30000, description: 'Corte de precisión y alineación milimétrica de cejas.' },
+  { id: 'srv-06', name: 'Combo VIP: Corte + Barba + Cejas', durationMinutes: 60, price: 45000, description: 'La experiencia completa tradicional: corte, barba y cejas en una sola sesión.' }
 ];
 
 /**

@@ -23,6 +23,7 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react';
+import { TRADITIONAL_SERVICES } from '../constants/services';
 
 export const ClientsCRM = () => {
   const { tenantId, barbers } = useBarbershop();
@@ -47,9 +48,9 @@ export const ClientsCRM = () => {
 
   // Registro Manual de Visita / Historial
   const [isAddingVisitOpen, setIsAddingVisitOpen] = useState(false);
-  const [visitService, setVisitService] = useState('Skin Fade + Barba');
+  const [visitService, setVisitService] = useState(TRADITIONAL_SERVICES[0].name);
   const [visitBarber, setVisitBarber] = useState(barbers[0]?.name || 'Carlos FadeMaster');
-  const [visitPrice, setVisitPrice] = useState(35000);
+  const [visitPrice, setVisitPrice] = useState(TRADITIONAL_SERVICES[0].price);
   const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0]);
   const [visitNotes, setVisitNotes] = useState('');
   const [isSavingVisit, setIsSavingVisit] = useState(false);
@@ -601,10 +602,36 @@ export const ClientsCRM = () => {
               {/* Formulario para Registrar Visita Manual */}
               {isAddingVisitOpen && (
                 <form onSubmit={handleAddVisit} className="p-3.5 rounded-xl bg-slate-100 dark:bg-noir-900 border border-slate-300 dark:border-industrial-700/80 mb-3 space-y-3 animate-fadeIn">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Scissors className="w-3.5 h-3.5 text-gold-500" />
-                    <span>Registrar Corte / Servicio al Historial</span>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Scissors className="w-3.5 h-3.5 text-gold-500" />
+                      <span>Registrar Servicio al Historial</span>
+                    </div>
+                    <span className="text-[10px] text-gold-400 font-mono">1-Clic</span>
                   </div>
+
+                  {/* Chips de Servicios Tradicionales */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    {TRADITIONAL_SERVICES.map((srv) => (
+                      <button
+                        key={srv.id}
+                        type="button"
+                        onClick={() => {
+                          setVisitService(srv.name);
+                          setVisitPrice(srv.price);
+                        }}
+                        className={`p-1.5 rounded-lg border text-left text-[11px] flex items-center gap-1.5 transition-all cursor-pointer ${
+                          visitService === srv.name
+                            ? 'border-gold-500 bg-gold-500/20 text-gold-400 font-bold'
+                            : 'border-slate-300 dark:border-industrial-800 bg-white dark:bg-noir-950 text-slate-700 dark:text-industrial-300 hover:border-gold-500/50'
+                        }`}
+                      >
+                        <span>{srv.icon}</span>
+                        <span className="truncate">{srv.shortName}</span>
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="text-[10px] uppercase font-mono text-slate-500 dark:text-industrial-400 block mb-1">Servicio Realizado *</label>
@@ -613,7 +640,7 @@ export const ClientsCRM = () => {
                         required
                         value={visitService}
                         onChange={(e) => setVisitService(e.target.value)}
-                        placeholder="Ej: Skin Fade + Barba Ritual"
+                        placeholder="Ej: Corte + Barba"
                         className="w-full bg-white dark:bg-noir-950 border border-slate-300 dark:border-industrial-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
                       />
                     </div>

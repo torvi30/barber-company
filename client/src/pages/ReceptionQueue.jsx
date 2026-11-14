@@ -25,8 +25,11 @@ import {
   Save,
   Coffee,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { TRADITIONAL_SERVICES } from '../constants/services';
 
 const DAYS_OF_WEEK = [
   { id: 'monday', label: 'Lunes' },
@@ -45,17 +48,45 @@ export const ReceptionQueue = () => {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  // Form states
+  // Form states con servicios tradicionales de barbería
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [serviceName, setServiceName] = useState('Skin Fade Ritual');
-  const [price, setPrice] = useState(35);
+  const [serviceName, setServiceName] = useState(TRADITIONAL_SERVICES[0].name);
+  const [price, setPrice] = useState(TRADITIONAL_SERVICES[0].price);
   const [barberId, setBarberId] = useState(barbers[0]?.id || 'barber-01');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [agendaDate, setAgendaDate] = useState(todayStr); // Fecha activa del Calendario de la Agenda
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedTime, setSelectedTime] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [isManageSlotsOpen, setIsManageSlotsOpen] = useState(false);
+
+  // Formato de fecha amigable en español
+  const formatFriendlyDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const d = new Date(year, month - 1, day);
+      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      return `${days[d.getDay()]}, ${day} de ${months[d.getMonth()]} de ${year}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Mover fecha hacia adelante o hacia atrás en el calendario
+  const shiftAgendaDate = (days) => {
+    try {
+      const [year, month, day] = agendaDate.split('-').map(Number);
+      const d = new Date(year, month - 1, day);
+      d.setDate(d.getDate() + days);
+      setAgendaDate(d.toISOString().split('T')[0]);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
 
   // Estados de gestión de turnos avanzada
   const [manageTab, setManageTab] = useState('slots'); // 'slots' | 'schedule'
@@ -271,43 +302,145 @@ export const ReceptionQueue = () => {
     setSelectedRetailProducts([]);
   };
 
-  const waitingQueue = appointments.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
-  const inChairList = appointments.filter(a => a.status === 'IN_CHAIR');
-  const completedList = appointments.filter(a => a.status === 'COMPLETED');
+  // Filtrar citas del día seleccionado en el Calendario de la Agenda
+  const filteredAppointments = appointments.filter(a => {
+    const aDate = a.date || todayStr;
+    return aDate === agendaDate;
+  });
+
+  const waitingQueue = filteredAppointments.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
+  const inChairList = filteredAppointments.filter(a => a.status === 'IN_CHAIR');
+  const completedList = filteredAppointments.filter(a => a.status === 'COMPLETED');
 
   const [mobileTab, setMobileTab] = useState('waiting'); // 'waiting' | 'in_chair' | 'completed'
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
+    <div className="space-y-4 animate-fadeIn pb-12">
       {/* Header Adaptado para Móvil y Desktop */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl md:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide">
             Agenda del Salón
           </h2>
           <p className="text-[11px] text-slate-500 dark:text-industrial-400 mt-0.5">
-            Turnos en tiempo real y asignación rápida de sillones.
+            Turnos en tiempo real, calendario interactivo y asignación rápida de sillones.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsManageSlotsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-50 dark:hover:bg-noir-800 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-50 dark:hover:bg-noir-800 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all cursor-pointer"
             title="Activar o desactivar turnos de los barberos con 1 click"
           >
             <Clock className="w-3.5 h-3.5 text-gold-500" />
-            <span className="hidden sm:inline">Activar / Pausar Turnos</span>
+            <span className="hidden sm:inline">Pausar / Activar Turnos</span>
             <span className="sm:hidden">Turnos</span>
           </button>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all"
+            onClick={() => {
+              setSelectedDate(agendaDate);
+              setIsAddModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>+ Cita / Turno</span>
           </button>
+        </div>
+      </div>
+
+      {/* Barra de Navegación del Calendario del Salón (Funcional 100%) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
+        {/* Fecha activa e indicador */}
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-400">
+            <Calendar className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm sm:text-base capitalize">
+                {formatFriendlyDate(agendaDate)}
+              </h3>
+              {agendaDate === todayStr ? (
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  HOY
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAgendaDate(todayStr)}
+                  className="text-[10px] font-mono text-gold-400 hover:underline cursor-pointer"
+                >
+                  (Volver a Hoy)
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-industrial-400">
+              {filteredAppointments.length} {filteredAppointments.length === 1 ? 'servicio agendado' : 'servicios agendados'} para este día
+            </p>
+          </div>
+        </div>
+
+        {/* Controles de Día: Ayer, Hoy, Mañana y Selector de Calendario */}
+        <div className="flex items-center gap-1.5 self-stretch sm:self-auto justify-between sm:justify-end">
+          <button
+            type="button"
+            onClick={() => shiftAgendaDate(-1)}
+            className="p-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:text-white transition-colors cursor-pointer"
+            title="Día anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAgendaDate(todayStr)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              agendaDate === todayStr
+                ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
+                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+            }`}
+          >
+            Hoy
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              const tom = new Date();
+              tom.setDate(tom.getDate() + 1);
+              setAgendaDate(tom.toISOString().split('T')[0]);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              agendaDate === new Date(Date.now() + 86400000).toISOString().split('T')[0]
+                ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
+                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+            }`}
+          >
+            Mañana
+          </button>
+
+          <button
+            type="button"
+            onClick={() => shiftAgendaDate(1)}
+            className="p-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:text-white transition-colors cursor-pointer"
+            title="Día siguiente"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+          {/* Selector de Fecha Nativo de Calendario */}
+          <div className="relative">
+            <input
+              type="date"
+              value={agendaDate}
+              onChange={(e) => e.target.value && setAgendaDate(e.target.value)}
+              className="bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-gold-500 cursor-pointer"
+              title="Seleccionar fecha en el calendario"
+            />
+          </div>
         </div>
       </div>
 
@@ -541,30 +674,64 @@ export const ReceptionQueue = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
-                Servicio
-              </label>
-              <input
-                type="text"
-                required
-                value={serviceName}
-                onChange={(e) => setServiceName(e.target.value)}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500"
-              />
+          {/* Selector de Servicios Tradicionales */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-industrial-400 uppercase flex items-center justify-between">
+              <span>Servicios Tradicionales de Barbería</span>
+              <span className="text-[10px] text-gold-400 font-mono">1 Clic</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {TRADITIONAL_SERVICES.map((srv) => {
+                const isSelected = serviceName === srv.name;
+                return (
+                  <button
+                    key={srv.id}
+                    type="button"
+                    onClick={() => {
+                      setServiceName(srv.name);
+                      setPrice(srv.price);
+                    }}
+                    className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-gold-500 bg-gold-500/15 text-gold-300 shadow-sm'
+                        : 'border-industrial-800 hover:border-industrial-700 bg-noir-950 text-industrial-300'
+                    }`}
+                  >
+                    <span className="text-sm flex-shrink-0">{srv.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-bold truncate">{srv.shortName}</div>
+                      <div className="text-[9px] text-gold-400 font-mono">${srv.price.toLocaleString('es-CO')}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
-                Precio ($)
-              </label>
-              <input
-                type="number"
-                required
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500"
-              />
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[10px] text-industrial-400 uppercase mb-1">
+                  Servicio Seleccionado
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={serviceName}
+                  onChange={(e) => setServiceName(e.target.value)}
+                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] text-industrial-400 uppercase mb-1">
+                  Precio ($ COP)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={price}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-gold-400 font-mono font-bold focus:outline-none focus:border-gold-500"
+                />
+              </div>
             </div>
           </div>
 
