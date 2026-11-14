@@ -65,3 +65,4 @@ export function getOptimizedImageUrl(url, { width = 300, height = 300, crop = 'f
   const transformation = `f_auto,q_auto,w_${width},h_${height},c_${crop}`;
   return url.replace('/image/upload/', `/image/upload/${transformation}/`);
 }
+

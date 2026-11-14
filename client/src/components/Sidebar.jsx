@@ -9,7 +9,6 @@ import {
   Crown,
   ExternalLink,
   LogOut,
-  Sparkles,
   Settings
 } from 'lucide-react';
 
@@ -93,23 +92,6 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
                 </button>
               );
             })}
-
-            {/* Acceso Directo a Identidad & Logo */}
-            {onOpenSettings && (
-              <button
-                onClick={() => onOpenSettings('identity')}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-industrial-400 hover:text-gold-300 hover:bg-gold-500/10 border border-transparent hover:border-gold-500/20 transition-all cursor-pointer mt-2"
-                title="Configurar Logotipo, Datos y Módulos del Salón"
-              >
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span>Identidad & Logo</span>
-                </div>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-gold-500/10 text-gold-400 border border-gold-500/20">
-                  LOGO
-                </span>
-              </button>
-            )}
           </nav>
         </div>
       </div>

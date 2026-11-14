@@ -473,7 +473,7 @@ export const BarberPortal = () => {
           </button>
         </div>
 
-        {/* Switcher rápido de barbero y acción según sección */}
+        {/* Switcher rápido de barbero */}
         <div className="flex items-center gap-2 justify-between sm:justify-end">
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs shadow-sm">
             <span className="text-slate-500 dark:text-industrial-400 text-[11px] hidden sm:inline">Ver como:</span>
@@ -489,16 +489,6 @@ export const BarberPortal = () => {
               ))}
             </select>
           </div>
-
-          {activeSection === 'team' && (
-            <button
-              onClick={openNewBarberModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 text-xs font-bold shadow-glow-gold transition-all cursor-pointer"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>+ Nuevo Barbero</span>
-            </button>
-          )}
         </div>
       </div>
 
