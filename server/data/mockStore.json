@@ -660,8 +660,9 @@
         "costPrice": 18000,
         "stock": 15,
         "minStock": 4,
-        "imageUrl": "https://images.unsplash.com/photo-1597852074816-d933c4d2b988?fit=crop&w=400&q=80",
-        "isPublic": true
+        "imageUrl": "https://res.cloudinary.com/bchdrvef/image/upload/v1794641752/barber-company/productos/tqm2fdbylhwoxlpul7bl.webp",
+        "isPublic": true,
+        "updatedAt": "2026-11-14T07:35:56.522Z"
       },
       {
         "id": "prod-02",

@@ -43,7 +43,7 @@ export const Landing = ({ onEnterAdmin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-gold-500 selection:text-black transition-colors duration-200">
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-gold-500 selection:text-black transition-colors duration-200 overflow-x-hidden">
       {/* Top Bar Navigation: Adaptado a Móvil y Desktop */}
       <nav className="border-b border-slate-200 dark:border-industrial-800 bg-white/90 dark:bg-noir-900/90 backdrop-blur-md px-4 py-3 md:px-6 md:py-4 sticky top-0 z-40 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">

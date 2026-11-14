@@ -3,8 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     @apply bg-noir-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-gold-500 selection:text-black transition-colors duration-200;
+    overflow-y: auto;
+    overflow-x: hidden;
+    touch-action: pan-y;
   }
 
   /* Modo Claro Elegante & Armonioso (Executive Ivory & Slate) */
