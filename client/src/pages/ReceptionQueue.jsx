@@ -27,7 +27,10 @@ import {
   RotateCcw,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User,
+  MessageSquare,
+  Phone
 } from 'lucide-react';
 import { TRADITIONAL_SERVICES } from '../constants/services';
 
@@ -84,6 +87,7 @@ export const ReceptionQueue = () => {
   const [isManageSlotsOpen, setIsManageSlotsOpen] = useState(false);
   const [allowPast, setAllowPast] = useState(false);
   const [mobileTab, setMobileTab] = useState('waiting'); // 'waiting' | 'in_chair' | 'completed'
+  const [selectedBarberFilter, setSelectedBarberFilter] = useState('ALL'); // 'ALL' | barberId
 
   // Auto-switch de fecha y animación inmediata cuando entra una nueva reserva en tiempo real
   useEffect(() => {
@@ -376,10 +380,16 @@ export const ReceptionQueue = () => {
   };
 
   // Filtrar citas del día seleccionado en el Calendario de la Agenda
-  const filteredAppointments = appointments.filter(a => {
-    const aDate = a.date || todayStr;
+  const dayAppointments = appointments.filter(a => {
+    if (!a) return false;
+    const aDate = String(a.date || todayStr);
     return aDate === agendaDate;
   });
+
+  // Filtrar por Barbero si hay uno seleccionado
+  const filteredAppointments = selectedBarberFilter === 'ALL'
+    ? dayAppointments
+    : dayAppointments.filter(a => a.barberId === selectedBarberFilter || a.barberName === selectedBarberFilter);
 
   const waitingQueue = filteredAppointments.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
   const inChairList = filteredAppointments.filter(a => a.status === 'IN_CHAIR');
@@ -546,6 +556,52 @@ export const ReceptionQueue = () => {
             ))}
           </div>
         )}
+
+        {/* Selector de Barberos (Filtro Inteligente para Salón Multi-Barbero) */}
+        {barbers && barbers.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 scrollbar-none w-full border-t border-slate-100 dark:border-industrial-850">
+            <span className="text-[10px] uppercase font-mono text-slate-400 dark:text-industrial-400 font-bold whitespace-nowrap flex items-center gap-1">
+              💈 Sillón:
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedBarberFilter('ALL')}
+              className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                selectedBarberFilter === 'ALL'
+                  ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                  : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+              }`}
+            >
+              <span>👥 Todos ({dayAppointments.length})</span>
+            </button>
+            {barbers.map((b) => {
+              const bApts = dayAppointments.filter(a => a.barberId === b.id || a.barberName === b.name);
+              const bWaiting = bApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED').length;
+              const isSelected = selectedBarberFilter === b.id || selectedBarberFilter === b.name;
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => setSelectedBarberFilter(isSelected ? 'ALL' : b.id)}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold shadow-glow-gold'
+                      : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                  }`}
+                  title={`Filtrar para ver solo turnos de ${b.name}`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                  <span className="truncate">{b.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                    isSelected ? 'bg-noir-950/20 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+                  }`}>
+                    {bWaiting}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Selector de pestañas para celular (Mobile Segmented Control) */}
@@ -616,29 +672,67 @@ export const ReceptionQueue = () => {
               waitingQueue.map((apt) => (
                 <div
                   key={apt.id}
-                  className={`bg-slate-50 dark:bg-noir-950 border rounded-xl p-4 transition-all shadow-sm ${
+                  className={`bg-slate-50 dark:bg-noir-950 border rounded-2xl p-4 transition-all shadow-sm ${
                     realtimeAppointment?.id === apt.id
                       ? 'border-gold-500 ring-2 ring-gold-500/50 shadow-glow-gold animate-fadeIn'
                       : 'border-slate-200 dark:border-industrial-800/90 hover:border-gold-500/40'
                   }`}
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{apt.clientName}</h4>
-                      <p className="text-xs text-slate-500 dark:text-industrial-400 flex items-center gap-1 mt-0.5">
-                        <Scissors className="w-3 h-3 text-gold-500" /> {apt.serviceName}
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm uppercase tracking-wide truncate">
+                          {apt.clientName}
+                        </h4>
+                        {realtimeAppointment?.id === apt.id && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-gold-500 text-noir-950 font-black text-[9px] uppercase tracking-wider animate-pulse font-mono">
+                            Nuevo
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-industrial-400 flex items-center gap-1.5 mt-1">
+                        <Scissors className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{apt.serviceName}</span>
                       </p>
+
+                      {/* Barbero Asignado Destacado & WhatsApp */}
+                      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 dark:bg-gold-500/15 border border-amber-500/30 dark:border-gold-500/30 text-amber-700 dark:text-gold-400 text-xs font-semibold">
+                          <User className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                          <span>Barbero: <strong className="text-slate-900 dark:text-white">{apt.barberName || 'Por Asignar'}</strong></span>
+                        </span>
+
+                        {apt.clientPhone && (
+                          <a
+                            href={`https://wa.me/${apt.clientPhone.replace(/[^\d]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold transition-colors"
+                            title="Chat de WhatsApp con el cliente"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-mono text-xs text-gold-600 dark:text-gold-400 font-bold">${apt.price}</span>
+
+                    <div className="text-right flex-shrink-0">
+                      <span className="font-mono text-sm sm:text-base text-gold-600 dark:text-gold-400 font-bold block">
+                        ${Number(apt.price).toLocaleString('es-CO')}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-industrial-800 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 dark:text-industrial-400 font-mono flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {apt.time}
+                    <span className="text-slate-600 dark:text-industrial-300 font-mono font-bold flex items-center gap-1 bg-slate-200/60 dark:bg-noir-900 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-industrial-800">
+                      <Clock className="w-3.5 h-3.5 text-gold-500" /> {apt.time} hrs
                     </span>
                     <button
                       onClick={() => handleStartService(apt.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all text-xs font-bold shadow-sm cursor-pointer"
                     >
                       <PlayCircle className="w-3.5 h-3.5" /> Al Sillón
                     </button>
@@ -670,26 +764,46 @@ export const ReceptionQueue = () => {
               inChairList.map((apt) => (
                 <div
                   key={apt.id}
-                  className="bg-slate-50 dark:bg-noir-950 border border-blue-500/30 rounded-xl p-4 shadow-sm"
+                  className="bg-slate-50 dark:bg-noir-950 border border-blue-500/40 rounded-2xl p-4 shadow-sm"
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{apt.clientName}</h4>
-                      <p className="text-xs text-gold-600 dark:text-gold-400 flex items-center gap-1 mt-0.5 font-medium">
-                        Barbero: {apt.barberName}
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm uppercase tracking-wide truncate">
+                        {apt.clientName}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-industrial-400 flex items-center gap-1 mt-0.5">
+                        <Scissors className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" /> {apt.serviceName}
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{apt.serviceName}</p>
+                      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                          <User className="w-3.5 h-3.5" />
+                          <span>Atendido por: <strong>{apt.barberName}</strong></span>
+                        </span>
+                        {apt.clientPhone && (
+                          <a
+                            href={`https://wa.me/${apt.clientPhone.replace(/[^\d]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold transition-colors"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-mono text-sm text-slate-900 dark:text-white font-bold">${apt.price}</span>
+                    <span className="font-mono text-sm sm:text-base text-slate-900 dark:text-white font-bold block">${Number(apt.price).toLocaleString('es-CO')}</span>
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-industrial-800 flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded font-semibold">
-                      En Curso
+                    <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                      En Sillón ({apt.time} hrs)
                     </span>
                     <button
                       onClick={() => openCheckout(apt)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors text-xs font-bold"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 transition-colors text-xs font-bold shadow-sm cursor-pointer"
                     >
                       <CheckCircle className="w-3.5 h-3.5" /> Cobrar Turno
                     </button>

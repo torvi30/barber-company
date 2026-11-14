@@ -510,6 +510,25 @@
   "appointments": {
     "tenant_imperio_barber_01": [
       {
+        "id": "apt-1794638832523",
+        "barberId": "barber-01",
+        "barberName": "Barbero Asignado",
+        "clientName": "VICTOR",
+        "clientPhone": "322254656544",
+        "clientEmail": "",
+        "serviceName": "Corte y Cejas",
+        "durationMinutes": 45,
+        "price": 30000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "WAITING",
+        "date": "2026-11-14",
+        "time": "09:00",
+        "notes": "",
+        "createdAt": "2026-11-14T06:47:12.523Z",
+        "completedAt": null
+      },
+      {
         "id": "apt-1794636254416",
         "barberId": "barber-01",
         "barberName": "Barbero Asignado",
@@ -819,6 +838,39 @@
         ],
         "createdAt": "2026-11-14T04:18:59.151Z",
         "updatedAt": "2026-11-14T06:04:14.416Z"
+      },
+      {
+        "id": "cli-1794638832524",
+        "name": "VICTOR",
+        "phone": "322254656544",
+        "email": "",
+        "tier": "NEW",
+        "totalVisits": 1,
+        "totalSpent": 0,
+        "lastVisit": "2026-11-14",
+        "preferredBarberId": "barber-01",
+        "preferredBarberName": "Barbero Asignado",
+        "styleProfile": {
+          "haircutType": "Corte y Cejas",
+          "guardSides": "A convenir en cita",
+          "topLength": "Tijera normal",
+          "beardNotes": "Sin notas aún",
+          "productPreference": "Pomada Mate",
+          "technicalNotes": "Cliente registrado automáticamente al agendar turno (2026-11-14 09:00)"
+        },
+        "visitHistory": [
+          {
+            "id": "vis-1794638832524",
+            "date": "2026-11-14",
+            "time": "09:00",
+            "service": "Corte y Cejas",
+            "barber": "Barbero Asignado",
+            "price": 30000,
+            "status": "WAITING",
+            "recordedAt": "2026-11-14T06:47:12.524Z"
+          }
+        ],
+        "createdAt": "2026-11-14T06:47:12.524Z"
       }
     ]
   },

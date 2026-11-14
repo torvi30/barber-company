@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { initSocket, getSocket } from '../services/socket';
 import {
@@ -42,36 +42,41 @@ export const BarbershopProvider = ({ children }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
   const [realtimeAppointment, setRealtimeAppointment] = useState(null);
+  const toastTimerRef = useRef(null);
 
-  // Chime de barbería tradicional (Web Audio API nativo)
+  // Chime de barbería tradicional (Web Audio API nativo con 3 notas de bienvenida)
   const playBarberChime = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
 
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const gain = ctx.createGain();
+      // Campana armónica brillante tradicional (Do - Mi - Sol / C5 - E5 - G5)
+      const bells = [
+        { freq: 523.25, time: 0, dur: 0.35, gainVal: 0.25 },
+        { freq: 659.25, time: 0.12, dur: 0.4, gainVal: 0.3 },
+        { freq: 783.99, time: 0.24, dur: 0.7, gainVal: 0.35 }
+      ];
 
-      osc1.type = 'triangle';
-      osc2.type = 'sine';
+      bells.forEach(({ freq, time, dur, gainVal }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
 
-      osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc1.frequency.exponentialRampToValueAtTime(880.00, ctx.currentTime + 0.15);
-      osc2.frequency.setValueAtTime(1174.66, ctx.currentTime);
-      osc2.frequency.exponentialRampToValueAtTime(1760.00, ctx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.8);
+        gain.gain.setValueAtTime(gainVal, ctx.currentTime + time);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + time + dur);
 
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(ctx.destination);
-      osc1.start(); osc2.start();
-      osc1.stop(ctx.currentTime + 0.8);
-      osc2.stop(ctx.currentTime + 0.8);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + time);
+        osc.stop(ctx.currentTime + time + dur);
+      });
     } catch (err) {
-      // Ignorar si el usuario aún no interactuó con el DOM
+      console.warn('Audio chime notice:', err.message);
     }
   }, []);
 
@@ -212,11 +217,15 @@ export const BarbershopProvider = ({ children }) => {
         setAppointments((prev) => [apt, ...prev.filter(a => a.id !== apt.id)]);
         setRealtimeAppointment(apt);
         playBarberChime();
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         setToastNotification({
-          title: '¡Nueva Cita Agendada en Tiempo Real!',
-          message: `${apt.clientName} reservó para el ${apt.date} a las ${apt.time} con ${apt.barberName}`,
+          title: '🔔 ¡NUEVA RESERVA EN TIEMPO REAL!',
+          message: `${apt.clientName} reservó ${apt.serviceName || 'Servicio'} con ${apt.barberName} para las ${apt.time} hrs (${apt.date}).`,
           appointment: apt
         });
+        toastTimerRef.current = setTimeout(() => {
+          setToastNotification(null);
+        }, 8000);
         saveFirestoreAppointment(tenantId, apt).catch(() => {});
         loadTenantData(tenantId);
       }
