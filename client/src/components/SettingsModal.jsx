@@ -366,12 +366,12 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                 <img
                   src={avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
                   alt={displayName || 'Avatar'}
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-gold-500/50 shadow-glow-gold"
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500/50 shadow-sm"
                 />
                 <button
                   type="button"
                   onClick={() => avatarFileInputRef.current?.click()}
-                  className="absolute -bottom-1 -right-1 p-1.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 shadow-md transition-transform hover:scale-110 cursor-pointer"
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-transform hover:scale-110 cursor-pointer"
                   title="Subir foto desde tu dispositivo"
                 >
                   <Camera className="w-4 h-4" />
@@ -385,8 +385,8 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                   </h3>
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                     isSuperAdmin
-                      ? 'bg-amber-500/20 text-amber-700 dark:text-gold-300 border border-amber-500/30 dark:border-gold-500/30'
-                      : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                      ? 'bg-amber-500/15 text-amber-800 dark:text-gold-300 border border-amber-500/30'
+                      : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
                   }`}>
                     {isSuperAdmin ? 'SUPERADMIN' : 'ADMINISTRADOR'}
                   </span>
@@ -405,7 +405,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
             <div className="space-y-3">
               <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <Camera className="w-4 h-4 text-amber-500 dark:text-gold-400" />
+                  <Camera className="w-4 h-4 text-amber-600 dark:text-gold-400" />
                   Foto de Perfil & Avatar
                 </span>
                 {avatarUrl && (
@@ -415,7 +415,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                       setAvatarUrl('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
                       setAvatarUploadFeedback(null);
                     }}
-                    className="text-[11px] text-industrial-400 hover:text-white cursor-pointer"
+                    className="text-[11px] text-slate-500 hover:text-slate-900 dark:text-industrial-400 dark:hover:text-white cursor-pointer transition-colors"
                   >
                     Restablecer
                   </button>
@@ -434,9 +434,9 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                 <button
                   type="button"
                   onClick={() => avatarFileInputRef.current?.click()}
-                  className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-industrial-700 bg-white dark:bg-noir-900 hover:border-gold-500 dark:hover:border-gold-500 transition-colors flex items-center gap-3 text-left group cursor-pointer"
+                  className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-industrial-700 bg-white dark:bg-noir-900 hover:border-amber-500 dark:hover:border-amber-500 transition-colors flex items-center gap-3 text-left group cursor-pointer"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 text-amber-600 dark:text-gold-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-gold-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Upload className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
@@ -444,14 +444,14 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                       Subir Foto Personal
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-industrial-400 truncate">
-                      Desde tu celular o PC (JPG, PNG, WebP)
+                      PNG, JPG, WebP (Optimizado al instante)
                     </div>
                   </div>
                 </button>
 
                 <div className="p-3.5 rounded-xl border border-slate-200 dark:border-industrial-800 bg-white dark:bg-noir-900 flex flex-col justify-center">
-                  <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-industrial-400 mb-1 flex items-center gap-1">
-                    <LinkIcon className="w-3 h-3 text-amber-500" />
+                  <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-industrial-400 mb-1 flex items-center gap-1 font-semibold">
+                    <LinkIcon className="w-3 h-3 text-amber-600 dark:text-gold-400" />
                     O pegar URL de imagen
                   </span>
                   <input
@@ -462,14 +462,14 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                       setAvatarUploadFeedback(null);
                     }}
                     placeholder="https://ejemplo.com/mifoto.jpg"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono"
                   />
                 </div>
               </div>
 
               {avatarUploadFeedback && (
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
-                  <Check className="w-4 h-4 flex-shrink-0" />
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn font-medium">
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                   <span>{avatarUploadFeedback}</span>
                 </div>
               )}
@@ -492,8 +492,8 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                         }}
                         className={`p-1 rounded-xl border transition-all flex flex-col items-center gap-1 cursor-pointer group ${
                           isSelected
-                            ? 'border-gold-500 bg-gold-500/15 shadow-glow-gold'
-                            : 'border-slate-200 dark:border-industrial-800 hover:border-gold-500/40'
+                            ? 'border-amber-500 bg-amber-500/10 shadow-sm'
+                            : 'border-slate-200 dark:border-industrial-800 hover:border-amber-500/40 bg-white dark:bg-noir-900'
                         }`}
                         title={p.label}
                       >
@@ -607,81 +607,48 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
         {/* TAB 2: IDENTIDAD & LOGOTIPO DEL SALÓN */}
         {activeTab === 'identity' && (
           <form onSubmit={handleSaveSalon} className="space-y-6 animate-fadeIn">
-            {/* Visualizador / Live Preview de Marca */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 space-y-3">
+            {/* Visualizador / Live Preview de Marca (100% Adaptativo y Nítido) */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-400 flex items-center gap-1.5">
-                  <Eye className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
-                  Previsualización en Vivo de tu Marca
+                  <Eye className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400" />
+                  Previsualización de tu Marca
                 </span>
-                <div className="flex items-center gap-1 bg-slate-200 dark:bg-noir-900 p-0.5 rounded-lg border border-slate-300 dark:border-industrial-700 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTheme('dark')}
-                    className={`px-2 py-0.5 rounded-md font-mono transition-colors ${
-                      previewTheme === 'dark'
-                        ? 'bg-noir-950 text-gold-400 font-bold shadow-sm'
-                        : 'text-slate-600 dark:text-industrial-400'
-                    }`}
-                  >
-                    Oscuro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTheme('light')}
-                    className={`px-2 py-0.5 rounded-md font-mono transition-colors ${
-                      previewTheme === 'light'
-                        ? 'bg-white text-slate-900 font-bold shadow-sm'
-                        : 'text-slate-600 dark:text-industrial-400'
-                    }`}
-                  >
-                    Claro
-                  </button>
-                </div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-gold-300 border border-amber-500/20">
+                  Vista en App
+                </span>
               </div>
 
               {/* Simulación del Header / Navbar */}
-              <div
-                className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
-                  previewTheme === 'dark'
-                    ? 'bg-noir-900 border-industrial-800 text-white'
-                    : 'bg-white border-slate-200 text-slate-900 shadow-sm'
-                }`}
-              >
+              <div className="p-3.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 flex items-center justify-between gap-3 shadow-xs transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   {salonLogoUrl ? (
                     <img
                       src={salonLogoUrl}
                       alt={salonName || 'Logo'}
-                      className="w-10 h-10 rounded-xl object-cover border-2 border-amber-500/50 shadow-glow-gold flex-shrink-0"
+                      className="w-10 h-10 rounded-xl object-cover border border-amber-500/50 shadow-sm flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center font-display font-black text-black text-sm shadow-glow-gold flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-display font-black text-sm shadow-sm flex-shrink-0">
                       {salonName ? salonName.substring(0, 2).toUpperCase() : 'BP'}
                     </div>
                   )}
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-display font-bold text-sm truncate">
+                      <span className="font-display font-bold text-sm text-slate-900 dark:text-white truncate">
                         {salonName || 'Nombre de tu Barbería'}
                       </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 flex-shrink-0">
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-800 dark:text-gold-300 border border-amber-500/30 flex-shrink-0 font-bold">
                         ADMIN
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-industrial-400 flex items-center gap-1 truncate">
-                      <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                    <p className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-1 truncate mt-0.5">
+                      <MapPin className="w-2.5 h-2.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
                       <span>{salonMunicipality || 'Rionegro'}</span>
                       {salonSlogan && <span>• "{salonSlogan}"</span>}
                     </p>
                   </div>
-                </div>
-
-                <div className="text-right flex-shrink-0">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-gold-400 border border-amber-500/20">
-                    Vista Previa
-                  </span>
                 </div>
               </div>
             </div>
@@ -690,7 +657,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
             <div className="space-y-3">
               <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <ImageIcon className="w-4 h-4 text-amber-500 dark:text-gold-400" />
+                  <ImageIcon className="w-4 h-4 text-amber-600 dark:text-gold-400" />
                   Logotipo Oficial de la Barbería
                 </span>
                 {salonLogoUrl && (
@@ -700,9 +667,9 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                       setSalonLogoUrl('');
                       setLogoUploadFeedback(null);
                     }}
-                    className="text-[11px] text-rose-500 hover:text-rose-400 font-normal flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-slate-500 hover:text-slate-900 dark:text-industrial-400 dark:hover:text-white font-medium flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3 h-3 text-slate-400" />
                     Quitar logo (usar iniciales)
                   </button>
                 )}
@@ -720,9 +687,9 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                 <button
                   type="button"
                   onClick={() => logoFileInputRef.current?.click()}
-                  className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-industrial-700 bg-white dark:bg-noir-900 hover:border-gold-500 dark:hover:border-gold-500 transition-colors flex items-center gap-3 text-left group cursor-pointer"
+                  className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-industrial-700 bg-white dark:bg-noir-900 hover:border-amber-500 dark:hover:border-amber-500 transition-colors flex items-center gap-3 text-left group cursor-pointer"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 text-amber-600 dark:text-gold-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-gold-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Upload className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
@@ -736,8 +703,8 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                 </button>
 
                 <div className="p-3.5 rounded-xl border border-slate-200 dark:border-industrial-800 bg-white dark:bg-noir-900 flex flex-col justify-center">
-                  <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-industrial-400 mb-1 flex items-center gap-1">
-                    <LinkIcon className="w-3 h-3 text-amber-500" />
+                  <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-industrial-400 mb-1 flex items-center gap-1 font-semibold">
+                    <LinkIcon className="w-3 h-3 text-amber-600 dark:text-gold-400" />
                     O pegar enlace directo URL
                   </span>
                   <input
@@ -748,14 +715,14 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                       setLogoUploadFeedback(null);
                     }}
                     placeholder="https://ejemplo.com/logo.png"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono"
                   />
                 </div>
               </div>
 
               {logoUploadFeedback && (
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
-                  <Check className="w-4 h-4 flex-shrink-0" />
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn font-medium">
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                   <span>{logoUploadFeedback}</span>
                 </div>
               )}
@@ -778,8 +745,8 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                         }}
                         className={`p-2 rounded-xl border transition-all flex flex-col items-center gap-1.5 cursor-pointer relative group ${
                           isSelected
-                            ? 'bg-amber-500/15 dark:bg-gold-500/15 border-amber-500 dark:border-gold-500 shadow-glow-gold'
-                            : 'bg-white dark:bg-noir-900 border-slate-200 dark:border-industrial-800 hover:border-gold-500/50'
+                            ? 'bg-amber-500/10 border-amber-500 shadow-sm'
+                            : 'bg-white dark:bg-noir-900 border-slate-200 dark:border-industrial-800 hover:border-amber-500/50'
                         }`}
                         title={preset.name}
                       >
@@ -788,11 +755,11 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                           alt={preset.name}
                           className="w-10 h-10 rounded-lg object-cover"
                         />
-                        <span className="text-[9px] font-medium text-slate-700 dark:text-industrial-300 truncate w-full text-center">
+                        <span className="text-[9px] font-semibold text-slate-700 dark:text-industrial-300 truncate w-full text-center">
                           {preset.name}
                         </span>
                         {isSelected && (
-                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gold-500 text-black flex items-center justify-center text-[10px] font-black">
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-xs">
                             ✓
                           </div>
                         )}
