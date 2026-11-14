@@ -121,41 +121,22 @@ export const Landing = ({ onEnterAdmin }) => {
       </nav>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-12 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 md:py-10 flex-1 w-full">
         {isStoreEnabled && activeTab === 'store' ? (
           <PublicStore slug={effectiveSlug} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
-            {/* Left Column: Brand Story & Live Proof (Texto fluido responsivo) */}
-            <div className="lg:col-span-5 space-y-4 md:space-y-6">
-              {/* Badge oficial de la barbería */}
-              {barbershopInfo?.logoUrl && (
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm w-fit">
-                  <img
-                    src={barbershopInfo?.logoUrl}
-                    alt={barbershopInfo?.name || 'Barbería'}
-                    className="w-12 h-12 rounded-xl object-cover border border-amber-500/40 shadow-glow-gold flex-shrink-0"
-                  />
-                  <div>
-                    <h3 className="font-display font-black text-sm text-slate-900 dark:text-white">
-                      {barbershopInfo?.name || 'BarberPulse Studio'}
-                    </h3>
-                    <p className="text-[11px] text-amber-600 dark:text-gold-400 font-mono">
-                      {barbershopInfo?.slogan || 'Salón & Barbería Oficial'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
+            {/* Left Column: Brand Story & Live Proof (Visible en desktop/tablet, en móvil el cliente va directo al wizard de reserva limpio) */}
+            <div className="hidden lg:block lg:col-span-5 space-y-5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/30 dark:border-gold-500/30 text-amber-700 dark:text-gold-400 text-[11px] font-semibold tracking-wider uppercase font-mono">
                 <Award className="w-3.5 h-3.5" /> Grooming & Gentlemen Sanctuary
               </div>
 
-              <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-black text-slate-900 dark:text-white leading-tight">
+              <h2 className="text-3xl md:text-5xl font-display font-black text-slate-900 dark:text-white leading-tight">
                 Cortes de precisión y rituales clásicos, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-gold-500 to-amber-700 dark:from-gold-400 dark:via-gold-300 dark:to-amber-500">sin minutos de espera</span>.
               </h2>
 
-              <p className="text-slate-600 dark:text-industrial-400 text-xs sm:text-sm md:text-base leading-relaxed">
+              <p className="text-slate-600 dark:text-industrial-400 text-sm md:text-base leading-relaxed">
                 Reserva tu horario con tu barbero favorito en tiempo real. Nuestro sistema anti-colisión asegura tu sillón al instante, sin solapamientos ni esperas en sala.
               </p>
 
@@ -191,8 +172,8 @@ export const Landing = ({ onEnterAdmin }) => {
               </div>
             </div>
 
-            {/* Right Column: Public Booking Wizard */}
-            <div className="lg:col-span-7 w-full">
+            {/* Right Column: Public Booking Wizard (En móvil ocupa todo el ancho y se ve al instante) */}
+            <div className="col-span-1 lg:col-span-7 w-full max-w-2xl mx-auto lg:max-w-none">
               <PublicBookingWizard slug={effectiveSlug} initialBarbershop={barbershopInfo} />
             </div>
           </div>

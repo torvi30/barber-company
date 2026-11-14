@@ -446,26 +446,26 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
   }
 
   return (
-    <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-3xl p-6 sm:p-8 shadow-xl dark:shadow-2xl relative overflow-hidden transition-colors">
+    <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl dark:shadow-2xl relative overflow-hidden transition-colors">
       {/* Decorative Blur */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
       {/* Stepper Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-industrial-800 mb-6">
+      <div className="flex items-center justify-between pb-3 sm:pb-5 border-b border-slate-100 dark:border-industrial-800 mb-4 sm:mb-6">
         <div>
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-gold-400 flex items-center gap-1.5">
+          <span className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-gold-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" /> Agendamiento Inteligente
           </span>
-          <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white mt-1">
-            Reserva tu Cita en {barbershop.name}
+          <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white mt-0.5">
+            Reserva tu Cita
           </h3>
         </div>
 
-        <div className="flex items-center gap-1.5 font-mono text-xs">
+        <div className="flex items-center gap-1 sm:gap-1.5 font-mono text-xs">
           {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
-              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
+              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center font-bold text-[11px] sm:text-xs transition-colors ${
                 step === s
                   ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
                   : step > s
