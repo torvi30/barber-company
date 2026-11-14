@@ -122,7 +122,8 @@
           "sunday": {
             "working": false
           }
-        }
+        },
+        "dailyTarget": 150
       },
       {
         "id": "barber_imp_2",
@@ -512,7 +513,8 @@
     "tenant_netx_baber_483": []
   },
   "inventory": {
-    "tenant_imperio_barber_01": []
+    "tenant_imperio_barber_01": [],
+    "demo-barbershop-01": []
   },
   "cashClosures": {},
   "clients": {

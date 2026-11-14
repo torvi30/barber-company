@@ -25,6 +25,17 @@ const getLocalDate = (d = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+const getDefaultBookingDate = () => {
+  const now = new Date();
+  // Si son más de las 19:00 hrs (salón cerrado por hoy), sugerir automáticamente Mañana
+  if (now.getHours() >= 19) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return getLocalDate(tomorrow);
+  }
+  return getLocalDate(now);
+};
+
 export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
   const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : 'black-gold';
   const [step, setStep] = useState(1);
@@ -33,10 +44,15 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
   const [barbershop, setBarbershop] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(getLocalDate(new Date()));
+  const [selectedDate, setSelectedDate] = useState(getDefaultBookingDate());
   const [selectedTime, setSelectedTime] = useState(null);
   const [slots, setSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [enableTestSlots, setEnableTestSlots] = useState(false);
+
+  const todayStr = getLocalDate(new Date());
+  const tomorrowStr = getLocalDate(new Date(Date.now() + 86400000));
+  const dayAfterStr = getLocalDate(new Date(Date.now() + 86400000 * 2));
 
   // Client info form
   const [clientName, setClientName] = useState('');
@@ -105,7 +121,7 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
         setLoadingSlots(true);
         setSelectedTime(null);
         setCollisionError('');
-        const res = await api.getPublicSlots(effectiveSlug, selectedBarber.id, selectedDate);
+        const res = await api.getPublicSlots(effectiveSlug, selectedBarber.id, selectedDate, enableTestSlots);
         if (res.success) {
           setSlots(res.slots || []);
         }
@@ -117,7 +133,7 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
     };
 
     fetchSlots();
-  }, [effectiveSlug, selectedBarber, selectedDate]);
+  }, [effectiveSlug, selectedBarber, selectedDate, enableTestSlots]);
 
   const handleConfirmBooking = async (e) => {
     e.preventDefault();
@@ -470,12 +486,52 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
             <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase tracking-wider">
               3. Fecha y Hora Disponible (Sin Esperas)
             </label>
+            <div className="text-xs font-mono text-amber-600 dark:text-gold-400 font-bold flex items-center gap-1.5">
+              <span>Barbero: {selectedBarber?.name}</span>
+            </div>
+          </div>
+
+          {/* Selector Rápido de Días (Hoy, Mañana, Pasado Mañana + Calendario) */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800">
+            <button
+              type="button"
+              onClick={() => { setSelectedDate(todayStr); setEnableTestSlots(false); }}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                selectedDate === todayStr
+                  ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Hoy ({todayStr.slice(8, 10)}/{todayStr.slice(5, 7)})
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelectedDate(tomorrowStr); setEnableTestSlots(false); }}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                selectedDate === tomorrowStr
+                  ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelectedDate(dayAfterStr); setEnableTestSlots(false); }}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                selectedDate === dayAfterStr
+                  ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Pasado Mañana
+            </button>
             <input
               type="date"
-              min={getLocalDate(new Date())}
+              min={todayStr}
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"
+              onChange={(e) => { setSelectedDate(e.target.value); setEnableTestSlots(false); }}
+              className="bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-800 rounded-xl px-2.5 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"
             />
           </div>
 
@@ -487,12 +543,34 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
             const freeSlots = slots.filter(s => s.available);
             if (freeSlots.length === 0) {
               return (
-                <div className="py-8 text-center p-6 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl space-y-2">
+                <div className="py-8 text-center p-6 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl space-y-3">
                   <Clock className="w-8 h-8 text-amber-500 dark:text-gold-400 mx-auto opacity-70" />
-                  <h4 className="text-slate-900 dark:text-white text-sm font-bold">Sin citas disponibles para esta fecha</h4>
+                  <h4 className="text-slate-900 dark:text-white text-sm font-bold">
+                    {selectedDate === todayStr ? 'El salón ya finalizó su jornada por hoy' : 'Sin citas disponibles para esta fecha'}
+                  </h4>
                   <p className="text-xs text-slate-500 dark:text-industrial-400 max-w-sm mx-auto">
-                    {selectedBarber?.name} no tiene horarios libres para el {selectedDate}. Por favor selecciona otro día en el calendario o elige otro barbero.
+                    {selectedDate === todayStr
+                      ? `Las citas para hoy (${selectedDate}) han concluido (horario de atención hasta las 20:00). Reserva con ${selectedBarber?.name} para mañana a primera hora.`
+                      : `${selectedBarber?.name} no tiene horarios libres para el ${selectedDate}. Por favor selecciona otro día en el calendario o elige otro barbero.`}
                   </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDate(tomorrowStr)}
+                      className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
+                    >
+                      Ver Horarios de Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)}) →
+                    </button>
+                    {selectedDate === todayStr && !enableTestSlots && (
+                      <button
+                        type="button"
+                        onClick={() => setEnableTestSlots(true)}
+                        className="px-4 py-2 rounded-xl border border-amber-500/40 text-amber-600 dark:text-gold-400 text-xs hover:bg-amber-500/10 transition-colors cursor-pointer"
+                      >
+                        ⚡ Habilitar turnos para ensayo hoy
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             }

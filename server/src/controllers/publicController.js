@@ -164,7 +164,7 @@ export const getBarbershopBySlug = async (req, res) => {
 export const getPublicSlots = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { barberId, date = getLocalDateString(new Date()) } = req.query;
+    const { barberId, date = getLocalDateString(new Date()), allowPast } = req.query;
 
     if (!barberId) {
       return res.status(400).json({ success: false, error: 'Parámetro barberId requerido.' });
@@ -217,10 +217,12 @@ export const getPublicSlots = async (req, res) => {
     const dayIndex = new Date(date + 'T12:00:00').getDay();
     const dayName = dayNames[dayIndex];
     const barber = (mockStore.barbers?.[barbershopId] || []).find(b => b.id === barberId);
-    const daySchedule = barber?.schedule?.[dayName];
+    const daySchedule = barber?.schedule?.[dayName] || { working: true, start: '09:00', end: '20:00' };
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const isAllowPast = allowPast === 'true' || allowPast === true;
 
     const slots = OPERATING_SLOTS.map(time => {
       const slotMinutes = toMinutes(time);
@@ -234,7 +236,7 @@ export const getPublicSlots = async (req, res) => {
       if (daySchedule?.end && slotMinutes >= toMinutes(daySchedule.end)) {
         return { time, available: false, reason: 'OUT_OF_SCHEDULE' };
       }
-      if (date === todayStr && slotMinutes <= currentMinutes) {
+      if (!isAllowPast && date === todayStr && slotMinutes <= currentMinutes) {
         return { time, available: false, reason: 'PAST' };
       }
       if (manualBlocked.includes(time)) {

@@ -34,7 +34,7 @@ export const apiClient = async (endpoint, options = {}, tenantId = null) => {
 export const api = {
   // --- Rutas Públicas (Landing del Cliente & Tienda) ---
   getPublicBarbershop: (slug) => apiClient(`/public/barbershop/${slug}`, { method: 'GET' }, null),
-  getPublicSlots: (slug, barberId, date) => apiClient(`/public/barbershop/${slug}/slots?barberId=${barberId}&date=${date}`, { method: 'GET' }, null),
+  getPublicSlots: (slug, barberId, date, allowPast = false) => apiClient(`/public/barbershop/${slug}/slots?barberId=${barberId}&date=${date}${allowPast ? '&allowPast=true' : ''}`, { method: 'GET' }, null),
   createPublicBooking: (slug, bookingData) => apiClient(`/public/barbershop/${slug}/book`, { method: 'POST', body: bookingData }, null),
   getPublicProducts: (slug) => apiClient(`/public/barbershop/${slug}/products`, { method: 'GET' }, null),
   createPublicOrder: (slug, orderData) => apiClient(`/public/barbershop/${slug}/orders`, { method: 'POST', body: orderData }, null),
