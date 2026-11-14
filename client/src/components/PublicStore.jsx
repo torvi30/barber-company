@@ -17,7 +17,8 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-export const PublicStore = ({ slug = 'black-gold' }) => {
+export const PublicStore = ({ slug }) => {
+  const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : 'black-gold';
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -35,7 +36,7 @@ export const PublicStore = ({ slug = 'black-gold' }) => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const res = await api.getPublicProducts(slug);
+        const res = await api.getPublicProducts(effectiveSlug);
         if (res.success) {
           setProducts(res.data || []);
         }
@@ -47,7 +48,7 @@ export const PublicStore = ({ slug = 'black-gold' }) => {
     };
 
     fetchProducts();
-  }, [slug]);
+  }, [effectiveSlug]);
 
   // Carrito helpers
   const addToCart = (product) => {
@@ -120,7 +121,7 @@ export const PublicStore = ({ slug = 'black-gold' }) => {
         notes
       };
 
-      const res = await api.createPublicOrder(slug, payload);
+      const res = await api.createPublicOrder(effectiveSlug, payload);
       if (res.success) {
         setOrderConfirmed(res.data);
         setCart([]);

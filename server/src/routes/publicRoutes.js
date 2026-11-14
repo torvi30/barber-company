@@ -13,7 +13,8 @@ const router = Router();
 // Alta y Registro de Nuevos Negocios (Wizard Onboarding con 14 días gratis)
 router.post('/onboarding', registerNewBusiness);
 
-// Resolver barbería por su slug (ej: /black-gold)
+// Resolver barbería por su slug (ej: /black-gold o general)
+router.get('/barbershop', getBarbershopBySlug);
 router.get('/barbershop/:slug', getBarbershopBySlug);
 
 // Disponibilidad de slots por fecha y barbero

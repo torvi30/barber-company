@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { useTheme } from '../context/ThemeContext';
 import { PublicBookingWizard } from '../components/PublicBookingWizard';
@@ -22,15 +22,24 @@ import {
 export const Landing = ({ onEnterAdmin }) => {
   const { barbershopInfo, availableTenants, switchTenant } = useBarbershop();
   const { theme, toggleTheme, isDark } = useTheme();
-  const [activeSlug, setActiveSlug] = useState(barbershopInfo?.slug || '');
+  const [activeSlug, setActiveSlug] = useState(barbershopInfo?.slug || barbershopInfo?.id || '');
   const [activeTab, setActiveTab] = useState('booking'); // 'booking' | 'store'
 
+  // Sincronizar reactivamente el slug cuando cargue o cambie barbershopInfo
+  useEffect(() => {
+    const slug = barbershopInfo?.slug || barbershopInfo?.id || '';
+    if (slug) {
+      setActiveSlug(slug);
+    }
+  }, [barbershopInfo?.slug, barbershopInfo?.id]);
+
+  const effectiveSlug = activeSlug || barbershopInfo?.slug || barbershopInfo?.id || 'black-gold';
   const isStoreEnabled = barbershopInfo?.storeEnabled !== false;
 
   // Mantener sincronizado el slug con la barbería activa
   const handleSelectBarbershop = (tenant) => {
     switchTenant(tenant);
-    setActiveSlug(tenant.slug);
+    setActiveSlug(tenant.slug || tenant.id);
   };
 
   return (
@@ -114,7 +123,7 @@ export const Landing = ({ onEnterAdmin }) => {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-12 flex-1 w-full">
         {isStoreEnabled && activeTab === 'store' ? (
-          <PublicStore slug={activeSlug} />
+          <PublicStore slug={effectiveSlug} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
             {/* Left Column: Brand Story & Live Proof (Texto fluido responsivo) */}
@@ -184,7 +193,7 @@ export const Landing = ({ onEnterAdmin }) => {
 
             {/* Right Column: Public Booking Wizard */}
             <div className="lg:col-span-7 w-full">
-              <PublicBookingWizard slug={activeSlug} />
+              <PublicBookingWizard slug={effectiveSlug} />
             </div>
           </div>
         )}

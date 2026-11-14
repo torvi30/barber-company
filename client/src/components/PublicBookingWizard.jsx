@@ -25,9 +25,11 @@ const getLocalDate = (d = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
-export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) => {
+export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
+  const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : 'black-gold';
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [barbershop, setBarbershop] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
@@ -49,11 +51,14 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
 
   // Cargar datos de la barbería por slug
   useEffect(() => {
+    let isMounted = true;
     const loadBarbershop = async () => {
       try {
         setLoading(true);
-        const res = await api.getPublicBarbershop(slug);
-        if (res.success) {
+        setError('');
+        const res = await api.getPublicBarbershop(effectiveSlug);
+        if (!isMounted) return;
+        if (res.success && res.data) {
           setBarbershop(res.data);
           if (res.data.services?.length > 0) {
             setSelectedService(res.data.services[0]);
@@ -61,16 +66,35 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
           if (res.data.barbers?.length > 0) {
             setSelectedBarber(res.data.barbers[0]);
           }
+        } else {
+          throw new Error(res.message || 'Error al conectar con la barbería');
         }
       } catch (err) {
         console.error('Error al cargar barbería pública:', err);
+        if (!isMounted) return;
+        if (effectiveSlug !== 'black-gold') {
+          try {
+            const fallbackRes = await api.getPublicBarbershop('black-gold');
+            if (!isMounted) return;
+            if (fallbackRes.success && fallbackRes.data) {
+              setBarbershop(fallbackRes.data);
+              if (fallbackRes.data.services?.length > 0) setSelectedService(fallbackRes.data.services[0]);
+              if (fallbackRes.data.barbers?.length > 0) setSelectedBarber(fallbackRes.data.barbers[0]);
+              return;
+            }
+          } catch (e) {
+            console.warn('Fallback error:', e);
+          }
+        }
+        setError(err.message || 'No fue posible conectar con la barbería.');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadBarbershop();
-  }, [slug]);
+    return () => { isMounted = false; };
+  }, [effectiveSlug]);
 
   // Cargar slots cuando cambie el barbero o la fecha
   useEffect(() => {
@@ -81,7 +105,7 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
         setLoadingSlots(true);
         setSelectedTime(null);
         setCollisionError('');
-        const res = await api.getPublicSlots(slug, selectedBarber.id, selectedDate);
+        const res = await api.getPublicSlots(effectiveSlug, selectedBarber.id, selectedDate);
         if (res.success) {
           setSlots(res.slots || []);
         }
@@ -93,7 +117,7 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
     };
 
     fetchSlots();
-  }, [slug, selectedBarber, selectedDate]);
+  }, [effectiveSlug, selectedBarber, selectedDate]);
 
   const handleConfirmBooking = async (e) => {
     e.preventDefault();
@@ -119,7 +143,7 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
         notes
       };
 
-      const res = await api.createPublicBooking(slug, payload);
+      const res = await api.createPublicBooking(effectiveSlug, payload);
       if (res.success) {
         setConfirmedBooking(res.data);
         if (onBookingComplete) onBookingComplete(res.data);
@@ -128,7 +152,7 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
       if (err.status === 409 || err.message?.includes('Collision') || err.message?.includes('disponible')) {
         setCollisionError(err.message || 'El horario seleccionado acaba de ser tomado por otro cliente. Por favor elige otro horario.');
         // Recargar slots actualizados
-        const res = await api.getPublicSlots(slug, selectedBarber.id, selectedDate);
+        const res = await api.getPublicSlots(effectiveSlug, selectedBarber.id, selectedDate);
         if (res.success) setSlots(res.slots || []);
       } else {
         setCollisionError(err.message || 'Ocurrió un error al procesar tu cita. Inténtalo de nuevo.');
@@ -138,13 +162,35 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
     }
   };
 
-  if (loading || !barbershop) {
+  if (loading) {
     return (
-      <div className="bg-noir-900 border border-industrial-800 rounded-3xl p-8 text-center animate-pulse">
-        <div className="w-12 h-12 bg-gold-500/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <Scissors className="w-6 h-6 text-gold-400 animate-spin" />
+      <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-3xl p-8 text-center animate-pulse">
+        <div className="w-12 h-12 bg-amber-500/20 dark:bg-gold-500/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <Scissors className="w-6 h-6 text-amber-500 dark:text-gold-400 animate-spin" />
         </div>
-        <p className="text-sm font-mono text-industrial-400">Conectando con la agenda de la barbería en tiempo real...</p>
+        <p className="text-sm font-mono text-slate-600 dark:text-industrial-400">Conectando con la agenda de la barbería en tiempo real...</p>
+      </div>
+    );
+  }
+
+  if (!barbershop) {
+    return (
+      <div className="bg-white dark:bg-noir-900 border border-red-500/30 rounded-3xl p-8 text-center space-y-4">
+        <div className="w-12 h-12 bg-red-500/10 rounded-full mx-auto flex items-center justify-center text-red-500">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <div>
+          <h4 className="text-base font-bold text-slate-900 dark:text-white">Agenda no disponible temporalmente</h4>
+          <p className="text-xs text-slate-500 dark:text-industrial-400 mt-1">
+            {error || 'No se pudo conectar con la agenda de la barbería.'}
+          </p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 dark:from-gold-500 dark:to-gold-600 text-black font-bold text-xs rounded-xl shadow-glow-gold hover:scale-105 transition-all"
+        >
+          Reintentar Conexión
+        </button>
       </div>
     );
   }
