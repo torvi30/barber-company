@@ -1724,7 +1724,7 @@ export const ReceptionQueue = () => {
                       className={`px-2.5 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                         isSelected
                           ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
-                          : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                          : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>

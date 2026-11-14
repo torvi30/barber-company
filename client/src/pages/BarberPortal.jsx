@@ -1246,7 +1246,7 @@ export const BarberPortal = () => {
       >
         <form onSubmit={handleSaveBarber} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
               Nombre Completo & Apodo Profesional *
             </label>
             <input
@@ -1255,26 +1255,34 @@ export const BarberPortal = () => {
               placeholder="Ej. Andrés 'Fader' Castro"
               value={barberFormData.name}
               onChange={(e) => setBarberFormData({ ...barberFormData, name: e.target.value })}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
-                WhatsApp / Teléfono
-              </label>
-              <input
-                type="tel"
-                placeholder="+57 300 000 0000"
-                value={barberFormData.phone}
-                onChange={(e) => setBarberFormData({ ...barberFormData, phone: e.target.value })}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500 font-mono"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
+                  WhatsApp / Teléfono
+                </label>
+                <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono">🇨🇴 322... o 57322...</span>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3.5 top-2 text-xs font-mono font-bold text-slate-400 dark:text-industrial-500 pointer-events-none select-none">
+                  🇨🇴 +57
+                </span>
+                <input
+                  type="tel"
+                  placeholder="322 546 6673"
+                  value={barberFormData.phone}
+                  onChange={(e) => setBarberFormData({ ...barberFormData, phone: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-20 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                 Correo Electrónico
               </label>
               <input
@@ -1282,14 +1290,14 @@ export const BarberPortal = () => {
                 placeholder="andres@barberia.com"
                 value={barberFormData.email}
                 onChange={(e) => setBarberFormData({ ...barberFormData, email: e.target.value })}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500 font-mono"
+                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                 % Comisión por Servicios
               </label>
               <div className="relative">
@@ -1300,31 +1308,31 @@ export const BarberPortal = () => {
                   required
                   value={barberFormData.commissionRate}
                   onChange={(e) => setBarberFormData({ ...barberFormData, commissionRate: e.target.value })}
-                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-gold-400 font-mono font-bold focus:outline-none focus:border-gold-500"
+                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-amber-600 dark:text-gold-400 font-mono font-bold focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-industrial-500 font-bold">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-industrial-500 font-bold">%</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                 Meta Diaria ($)
               </label>
               <input
                 type="number"
                 value={barberFormData.dailyTarget}
                 onChange={(e) => setBarberFormData({ ...barberFormData, dailyTarget: e.target.value })}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-gold-500"
+                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-industrial-400 uppercase">
+              <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
                 Servicios y Especialidades
               </label>
-              <span className="text-[10px] text-industrial-500 font-mono">1 Clic o Escribe</span>
+              <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-mono">1 Clic o Escribe</span>
             </div>
             {/* Chips rápidos de servicios básicos */}
             <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1348,8 +1356,8 @@ export const BarberPortal = () => {
                     }}
                     className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${
                       isActive
-                        ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
-                        : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                        : 'bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     {isActive ? `✓ ${spec}` : `+ ${spec}`}
@@ -1362,15 +1370,15 @@ export const BarberPortal = () => {
               placeholder="Corte, Barba, Cejas, Cera..."
               value={barberFormData.specialties}
               onChange={(e) => setBarberFormData({ ...barberFormData, specialties: e.target.value })}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
             />
           </div>
 
           {/* Selector y Vista Previa de Foto de Perfil */}
-          <div className="p-3.5 rounded-2xl bg-noir-950 border border-industrial-800 space-y-3">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-industrial-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Camera className="w-3.5 h-3.5 text-gold-400" />
+              <label className="text-xs font-semibold text-slate-700 dark:text-industrial-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
                 <span>Foto de Perfil Profesional</span>
               </label>
               <input
@@ -1383,7 +1391,7 @@ export const BarberPortal = () => {
               <button
                 type="button"
                 onClick={() => barberFileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs shadow-glow-gold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
               >
                 <Upload className="w-3.5 h-3.5" />
                 <span>Subir Foto Propia</span>
@@ -1391,7 +1399,7 @@ export const BarberPortal = () => {
             </div>
 
             {barberPhotoFeedback && (
-              <p className={`text-[11px] font-mono ${barberPhotoFeedback.startsWith('✓') ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`}>
+              <p className={`text-[11px] font-mono ${barberPhotoFeedback.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400 animate-pulse'}`}>
                 {barberPhotoFeedback}
               </p>
             )}
@@ -1404,7 +1412,7 @@ export const BarberPortal = () => {
                   <img
                     src={barberFormData.avatar || AVATAR_PRESETS[0].url}
                     alt={barberFormData.name || 'Barbero'}
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-gold-500 shadow-glow-gold"
+                    className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500 dark:border-gold-500 shadow-sm"
                   />
                   <button
                     type="button"
@@ -1412,16 +1420,16 @@ export const BarberPortal = () => {
                     className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white font-semibold transition-opacity cursor-pointer"
                     title="Cambiar foto"
                   >
-                    <Camera className="w-4 h-4 text-gold-400 mb-0.5" />
+                    <Camera className="w-4 h-4 text-amber-400 dark:text-gold-400 mb-0.5" />
                     <span>Cambiar</span>
                   </button>
                 </div>
-                <span className="text-[10px] text-gold-400 font-mono font-semibold">Foto Activa</span>
+                <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono font-semibold">Foto Activa</span>
               </div>
 
               {/* 3 Avatares Genéricos con Diferente Pelo */}
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] text-industrial-400 block mb-1.5">
+                <span className="text-[10px] text-slate-500 dark:text-industrial-400 block mb-1.5">
                   O escoge un avatar genérico por estilo de cabello:
                 </span>
                 <div className="grid grid-cols-3 gap-2">
@@ -1437,8 +1445,8 @@ export const BarberPortal = () => {
                         }}
                         className={`p-1.5 rounded-xl border transition-all text-center flex flex-col items-center gap-1 cursor-pointer ${
                           isSelected
-                            ? 'border-gold-500 bg-gold-500/20 shadow-glow-gold ring-1 ring-gold-500'
-                            : 'border-industrial-800 hover:border-gold-500/40 bg-noir-900'
+                            ? 'border-amber-500 bg-amber-500/15 dark:bg-gold-500/20 shadow-sm ring-1 ring-amber-500'
+                            : 'border-slate-200 dark:border-industrial-800 hover:border-amber-500/40 bg-white dark:bg-noir-900'
                         }`}
                       >
                         <img
@@ -1446,7 +1454,7 @@ export const BarberPortal = () => {
                           alt={preset.label}
                           className="w-10 h-10 rounded-lg object-cover"
                         />
-                        <span className={`text-[9px] truncate w-full font-medium ${isSelected ? 'text-gold-400 font-bold' : 'text-industrial-400'}`}>
+                        <span className={`text-[9px] truncate w-full font-medium ${isSelected ? 'text-amber-700 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-industrial-400'}`}>
                           {preset.label}
                         </span>
                       </button>
@@ -1457,18 +1465,18 @@ export const BarberPortal = () => {
             </div>
           </div>
 
-          <div className="pt-3 pb-2 flex justify-end gap-3 border-t border-industrial-800 sticky bottom-0 bg-noir-900 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
+          <div className="pt-3 pb-2 flex justify-end gap-3 border-t border-slate-100 dark:border-industrial-800 sticky bottom-0 bg-white dark:bg-noir-900 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
             <button
               type="button"
               onClick={() => setIsBarberFormOpen(false)}
-              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs cursor-pointer"
+              className="px-4 py-2 rounded-xl text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={formSaving}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase shadow-glow-gold transition-all cursor-pointer"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase shadow-sm transition-all cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{formSaving ? 'Guardando...' : editingBarber ? 'Guardar Cambios' : 'Registrar Barbero'}</span>

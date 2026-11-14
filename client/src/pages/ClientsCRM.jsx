@@ -757,47 +757,55 @@ export const ClientsCRM = () => {
       >
         <form onSubmit={handleCreateClient} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">Nombre Completo *</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">Nombre Completo *</label>
             <input
               type="text"
               required
               placeholder="Ej. Andrés Valencia"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">Móvil / WhatsApp *</label>
-              <input
-                type="tel"
-                required
-                placeholder="+34 600 000 000"
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-gold-500 font-mono"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">Móvil / WhatsApp *</label>
+                <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono">🇨🇴 322... o 57322...</span>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3.5 top-2.5 text-xs font-mono font-bold text-slate-400 dark:text-industrial-500 pointer-events-none select-none">
+                  🇨🇴 +57
+                </span>
+                <input
+                  type="tel"
+                  required
+                  placeholder="322 546 6673"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-20 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 font-mono"
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">Email</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">Email</label>
               <input
                 type="email"
                 placeholder="andres@email.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-gold-500"
+                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">Barbero Habitual Asignado</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">Barbero Habitual Asignado</label>
             <select
               value={newPreferredBarber}
               onChange={(e) => setNewPreferredBarber(e.target.value)}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-gold-500"
+              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
             >
               {barbers.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -805,17 +813,17 @@ export const ClientsCRM = () => {
             </select>
           </div>
 
-          <div className="pt-3 pb-2 flex justify-end gap-3 border-t border-industrial-800 sticky bottom-0 bg-noir-900 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
+          <div className="pt-3 pb-2 flex justify-end gap-3 border-t border-slate-100 dark:border-industrial-800 sticky bottom-0 bg-white dark:bg-noir-900 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
             <button
               type="button"
               onClick={() => setIsNewClientModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs cursor-pointer"
+              className="px-4 py-2 rounded-xl text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white text-xs cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer"
             >
               Guardar en Directorio
             </button>

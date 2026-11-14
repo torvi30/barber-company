@@ -398,40 +398,40 @@ export const CashClosure = () => {
         <div className="space-y-6 animate-fadeIn">
           {/* Banner de Cierre Reciente si se acaba de ejecutar */}
           {closureResult && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 text-emerald-400 space-y-3 animate-fadeIn">
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 text-emerald-800 dark:text-emerald-300 space-y-3 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                   <div>
-                    <h4 className="font-bold text-sm text-white">¡Cierre de Caja Registrado & Auditado Exitosamente!</h4>
-                    <p className="text-xs text-emerald-300">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">¡Cierre de Caja Registrado & Auditado Exitosamente!</h4>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300">
                       ID de auditoría: <strong className="font-mono">{closureResult.id}</strong> — Sincronizado en la nube (Spark Plan).
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setClosureResult(null)}
-                  className="text-emerald-400 hover:text-white text-xs font-bold"
+                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white text-xs font-bold"
                 >
                   ✕
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-emerald-500/20 text-xs font-mono">
                 <div>
-                  <span className="text-emerald-500 block text-[10px] uppercase">Cash Drop Retirado:</span>
-                  <strong className="text-white text-sm">{formatMoney(closureResult.cashDropAmount)}</strong>
+                  <span className="text-emerald-600 dark:text-emerald-400 block text-[10px] uppercase">Cash Drop Retirado:</span>
+                  <strong className="text-slate-900 dark:text-white text-sm">{formatMoney(closureResult.cashDropAmount)}</strong>
                 </div>
                 <div>
-                  <span className="text-emerald-500 block text-[10px] uppercase">Queda en Gaveta:</span>
-                  <strong className="text-white text-sm">{formatMoney(closureResult.remainingCashInDrawer)}</strong>
+                  <span className="text-emerald-600 dark:text-emerald-400 block text-[10px] uppercase">Queda en Gaveta:</span>
+                  <strong className="text-slate-900 dark:text-white text-sm">{formatMoney(closureResult.remainingCashInDrawer)}</strong>
                 </div>
                 <div>
-                  <span className="text-emerald-500 block text-[10px] uppercase">Estado Arqueo:</span>
-                  <strong className="text-white text-sm">{closureResult.discrepancyStatus}</strong>
+                  <span className="text-emerald-600 dark:text-emerald-400 block text-[10px] uppercase">Estado Arqueo:</span>
+                  <strong className="text-slate-900 dark:text-white text-sm">{closureResult.discrepancyStatus}</strong>
                 </div>
                 <div>
-                  <span className="text-emerald-500 block text-[10px] uppercase">Cortes Auditados:</span>
-                  <strong className="text-white text-sm">{closureResult.totalServicesClosed}</strong>
+                  <span className="text-emerald-600 dark:text-emerald-400 block text-[10px] uppercase">Cortes Auditados:</span>
+                  <strong className="text-slate-900 dark:text-white text-sm">{closureResult.totalServicesClosed}</strong>
                 </div>
               </div>
             </div>
@@ -472,15 +472,15 @@ export const CashClosure = () => {
               <p className="text-[11px] text-slate-400 dark:text-industrial-400 mt-1">Nequi, Daviplata, Bancolombia</p>
             </div>
 
-            <div className="bg-gradient-to-br from-gold-500/10 to-noir-900 border border-gold-500/30 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-gold-400 mb-2">
+            <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 dark:from-gold-500/10 dark:to-noir-900 border border-amber-500/30 dark:border-gold-500/30 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center justify-between text-amber-700 dark:text-gold-400 mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider font-mono">Facturación Bruta</span>
                 <DollarSign className="w-4 h-4" />
               </div>
-              <div className="text-2xl font-display font-black text-white">
+              <div className="text-2xl font-display font-black text-slate-900 dark:text-white">
                 {formatMoney(metrics.grossRevenue)}
               </div>
-              <p className="text-[11px] text-gold-400/80 mt-1">{metrics.completedServicesCount} servicios completados</p>
+              <p className="text-[11px] text-amber-700/80 dark:text-gold-400/80 mt-1">{metrics.completedServicesCount} servicios completados</p>
             </div>
           </div>
 
@@ -1025,7 +1025,7 @@ export const CashClosure = () => {
               <button
                 type="button"
                 onClick={() => setIsMovementModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white font-bold text-sm cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white font-bold text-sm cursor-pointer"
               >
                 ✕
               </button>
