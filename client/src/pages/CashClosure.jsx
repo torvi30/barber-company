@@ -1000,8 +1000,14 @@ export const CashClosure = () => {
 
       {/* Modal Registrar Gasto Menor o Entrada Extraordinaria */}
       {isMovementModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setIsMovementModalOpen(false); }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-industrial-800">
               <h3 className="font-display font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 {movementType === 'EXPENSE' ? (
@@ -1019,7 +1025,7 @@ export const CashClosure = () => {
               <button
                 type="button"
                 onClick={() => setIsMovementModalOpen(false)}
-                className="text-slate-400 hover:text-white font-bold text-sm cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-white font-bold text-sm cursor-pointer"
               >
                 ✕
               </button>

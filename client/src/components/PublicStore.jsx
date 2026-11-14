@@ -273,8 +273,14 @@ export const PublicStore = ({ slug }) => {
 
       {/* Cart Drawer Slide-Over Modal */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-noir-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-noir-900 border-l border-industrial-800 h-full p-6 flex flex-col justify-between overflow-y-auto">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setIsCartOpen(false); }}
+          className="fixed inset-0 z-50 flex justify-end bg-noir-950/80 backdrop-blur-sm animate-fadeIn cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-noir-900 border-l border-industrial-800 h-full p-6 flex flex-col justify-between overflow-y-auto cursor-default"
+          >
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-industrial-800">
                 <div className="flex items-center gap-2">

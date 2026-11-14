@@ -15,7 +15,9 @@ import {
   FileText,
   ShieldCheck,
   MessageCircle,
-  Send
+  Send,
+  Home,
+  RotateCcw
 } from 'lucide-react';
 
 const getLocalDate = (d = new Date()) => {
@@ -64,6 +66,40 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
   const [submitting, setSubmitting] = useState(false);
   const [collisionError, setCollisionError] = useState('');
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [returnCountdown, setReturnCountdown] = useState(15);
+
+  const handleResetToHome = () => {
+    setConfirmedBooking(null);
+    setStep(1);
+    setSelectedTime(null);
+    setClientName('');
+    setClientPhone('');
+    setClientEmail('');
+    setNotes('');
+    setCollisionError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Temporizador para volver al inicio automáticamente tras reserva exitosa
+  useEffect(() => {
+    if (!confirmedBooking) {
+      setReturnCountdown(15);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setReturnCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleResetToHome();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [confirmedBooking]);
 
   // Cargar datos de la barbería por slug
   useEffect(() => {
@@ -290,25 +326,47 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
           return (
             <div className="mt-5 space-y-2.5">
+              {/* Temporizador automático de retorno */}
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-noir-950/90 border border-industrial-800 text-[11px] text-industrial-400">
+                <span className="flex items-center gap-1.5 font-mono">
+                  <Clock className="w-3.5 h-3.5 text-gold-400 animate-pulse" />
+                  Regresando al inicio en <strong className="text-white">{returnCountdown}s</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetToHome}
+                  className="text-gold-400 hover:text-white font-bold text-xs underline cursor-pointer"
+                >
+                  Volver Ya
+                </button>
+              </div>
+
               <a
                 href={waLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all"
+                className="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] transition-all"
               >
                 <MessageCircle className="w-4 h-4 fill-current" />
                 <span>Enviar Comprobante por WhatsApp a la Barbería</span>
               </a>
 
               <button
-                onClick={() => {
-                  setConfirmedBooking(null);
-                  setStep(1);
-                  setSelectedTime(null);
-                }}
-                className="w-full py-2.5 rounded-xl bg-noir-800 hover:bg-noir-700 text-industrial-400 hover:text-white text-xs font-semibold transition-colors"
+                type="button"
+                onClick={handleResetToHome}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-noir-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-gold hover:scale-[1.01] transition-all cursor-pointer"
               >
-                Hacer Otra Reserva
+                <Home className="w-4 h-4" />
+                <span>Volver al Inicio / Hacer Otra Reserva</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="w-full py-2.5 rounded-xl bg-noir-800 hover:bg-noir-700 text-industrial-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Recargar Página Principal</span>
               </button>
             </div>
           );

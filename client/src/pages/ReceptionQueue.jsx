@@ -259,9 +259,23 @@ export const ReceptionQueue = () => {
         time: timeToUse
       });
 
+      // 1. Cerrar ventana inmediatamente
       setIsAddModalOpen(false);
+
+      // 2. Mover la agenda del salón automáticamente a la fecha del turno para que el admin lo vea de inmediato
+      setAgendaDate(selectedDate);
+
+      // 3. Limpiar formulario y modo ensayo
       setClientName('');
       setClientPhone('');
+      setSelectedTime('');
+      setAllowPast(false);
+
+      // 4. Mostrar confirmación visual automática
+      showSuccessAlert(
+        '¡Turno Agendado con Éxito!',
+        `El turno de ${clientName || 'Cliente'} (${serviceName}) quedó registrado para las ${timeToUse} con ${assignedBarber ? assignedBarber.name : 'el barbero'}. La vista de la agenda se ubicó en la fecha ${selectedDate}.`
+      );
     } catch (err) {
       showErrorAlert('Horario No Disponible', err.message || 'Error al agendar cita.');
     }

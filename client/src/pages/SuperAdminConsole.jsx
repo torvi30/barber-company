@@ -1049,8 +1049,14 @@ export const SuperAdminConsole = ({
 
       {/* Modal de Alerta de WhatsApp Pre-redactada */}
       {selectedTenantForWA && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-noir-900 border border-gold-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedTenantForWA(null); }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-noir-900 border border-gold-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between border-b border-industrial-800 pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
@@ -1160,8 +1166,14 @@ export const SuperAdminConsole = ({
 
       {/* Modal para Extender Suscripción */}
       {selectedTenantForExtend && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-noir-900 border border-industrial-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedTenantForExtend(null); }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-noir-900 border border-industrial-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 cursor-default"
+          >
             <h3 className="font-display font-bold text-base text-white">
               Extender Suscripción: {selectedTenantForExtend.name}
             </h3>
@@ -1211,8 +1223,14 @@ export const SuperAdminConsole = ({
 
       {/* Modal de Invitación a Administrador de Barbería */}
       {selectedTenantForInvite && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-noir-900 border border-gold-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedTenantForInvite(null); }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-noir-900 border border-gold-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between border-b border-industrial-800 pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-gold-500/20 text-gold-400">
