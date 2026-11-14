@@ -3,6 +3,7 @@ import { Modal } from './Modal';
 import { useBarbershop } from '../context/BarbershopContext';
 import { useAuth } from '../context/AuthContext';
 import { showSuccessAlert, showErrorAlert } from '../lib/swal';
+import { uploadToCloudinary } from '../services/cloudinaryService';
 import {
   User,
   Upload,
@@ -171,23 +172,49 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
     reader.readAsDataURL(file);
   };
 
-  // Carga de avatar de usuario
+  // Carga de avatar de usuario a Cloudinary (carpeta: barber-company/avatars)
   const handleAvatarUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    compressImage(file, (compressedDataUrl, origKb, compKb) => {
+    setAvatarUploadFeedback('Optimizando y subiendo a Cloudinary...');
+
+    compressImage(file, async (compressedDataUrl) => {
+      // Mostrar preview inmediato
       setAvatarUrl(compressedDataUrl);
-      setAvatarUploadFeedback(`Foto optimizada: ${origKb} KB → ${compKb} KB (Sin costo de almacenamiento)`);
+
+      try {
+        const result = await uploadToCloudinary(compressedDataUrl, 'avatars');
+        if (result?.url) {
+          setAvatarUrl(result.url);
+          setAvatarUploadFeedback('✓ Foto alojada en Cloudinary (barber-company/avatars)');
+        }
+      } catch (err) {
+        console.warn('Fallo Cloudinary upload (fallback a imagen local):', err.message);
+        setAvatarUploadFeedback('✓ Foto guardada localmente (modo offline)');
+      }
     });
   };
 
-  // Carga de logo de barbería
+  // Carga de logo de barbería a Cloudinary (carpeta: barber-company/logos)
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    compressImage(file, (compressedDataUrl, origKb, compKb) => {
+    setLogoUploadFeedback('Optimizando y subiendo a Cloudinary...');
+
+    compressImage(file, async (compressedDataUrl) => {
+      // Mostrar preview inmediato
       setSalonLogoUrl(compressedDataUrl);
-      setLogoUploadFeedback(`Logo optimizado: ${origKb} KB → ${compKb} KB (Carga ultrarrápida)`);
+
+      try {
+        const result = await uploadToCloudinary(compressedDataUrl, 'logos');
+        if (result?.url) {
+          setSalonLogoUrl(result.url);
+          setLogoUploadFeedback('✓ Logo alojado en Cloudinary (barber-company/logos)');
+        }
+      } catch (err) {
+        console.warn('Fallo Cloudinary upload (fallback a imagen local):', err.message);
+        setLogoUploadFeedback('✓ Logo guardado localmente (modo offline)');
+      }
     });
   };
 

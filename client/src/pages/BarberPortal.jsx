@@ -9,6 +9,7 @@ import {
   showErrorAlert,
   showConfirmDialog
 } from '../lib/swal';
+import { uploadToCloudinary } from '../services/cloudinaryService';
 import {
   Scissors,
   DollarSign,
@@ -32,7 +33,9 @@ import {
   Edit3,
   Trash2,
   Users,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  Camera
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -147,9 +150,29 @@ export const BarberPortal = () => {
     avatar: AVATAR_PRESETS[0].url
   });
   const [formSaving, setFormSaving] = useState(false);
+  const barberFileInputRef = React.useRef(null);
+  const [barberPhotoFeedback, setBarberPhotoFeedback] = useState(null);
+
+  const handleBarberPhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBarberPhotoFeedback('Subiendo foto a Cloudinary...');
+    try {
+      const result = await uploadToCloudinary(file, 'barberos');
+      if (result?.url) {
+        setBarberFormData(prev => ({ ...prev, avatar: result.url }));
+        setBarberPhotoFeedback('✓ Foto guardada en Cloudinary (barber-company/barberos)');
+      }
+    } catch (err) {
+      console.warn('Fallo Cloudinary upload:', err.message);
+      setBarberPhotoFeedback('Error al subir: ' + err.message);
+    }
+  };
 
   const openNewBarberModal = () => {
     setEditingBarber(null);
+    setBarberPhotoFeedback(null);
     setBarberFormData({
       name: '',
       phone: '',
@@ -164,6 +187,7 @@ export const BarberPortal = () => {
 
   const openEditBarberModal = (b) => {
     setEditingBarber(b);
+    setBarberPhotoFeedback(null);
     setBarberFormData({
       name: b.name || '',
       phone: b.phone || '',
@@ -1189,9 +1213,33 @@ export const BarberPortal = () => {
 
           {/* Selector de Foto / Avatar */}
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-2">
-              Foto de Perfil Profesional
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-industrial-400 uppercase">
+                Foto de Perfil Profesional
+              </label>
+              <input
+                ref={barberFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleBarberPhotoUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => barberFileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gold-500/10 hover:bg-gold-500/20 border border-gold-500/40 text-gold-400 hover:text-gold-300 text-[11px] font-semibold transition-all cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Subir Foto (Cloudinary)</span>
+              </button>
+            </div>
+
+            {barberPhotoFeedback && (
+              <p className={`text-[10px] mb-2 font-mono ${barberPhotoFeedback.startsWith('✓') ? 'text-emerald-400' : 'text-industrial-400 animate-pulse'}`}>
+                {barberPhotoFeedback}
+              </p>
+            )}
+
             <div className="grid grid-cols-5 gap-2 mb-2">
               {AVATAR_PRESETS.map((preset, idx) => {
                 const isSelected = barberFormData.avatar === preset.url;
