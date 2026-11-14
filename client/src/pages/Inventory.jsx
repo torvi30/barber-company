@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmDialog } from '../lib/swal';
+import { compressImageFile, uploadToCloudinary, getOptimizedImageUrl } from '../services/cloudinaryService';
 import {
   Package,
   AlertTriangle,
@@ -22,16 +23,17 @@ import {
   ShoppingBag,
   Eye,
   Layers,
-  Check
+  Check,
+  Upload
 } from 'lucide-react';
 
 const PRESET_PRODUCT_IMAGES = [
-  { label: 'Pomada Mate', url: 'https://images.unsplash.com/photo-1597852074816-d933c4d2b988?fit=crop&w=400&q=80' },
-  { label: 'Aceite Barba', url: 'https://images.unsplash.com/photo-1621607512214-68297480165e?fit=crop&w=400&q=80' },
-  { label: 'Bálsamo After', url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?fit=crop&w=400&q=80' },
-  { label: 'Cera en Polvo', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?fit=crop&w=400&q=80' },
-  { label: 'Shaving Gel', url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?fit=crop&w=400&q=80' },
-  { label: 'Navaja Clásica', url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=400&q=80' }
+  { label: 'Pomada Mate', url: 'https://images.unsplash.com/photo-1597852074816-d933c4d2b988?auto=format&fit=crop&w=400&q=75' },
+  { label: 'Aceite Barba', url: 'https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=400&q=75' },
+  { label: 'Bálsamo After', url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=400&q=75' },
+  { label: 'Cera en Polvo', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=75' },
+  { label: 'Shaving Gel', url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=400&q=75' },
+  { label: 'Navaja Clásica', url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=400&q=75' }
 ];
 
 export const Inventory = () => {
@@ -59,6 +61,41 @@ export const Inventory = () => {
   const [costPrice, setCostPrice] = useState(18000);
   const [imageUrl, setImageUrl] = useState(PRESET_PRODUCT_IMAGES[0].url);
   const [showInStore, setShowInStore] = useState(true);
+
+  // Estados de carga y compresión automática de fotos (<60KB)
+  const fileInputRef = useRef(null);
+  const [compressingImage, setCompressingImage] = useState(false);
+  const [compressionBadge, setCompressionBadge] = useState(null);
+
+  const handleUploadImageFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setCompressingImage(true);
+      // Comprime cualquier foto pesada a máx 600x600 y calidad 0.75 WebP (<60KB)
+      const result = await compressImageFile(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 });
+      const origKb = Math.round(result.originalSize / 1024);
+      const compKb = Math.round(result.compressedSize / 1024);
+      setCompressionBadge(`Foto optimizada: ${origKb}KB → ${compKb}KB (-${result.reduction}%)`);
+
+      try {
+        const uploadRes = await uploadToCloudinary(result.blob, 'productos');
+        if (uploadRes?.url) {
+          setImageUrl(uploadRes.url);
+        } else {
+          setImageUrl(result.dataUrl);
+        }
+      } catch (cloudErr) {
+        // Fallback inmediato a DataURL optimizado en base64
+        setImageUrl(result.dataUrl);
+      }
+    } catch (err) {
+      showErrorAlert('Error con la imagen', err.message);
+    } finally {
+      setCompressingImage(false);
+    }
+  };
 
   // Form state de nueva categoría
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -212,73 +249,78 @@ export const Inventory = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn max-w-7xl mx-auto pb-12">
-      {/* Header con Título y Acciones Pro */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-industrial-800">
+      {/* Header con Título y Acciones Pro (Diseño Compacto y Optimizado) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-industrial-800">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-amber-700 dark:text-gold-400 text-xs font-semibold uppercase tracking-wider mb-2 font-mono">
-            <Sparkles className="w-3.5 h-3.5" /> Grooming Store & Stock Profesional
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-amber-700 dark:text-gold-400 text-[10px] font-semibold uppercase tracking-wider mb-1 font-mono">
+            <Sparkles className="w-3 h-3" /> Grooming Store & Stock
           </div>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2.5">
-            <Package className="w-7 h-7 text-amber-600 dark:text-gold-400" />
-            Tienda Boutique & Control de Inventario
+          <h2 className="text-xl sm:text-2xl font-display font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
+            <Package className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 dark:text-gold-400 flex-shrink-0" />
+            <span>Tienda Boutique & Inventario</span>
           </h2>
-          <p className="text-xs text-slate-500 dark:text-industrial-400 mt-1 max-w-2xl">
-            Sube tus productos de reventa para que los clientes los compren en la web, gestiona categorías de autor y controla el stock físico del salón.
+          <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
+            Catálogo de productos para clientes y control de stock físico del salón.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Botón Nueva Categoría */}
           <button
             type="button"
             onClick={() => setIsCategoryModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-noir-900 hover:bg-slate-200 dark:hover:bg-noir-850 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-noir-900 hover:bg-slate-200 dark:hover:bg-noir-850 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-all cursor-pointer shadow-sm"
           >
-            <Tag className="w-4 h-4 text-amber-500" />
-            <span>+ Nueva Categoría</span>
+            <Tag className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden sm:inline">+ Nueva Categoría</span>
+            <span className="sm:hidden">+ Categoría</span>
           </button>
 
           {/* Botón Subir Producto a la Tienda */}
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer hover:scale-[1.02]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>Subir Producto a Tienda</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Subir Producto</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Cards de Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* KPI Cards de Métricas Compactas (2 Columnas en Móvil para que no empujen los productos abajo) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <StatCard
-          title="Productos en Tienda"
+          compact={true}
+          title="Productos"
           value={metrics.totalItems || inventory.length}
           icon={ShoppingBag}
-          subtitle="Catálogo activo para clientes"
+          subtitle="Catálogo activo"
         />
 
         <StatCard
-          title="Categorías Creadas"
+          compact={true}
+          title="Categorías"
           value={categories.length}
           icon={Layers}
-          subtitle="Secciones en la boutique"
+          subtitle="Secciones boutique"
         />
 
         <StatCard
-          title="Alertas de Stock"
+          compact={true}
+          title="Alertas Stock"
           value={metrics.lowStockCount}
           icon={AlertTriangle}
           highlight={metrics.lowStockCount > 0}
-          subtitle={metrics.lowStockCount > 0 ? 'Requiere reabastecimiento' : 'Stock en niveles óptimos'}
+          subtitle={metrics.lowStockCount > 0 ? 'Bajo inventario' : 'Stock óptimo'}
         />
 
         <StatCard
-          title="Valoración Catálogo (PVP)"
+          compact={true}
+          title="Valoración PVP"
           value={`$${Number(metrics.totalValuation || inventory.reduce((s, i) => s + (Number(i.unitPrice || 0) * Number(i.stock || 0)), 0)).toLocaleString()}`}
           icon={DollarSign}
-          subtitle={`Inversión: $${Number(metrics.totalInvestment || inventory.reduce((s, i) => s + (Number(i.costPrice || 0) * Number(i.stock || 0)), 0)).toLocaleString()}`}
+          subtitle={`Costo: $${Number(metrics.totalInvestment || inventory.reduce((s, i) => s + (Number(i.costPrice || 0) * Number(i.stock || 0)), 0)).toLocaleString()}`}
         />
       </div>
 
@@ -377,11 +419,12 @@ export const Inventory = () => {
                   className="bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800/80 rounded-2xl p-4 flex flex-col justify-between hover:border-gold-500/40 transition-all shadow-sm hover:shadow-md group"
                 >
                   <div className="space-y-3">
-                    {/* Imagen y Badges */}
+                    {/* Imagen y Badges con Optimización CDN */}
                     <div className="relative aspect-video sm:aspect-square w-full rounded-xl overflow-hidden bg-noir-900 border border-slate-200 dark:border-industrial-800">
                       <img
-                        src={item.imageUrl || PRESET_PRODUCT_IMAGES[0].url}
+                        src={getOptimizedImageUrl(item.imageUrl || PRESET_PRODUCT_IMAGES[0].url, { width: 500, height: 500 })}
                         alt={item.name}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
 
@@ -639,41 +682,80 @@ export const Inventory = () => {
             />
           </div>
 
-          {/* Foto del Producto: Selector de Fotos Pro con 1 Clic */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-industrial-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Foto del Producto</span>
-              <span className="text-[10px] text-industrial-400">Elige una foto pro o pega tu enlace</span>
-            </label>
+          {/* Foto del Producto: Compresor Automático (<60KB) + Galería Rápida */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700 dark:text-industrial-300 uppercase tracking-wider">
+                Foto del Producto
+              </label>
+              <span className="text-[10px] text-emerald-500 font-mono font-bold flex items-center gap-1">
+                <span>⚡ Auto-comprimida a &lt;60KB</span>
+              </span>
+            </div>
+
+            {/* Botón de Carga Directa desde Celular / PC con Auto-Compresión */}
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUploadImageFile}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={compressingImage}
+                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-gold-500/50 hover:bg-gold-500/10 text-gold-600 dark:text-gold-400 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                <span>
+                  {compressingImage ? 'Comprimiendo y optimizando foto...' : 'Subir foto desde Celular o PC (Auto-Liviana)'}
+                </span>
+              </button>
+            </div>
+
+            {compressionBadge && (
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-400 font-mono flex items-center gap-1.5 animate-fadeIn">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <span>{compressionBadge}</span>
+              </div>
+            )}
 
             {/* Galería rápida de fotos con 1 toque */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-2">
-              {PRESET_PRODUCT_IMAGES.map((img) => (
-                <button
-                  key={img.label}
-                  type="button"
-                  onClick={() => setImageUrl(img.url)}
-                  className={`relative aspect-square rounded-xl overflow-hidden border transition-all cursor-pointer ${
-                    imageUrl === img.url
-                      ? 'border-gold-500 ring-2 ring-gold-500/50 scale-105'
-                      : 'border-slate-200 dark:border-industrial-800 hover:border-gold-500/40 opacity-70 hover:opacity-100'
-                  }`}
-                  title={img.label}
-                >
-                  <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
-                  {imageUrl === img.url && (
-                    <span className="absolute inset-0 bg-gold-500/30 flex items-center justify-center text-noir-950 font-bold text-xs">
-                      ✓
-                    </span>
-                  )}
-                </button>
-              ))}
+            <div className="space-y-1 pt-1">
+              <span className="text-[10px] text-industrial-400 block">O elige una foto prediseñada en 1 clic:</span>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {PRESET_PRODUCT_IMAGES.map((img) => (
+                  <button
+                    key={img.label}
+                    type="button"
+                    onClick={() => {
+                      setImageUrl(img.url);
+                      setCompressionBadge(null);
+                    }}
+                    className={`relative aspect-square rounded-xl overflow-hidden border transition-all cursor-pointer ${
+                      imageUrl === img.url
+                        ? 'border-gold-500 ring-2 ring-gold-500/50 scale-105'
+                        : 'border-slate-200 dark:border-industrial-800 hover:border-gold-500/40 opacity-70 hover:opacity-100'
+                    }`}
+                    title={img.label}
+                  >
+                    <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                    {imageUrl === img.url && (
+                      <span className="absolute inset-0 bg-gold-500/30 flex items-center justify-center text-noir-950 font-bold text-xs">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* URL personalizada */}
             <input
               type="url"
-              placeholder="https://ejemplo.com/foto-producto.jpg"
+              placeholder="O pega un enlace de imagen (https://...)"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-gold-500"

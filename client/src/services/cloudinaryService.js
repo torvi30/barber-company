@@ -54,15 +54,112 @@ export async function uploadToCloudinary(fileOrDataUrl, subfolder = '') {
 }
 
 /**
- * Aplica transformaciones automáticas de CDN de Cloudinary (WebP, compresión inteligente y resize)
+ * Comprime y redimensiona una imagen en el cliente (Browser Canvas) antes de subirla.
+ * Transforma fotos pesadas de teléfonos (3MB - 10MB) en archivos ultralivianos (~30KB - 70KB)
+ * ideales para soportar cientos de barberías y catálogos masivos sin sobrecargar el servidor ni agotar cuotas.
+ * 
+ * @param {File|Blob} file - Archivo de imagen original
+ * @param {object} options - Opciones de tamaño y calidad
+ * @returns {Promise<{ blob: Blob, dataUrl: string, originalSize: number, compressedSize: number, reduction: number }>}
  */
-export function getOptimizedImageUrl(url, { width = 300, height = 300, crop = 'fill' } = {}) {
-  if (!url || typeof url !== 'string' || !url.includes('cloudinary.com')) {
+export async function compressImageFile(file, { maxWidth = 600, maxHeight = 600, quality = 0.75 } = {}) {
+  if (!file) throw new Error('No se proporcionó archivo para comprimir');
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        // Mantener proporción de aspecto dentro del límite máximo
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        // Suavizado bicúbico de alta calidad
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Intentar exportar en WebP (estándar moderno más liviano), con fallback a JPEG
+        let dataUrl = canvas.toDataURL('image/webp', quality);
+        if (!dataUrl.startsWith('data:image/webp')) {
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              return reject(new Error('Error al comprimir imagen en canvas'));
+            }
+            const originalSize = file.size;
+            const compressedSize = blob.size;
+            const reduction = Math.round(((originalSize - compressedSize) / originalSize) * 100);
+
+            resolve({
+              blob,
+              dataUrl,
+              originalSize,
+              compressedSize,
+              reduction: reduction > 0 ? reduction : 0,
+              width,
+              height
+            });
+          },
+          'image/webp',
+          quality
+        );
+      };
+
+      img.onerror = (err) => reject(new Error('No se pudo decodificar la imagen: ' + err.message));
+    };
+
+    reader.onerror = (err) => reject(new Error('Error al leer el archivo: ' + err.message));
+  });
+}
+
+/**
+ * Aplica transformaciones automáticas de CDN (Cloudinary / Unsplash)
+ * para servir WebP con compresión automática y resolución justa de pantalla.
+ */
+export function getOptimizedImageUrl(url, { width = 400, height = 400, crop = 'fill' } = {}) {
+  if (!url || typeof url !== 'string') return url;
+
+  // Optimización para Cloudinary
+  if (url.includes('cloudinary.com')) {
+    const transformation = `f_auto,q_auto:good,w_${width},h_${height},c_${crop}`;
+    if (!url.includes('/image/upload/f_auto')) {
+      return url.replace('/image/upload/', `/image/upload/${transformation}/`);
+    }
     return url;
   }
 
-  // Insertar transformaciones: f_auto,q_auto,w_${width},h_${height},c_${crop}
-  const transformation = `f_auto,q_auto,w_${width},h_${height},c_${crop}`;
-  return url.replace('/image/upload/', `/image/upload/${transformation}/`);
+  // Optimización para Unsplash (format=webp, quality=75, tamaño controlado)
+  if (url.includes('images.unsplash.com')) {
+    const separator = url.includes('?') ? '&' : '?';
+    // Si ya tiene parámetros de width/quality, reemplazarlos o agregarlos
+    return `${url}${separator}auto=format&fit=crop&w=${width}&q=75`;
+  }
+
+  return url;
 }
 
