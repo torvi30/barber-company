@@ -143,19 +143,20 @@ export const PublicStore = ({ slug }) => {
           </p>
         </div>
 
-        {/* Botón superior de carrito */}
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="flex items-center justify-between sm:justify-start gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 text-black font-bold text-xs shadow-glow-gold hover:opacity-95 transition-opacity self-start w-full sm:w-auto cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
+        {/* Solo en desktop/tablet y cuando hayan productos en la bolsa (en móvil se usa exclusivamente la barra flotante inferior) */}
+        {cart.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 text-black font-bold text-xs shadow-glow-gold hover:opacity-95 transition-all cursor-pointer self-start md:self-auto"
+          >
             <ShoppingBag className="w-4 h-4" />
             <span>Ver Bolsa ({cart.reduce((s, i) => s + i.qty, 0)})</span>
-          </div>
-          <span className="bg-black/20 px-2 py-0.5 rounded-lg font-mono text-[11px]">
-            ${totalCartPrice.toFixed(2)}
-          </span>
-        </button>
+            <span className="bg-black/20 px-2 py-0.5 rounded-lg font-mono text-[11px]">
+              ${totalCartPrice.toFixed(2)}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Categorías Filter Chips - Con touch seguro sin atrapar scroll vertical */}
