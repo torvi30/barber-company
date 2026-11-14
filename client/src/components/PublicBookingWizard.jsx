@@ -608,13 +608,13 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             <button
               type="button"
               onClick={() => { setSelectedDate(dayAfterStr); setEnableTestSlots(false); }}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 selectedDate === dayAfterStr
                   ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Pasado Mañana
+              {dayAfterStr.slice(8, 10)}/{dayAfterStr.slice(5, 7)}
             </button>
             <input
               type="date"

@@ -647,7 +647,7 @@ export const Inventory = () => {
             </label>
 
             {/* Galería rápida de fotos con 1 toque */}
-            <div className="grid grid-cols-6 gap-2 mb-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-2">
               {PRESET_PRODUCT_IMAGES.map((img) => (
                 <button
                   key={img.label}

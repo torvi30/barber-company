@@ -1169,25 +1169,23 @@ export const ReceptionQueue = () => {
               })}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1">
               <div>
-                <label className="block text-[10px] text-industrial-400 uppercase mb-1 flex items-center justify-between">
-                  <span>Servicio</span>
-                  <span className="text-[9px] text-industrial-500 font-normal">Puedes editarlo libremente</span>
+                <label className="block text-[11px] font-bold text-slate-300 dark:text-industrial-300 uppercase mb-1">
+                  Servicio
                 </label>
                 <input
                   type="text"
                   required
                   value={serviceName}
                   onChange={(e) => setServiceName(e.target.value)}
-                  placeholder="Ej: Corte, Barba, Cejas..."
-                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500"
+                  placeholder="Ej: Corte, Barba..."
+                  className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-500 font-medium"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-industrial-400 uppercase mb-1 flex items-center justify-between">
-                  <span>Precio ($ COP)</span>
-                  <span className="text-[9px] text-industrial-500 font-normal">Modificable</span>
+                <label className="block text-[11px] font-bold text-slate-300 dark:text-industrial-300 uppercase mb-1">
+                  Precio ($ COP)
                 </label>
                 <input
                   type="number"
@@ -1200,72 +1198,83 @@ export const ReceptionQueue = () => {
             </div>
           </div>
 
+          {/* Asignación de Barbero (Selector Visual Táctil sin Desfase de Pantalla) */}
           <div>
-            <label className="block text-xs font-semibold text-industrial-400 uppercase mb-1">
-              Asignar a Barbero
-            </label>
-            <select
-              value={barberId}
-              onChange={(e) => setBarberId(e.target.value)}
-              className="w-full bg-noir-950 border border-industrial-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500"
-            >
-              {barbers.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name} ({b.status === 'AVAILABLE' ? 'Disponible' : b.status})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-industrial-400 uppercase">
+                Asignar a Barbero
+              </label>
+              <span className="text-[10px] text-industrial-500 font-medium">1 Clic para cambiar</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
+              {barbers.map((b) => {
+                const isSelected = barberId === b.id;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setBarberId(b.id)}
+                    className={`p-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-gold-500 bg-gold-500/15 text-gold-300 ring-1 ring-gold-500 shadow-sm'
+                        : 'border-industrial-800 bg-noir-950 text-industrial-300 hover:border-industrial-700 hover:bg-noir-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                      <span className="text-xs font-bold text-white truncate">{b.name}</span>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[9px] font-mono font-bold text-gold-400 px-1.5 py-0.5 rounded bg-gold-500/20">
+                        Elegido
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Fecha y Horario con Disponibilidad Sincronizada */}
-          <div className="space-y-2.5 pt-1 border-t border-industrial-800/60">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <label className="block text-xs font-semibold text-industrial-400 uppercase">
-                Fecha del Turno
-              </label>
-              
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => { setSelectedDate(todayStr); setAllowPast(false); }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    selectedDate === todayStr
-                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
-                      : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
-                  }`}
-                >
-                  Hoy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedDate(tomorrowStr); setAllowPast(false); }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    selectedDate === tomorrowStr
-                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
-                      : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
-                  }`}
-                >
-                  Mañana
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedDate(dayAfterStr); setAllowPast(false); }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    selectedDate === dayAfterStr
-                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
-                      : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
-                  }`}
-                >
-                  Pasado Mañana
-                </button>
-
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-noir-950 border border-industrial-800 rounded-lg px-2 py-1 text-xs text-gold-400 font-mono font-bold focus:outline-none"
-                />
-              </div>
+          {/* Fecha del Turno (Selector en Cuadrícula 100% Responsive) */}
+          <div className="space-y-2 pt-1 border-t border-industrial-800/60">
+            <label className="block text-xs font-semibold text-industrial-400 uppercase">
+              Fecha del Turno
+            </label>
+            
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => { setSelectedDate(todayStr); setAllowPast(false); }}
+                className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedDate === todayStr
+                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
+                    : 'bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white'
+                }`}
+              >
+                Hoy ({todayStr.slice(8, 10)}/{todayStr.slice(5, 7)})
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedDate(tomorrowStr); setAllowPast(false); }}
+                className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedDate === tomorrowStr
+                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
+                    : 'bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white'
+                }`}
+              >
+                Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedDate(dayAfterStr); setAllowPast(false); }}
+                className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedDate === dayAfterStr
+                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
+                    : 'bg-noir-950 border border-industrial-800 text-industrial-400 hover:text-white'
+                }`}
+              >
+                {dayAfterStr.slice(8, 10)}/{dayAfterStr.slice(5, 7)}
+              </button>
             </div>
 
             {allowPast && (
@@ -1339,28 +1348,30 @@ export const ReceptionQueue = () => {
             </div>
           </div>
 
-          <div className="pt-3 pb-3 sm:pb-2 flex items-center justify-between gap-3 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
-            <div>
+          <div className="pt-3 pb-2 flex items-center justify-between gap-2 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
+            <div className="min-w-0 flex-shrink-0">
               {!selectedTime ? (
-                <span className="text-[11px] text-amber-400 font-medium">👆 Selecciona una hora</span>
+                <span className="text-[11px] text-amber-400 font-medium whitespace-nowrap">👆 Elige hora</span>
               ) : (
-                <span className="text-[11px] text-emerald-400 font-mono font-bold">Turno: {selectedTime} hrs</span>
+                <span className="text-xs text-emerald-400 font-mono font-bold whitespace-nowrap bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg">
+                  {selectedTime} hrs
+                </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-industrial-800 text-industrial-400 hover:text-white text-xs font-semibold cursor-pointer"
+                className="px-3 py-2 rounded-xl border border-industrial-800 text-industrial-400 hover:text-white text-xs font-semibold cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting || !selectedTime}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
-                {submitting ? 'Agregando...' : 'Agregar a la Fila'}
+                {submitting ? 'Agregando...' : 'Agregar Fila'}
               </button>
             </div>
           </div>
@@ -1509,27 +1520,43 @@ export const ReceptionQueue = () => {
         <div className="space-y-4">
           {/* Selector de Barbero y Selector de Pestaña */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-industrial-800">
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <img
-                src={selectedBarberObj?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80'}
-                alt={selectedBarberObj?.name}
-                className="w-10 h-10 rounded-xl object-cover border border-amber-500/40 flex-shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-industrial-400 uppercase tracking-wider">
-                  Especialista / Barbero
-                </label>
-                <select
-                  value={barberId}
-                  onChange={(e) => setBarberId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-gold-500 cursor-pointer"
-                >
-                  {barbers.map((b) => (
-                    <option key={b.id} value={b.id} className="bg-white dark:bg-noir-950 text-slate-900 dark:text-white">
-                      {b.name} ({b.specialties?.[0] || 'Master Barber'})
-                    </option>
-                  ))}
-                </select>
+            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <img
+                  src={selectedBarberObj?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80'}
+                  alt={selectedBarberObj?.name}
+                  className="w-8 h-8 rounded-xl object-cover border border-amber-500/40 flex-shrink-0"
+                />
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Barbero Activo
+                  </span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {selectedBarberObj?.name || 'Selecciona Barbero'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Selector Rápido de Barberos sin Desfase */}
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
+                {barbers.map((b) => {
+                  const isSelected = barberId === b.id;
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setBarberId(b.id)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                          : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                      }`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                      <span>{b.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
