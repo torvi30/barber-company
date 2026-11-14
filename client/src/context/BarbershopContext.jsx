@@ -41,6 +41,7 @@ export const BarbershopProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [socketConnected, setSocketConnected] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
+  const [realtimeAppointment, setRealtimeAppointment] = useState(null);
 
   // Chime de barbería tradicional (Web Audio API nativo)
   const playBarberChime = useCallback(() => {
@@ -201,13 +202,23 @@ export const BarbershopProvider = ({ children }) => {
     const onDisconnect = () => setSocketConnected(false);
 
     const onAppointmentCreated = (payload) => {
-      if (payload.barbershopId === tenantId) {
-        setAppointments((prev) => [payload.appointment, ...prev.filter(a => a.id !== payload.appointment.id)]);
+      if (!payload?.appointment) return;
+      const isTargetTenant = payload.barbershopId === tenantId ||
+                             barbershopInfo?.slug === payload.barbershopId ||
+                             barbershopInfo?.id === payload.barbershopId;
+
+      if (isTargetTenant) {
+        const apt = payload.appointment;
+        setAppointments((prev) => [apt, ...prev.filter(a => a.id !== apt.id)]);
+        setRealtimeAppointment(apt);
         playBarberChime();
         setToastNotification({
-          title: '¡Nueva Cita Agendada!',
-          message: `${payload.appointment.clientName} reservó con ${payload.appointment.barberName} a las ${payload.appointment.time}`
+          title: '¡Nueva Cita Agendada en Tiempo Real!',
+          message: `${apt.clientName} reservó para el ${apt.date} a las ${apt.time} con ${apt.barberName}`,
+          appointment: apt
         });
+        saveFirestoreAppointment(tenantId, apt).catch(() => {});
+        loadTenantData(tenantId);
       }
     };
 
@@ -277,6 +288,7 @@ export const BarbershopProvider = ({ children }) => {
     };
     await saveFirestoreAppointment(tenantId, saved);
     setAppointments((prev) => [saved, ...prev.filter(a => a.id !== saved.id)]);
+    setRealtimeAppointment(saved);
     return { success: true, data: saved };
   };
 
@@ -370,6 +382,8 @@ export const BarbershopProvider = ({ children }) => {
         loading,
         socketConnected,
         toastNotification,
+        realtimeAppointment,
+        setRealtimeAppointment,
         clearToast: () => setToastNotification(null),
         playBarberChime,
         refreshData: () => loadTenantData(tenantId),

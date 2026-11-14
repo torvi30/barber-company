@@ -343,15 +343,29 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
 
       {/* Toast de eventos en vivo */}
       {toastNotification && (
-        <div className="fixed top-20 right-6 z-50 max-w-sm bg-noir-900 border border-gold-500/50 shadow-glow-gold rounded-2xl p-4 flex items-start gap-3 animate-fadeIn text-slate-100">
+        <div
+          onClick={() => {
+            if (onTabChange) onTabChange('reception');
+            clearToast();
+          }}
+          className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm bg-noir-900 border border-gold-500/50 shadow-glow-gold rounded-2xl p-4 flex items-start gap-3 animate-fadeIn text-slate-100 cursor-pointer hover:border-gold-400 transition-all"
+        >
           <div className="p-2 rounded-xl bg-gold-500/20 text-gold-400 flex-shrink-0">
             <Bell className="w-5 h-5 animate-bounce" />
           </div>
-          <div className="flex-1">
-            <h5 className="font-bold text-xs text-white">{toastNotification.title}</h5>
+          <div className="flex-1 min-w-0">
+            <h5 className="font-bold text-xs text-white truncate">{toastNotification.title}</h5>
             <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">{toastNotification.message}</p>
+            <span className="text-[10px] text-gold-400 font-bold block mt-1">👉 Toca para ver en la Agenda</span>
           </div>
-          <button onClick={clearToast} className="text-industrial-500 hover:text-white transition-colors">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              clearToast();
+            }}
+            className="text-industrial-500 hover:text-white transition-colors p-1"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>

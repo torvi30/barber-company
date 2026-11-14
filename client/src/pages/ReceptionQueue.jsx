@@ -42,7 +42,7 @@ const DAYS_OF_WEEK = [
 ];
 
 export const ReceptionQueue = () => {
-  const { tenantId, appointments, barbers, createAppointment, updateStatus } = useBarbershop();
+  const { tenantId, appointments, barbers, createAppointment, updateStatus, realtimeAppointment } = useBarbershop();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
@@ -82,6 +82,39 @@ export const ReceptionQueue = () => {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [isManageSlotsOpen, setIsManageSlotsOpen] = useState(false);
   const [allowPast, setAllowPast] = useState(false);
+  const [mobileTab, setMobileTab] = useState('waiting'); // 'waiting' | 'in_chair' | 'completed'
+
+  // Auto-switch de fecha y animación inmediata cuando entra una nueva reserva en tiempo real
+  useEffect(() => {
+    if (realtimeAppointment?.date) {
+      setAgendaDate(realtimeAppointment.date);
+      setMobileTab('waiting');
+    }
+  }, [realtimeAppointment]);
+
+  // Fechas que tienen citas activas para acceso directo
+  const datesWithAppointments = React.useMemo(() => {
+    const map = new Map();
+    (appointments || []).forEach(a => {
+      const d = a.date || todayStr;
+      if (!map.has(d)) {
+        map.set(d, 0);
+      }
+      map.set(d, map.get(d) + 1);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, count]) => {
+        const parts = date.split('-');
+        const day = parts[2] || parts[0];
+        const m = parts[1] || '';
+        return {
+          date,
+          label: `${day}/${m}`,
+          count
+        };
+      });
+  }, [appointments, todayStr]);
 
   // Formato de fecha amigable en español
   const formatFriendlyDate = (dateStr) => {
@@ -347,8 +380,6 @@ export const ReceptionQueue = () => {
   const inChairList = filteredAppointments.filter(a => a.status === 'IN_CHAIR');
   const completedList = filteredAppointments.filter(a => a.status === 'COMPLETED');
 
-  const [mobileTab, setMobileTab] = useState('waiting'); // 'waiting' | 'in_chair' | 'completed'
-
   return (
     <div className="space-y-4 animate-fadeIn pb-12">
       {/* Header Adaptado para Móvil y Desktop */}
@@ -481,6 +512,35 @@ export const ReceptionQueue = () => {
             />
           </div>
         </div>
+
+        {/* Acceso Rápido a Días con Citas Programadas */}
+        {datesWithAppointments.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2.5 pb-0.5 scrollbar-none w-full border-t border-slate-100 dark:border-industrial-850">
+            <span className="text-[10px] uppercase font-mono text-slate-400 dark:text-industrial-400 font-bold whitespace-nowrap flex items-center gap-1">
+              📅 Días con Citas:
+            </span>
+            {datesWithAppointments.map((d) => (
+              <button
+                key={d.date}
+                type="button"
+                onClick={() => setAgendaDate(d.date)}
+                className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                  agendaDate === d.date
+                    ? 'bg-amber-500 text-noir-950 font-black shadow-sm'
+                    : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title={`Ver citas del día ${d.date}`}
+              >
+                <span>{d.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-sans font-bold ${
+                  agendaDate === d.date ? 'bg-noir-950/25 text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+                }`}>
+                  {d.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Selector de pestañas para celular (Mobile Segmented Control) */}
@@ -551,7 +611,11 @@ export const ReceptionQueue = () => {
               waitingQueue.map((apt) => (
                 <div
                   key={apt.id}
-                  className="bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800/90 hover:border-gold-500/40 rounded-xl p-4 transition-all shadow-sm"
+                  className={`bg-slate-50 dark:bg-noir-950 border rounded-xl p-4 transition-all shadow-sm ${
+                    realtimeAppointment?.id === apt.id
+                      ? 'border-gold-500 ring-2 ring-gold-500/50 shadow-glow-gold animate-fadeIn'
+                      : 'border-slate-200 dark:border-industrial-800/90 hover:border-gold-500/40'
+                  }`}
                 >
                   <div className="flex justify-between items-start">
                     <div>

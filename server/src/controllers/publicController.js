@@ -379,6 +379,10 @@ export const createPublicBooking = async (req, res) => {
     if (isMock) {
       if (!tenantAppointments.data) tenantAppointments.data = [];
       tenantAppointments.data.unshift(newAppointment);
+      if (mockStore.appointments) {
+        mockStore.appointments[barbershopId] = tenantAppointments.data;
+      }
+      persistStore();
     } else {
       const docRef = await tenantAppointments.add(newAppointment);
       newAppointment.id = docRef.id;
@@ -387,7 +391,13 @@ export const createPublicBooking = async (req, res) => {
     // 3. BROADCAST SOCKET.IO EN TIEMPO REAL
     const io = req.app.get('io');
     if (io) {
+      // Emitir a la sala del tenant
       io.to(`barbershop:${barbershopId}`).emit('appointment:created', {
+        barbershopId,
+        appointment: newAppointment
+      });
+      // Emitir también a nivel raíz para clientes conectados a nodriza
+      io.emit('appointment:created', {
         barbershopId,
         appointment: newAppointment
       });
