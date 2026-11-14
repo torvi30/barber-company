@@ -453,7 +453,7 @@ export const BarberPortal = () => {
             onClick={() => setActiveSection('jornada')}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'jornada'
-                ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
+                ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -466,7 +466,7 @@ export const BarberPortal = () => {
             onClick={() => setActiveSection('schedule')}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'schedule'
-                ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
+                ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -479,7 +479,7 @@ export const BarberPortal = () => {
             onClick={() => setActiveSection('team')}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSection === 'team'
-                ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
+                ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-sm dark:shadow-glow-gold'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -540,7 +540,7 @@ export const BarberPortal = () => {
                         }}
                         className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-slate-900 text-white dark:bg-gold-500/20 dark:text-gold-300 font-bold'
+                            ? 'bg-amber-500 text-slate-950 font-bold dark:bg-gold-500/20 dark:text-gold-300'
                             : 'hover:bg-slate-100 dark:hover:bg-noir-950 text-slate-800 dark:text-slate-200'
                         }`}
                       >
@@ -552,13 +552,13 @@ export const BarberPortal = () => {
                           />
                           <div className="min-w-0">
                             <span className="text-xs font-bold truncate block">{b.name}</span>
-                            <span className={`text-[10px] font-mono block ${isSelected ? 'text-slate-300 dark:text-gold-400' : 'text-slate-400 dark:text-industrial-500'}`}>
+                            <span className={`text-[10px] font-mono block ${isSelected ? 'text-amber-950 font-semibold dark:text-gold-400' : 'text-slate-400 dark:text-industrial-500'}`}>
                               {b.status === 'AVAILABLE' ? '🟢 Disponible' : b.status === 'IN_SERVICE' ? '🔵 En Sillón' : '⚪ Pausa'}
                             </span>
                           </div>
                         </div>
                         {isSelected && (
-                          <CheckCircle2 className="w-4 h-4 text-white dark:text-gold-400 flex-shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-slate-950 dark:text-gold-400 flex-shrink-0" />
                         )}
                       </button>
                     );

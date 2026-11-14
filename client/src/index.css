@@ -14,9 +14,8 @@
   }
 
   /* ==========================================================================
-     MODO CLARO DE ALTA GAMA (EXECUTIVE OBSIDIAN & PORCELAIN ATELIER)
-     Diseño sobrio, minimalista y de lujo: sin saturación de colores,
-     alto contraste legible, superficies limpias y acentos dorados refinados.
+     MODO CLARO PROFESIONAL & ELEGANTE
+     Superficies limpias, alto contraste, acentos cálidos y máxima legibilidad
      ========================================================================== */
 
   html.light body {
@@ -63,17 +62,7 @@
     border-color: #e2e8f0 !important;
   }
 
-  /* Tipografías: Alto contraste en negro obsidiana y gris grafito */
-  html.light .text-white {
-    color: #0f172a !important;
-  }
-
-  html.light .text-slate-100,
-  html.light .text-slate-200,
-  html.light .text-slate-300 {
-    color: #1e293b !important;
-  }
-
+  /* Textos secundarios en contenedores convertidos a claro */
   html.light .text-industrial-400,
   html.light .text-industrial-500,
   html.light .text-industrial-600 {
@@ -93,81 +82,13 @@
     border-color: #e2e8f0 !important;
   }
 
-  /* Pestañas Activas y Píldoras Seleccionadas: Negro Obsidiana Ejecutivo */
-  html.light .bg-amber-500,
-  html.light .bg-gold-500 {
-    background-color: #0f172a !important;
-    color: #ffffff !important;
-  }
-
-  html.light .bg-amber-500 span,
-  html.light .bg-gold-500 span {
-    color: #ffffff !important;
-  }
-
-  /* Botones primarios dorados de autor */
-  html.light .bg-gradient-to-r.from-gold-500.to-amber-500,
-  html.light .bg-gradient-to-r.from-gold-600.to-gold-400 {
-    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
-    color: #ffffff !important;
-    box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.25) !important;
-  }
-
-  /* Píldoras y Badges suaves: Neutros elegantes */
-  html.light .bg-amber-500\/10,
-  html.light .bg-amber-500\/15,
-  html.light .bg-amber-500\/20,
-  html.light .bg-gold-500\/10,
-  html.light .bg-gold-500\/15,
-  html.light .bg-gold-500\/20 {
-    background-color: #f8fafc !important;
-    color: #334155 !important;
-    border-color: #e2e8f0 !important;
-  }
-
-  html.light .text-amber-500,
-  html.light .text-amber-600,
-  html.light .text-gold-500,
-  html.light .text-gold-600 {
-    color: #0f172a !important;
-  }
-
-  html.light .text-amber-400,
-  html.light .text-gold-400,
-  html.light .text-gold-300 {
-    color: #92400e !important;
-  }
-
-  /* Botón "Al Sillón" y estados en azul -> Sobrio y profesional */
-  html.light .bg-blue-500\/10,
-  html.light .bg-blue-500\/15,
-  html.light .bg-blue-500\/20 {
-    background-color: #f8fafc !important;
-    color: #0f172a !important;
-    border-color: #cbd5e1 !important;
-  }
-
-  html.light .bg-blue-500 {
-    background-color: #1e293b !important;
-    color: #ffffff !important;
-  }
-
-  html.light .text-blue-500,
-  html.light .text-blue-600 {
-    color: #0f172a !important;
-  }
-
-  /* WhatsApp y estados verdes -> Sage sutil y delicado */
-  html.light .bg-emerald-500\/10,
-  html.light .bg-emerald-500\/15,
-  html.light .bg-emerald-500\/20 {
-    background-color: #f0fdf4 !important;
-    color: #15803d !important;
-    border-color: #bbf7d0 !important;
-  }
-
-  html.light .bg-emerald-500 {
-    background-color: #15803d !important;
+  /* Botones con fondo oscuro: asegurar texto blanco legible SIEMPRE */
+  html.light .bg-slate-900,
+  html.light .bg-slate-900 *,
+  html.light .bg-black,
+  html.light .bg-black *,
+  html.light .bg-blue-600,
+  html.light .bg-blue-600 * {
     color: #ffffff !important;
   }
 

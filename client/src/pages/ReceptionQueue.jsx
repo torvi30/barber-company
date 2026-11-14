@@ -607,9 +607,9 @@ export const ReceptionQueue = () => {
               setSelectedDate(agendaDate);
               setIsAddModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all cursor-pointer"
           >
-            <UserPlus className="w-3.5 h-3.5" />
+            <UserPlus className="w-3.5 h-3.5 text-slate-950 dark:text-noir-950" />
             <span>+ Cita / Turno</span>
           </button>
         </div>
@@ -778,7 +778,7 @@ export const ReceptionQueue = () => {
                   onClick={() => setAgendaDate(d.date)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm dark:bg-gold-500 dark:text-noir-950'
                       : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title={`Ver turnos del ${d.date}`}
@@ -787,7 +787,7 @@ export const ReceptionQueue = () => {
                   {d.count > 0 && (
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                       isSelected
-                        ? 'bg-white/20 text-white dark:bg-noir-950/25 dark:text-noir-950'
+                        ? 'bg-slate-950/15 text-slate-950 dark:bg-noir-950/25 dark:text-noir-950'
                         : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
                     }`}>
                       {d.count}
@@ -813,13 +813,13 @@ export const ReceptionQueue = () => {
             onClick={() => setSelectedBarberFilter('ALL')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
               selectedBarberFilter === 'ALL'
-                ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm dark:bg-gold-500 dark:text-noir-950'
                 : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <span>👥 Todos</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-              selectedBarberFilter === 'ALL' ? 'bg-white/20 text-white dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+              selectedBarberFilter === 'ALL' ? 'bg-slate-950/15 text-slate-950 dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
             }`}>
               {dayAppointments.length}
             </span>
@@ -837,15 +837,15 @@ export const ReceptionQueue = () => {
                 onClick={() => setSelectedBarberFilter(isSelected ? 'ALL' : b.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-bold shadow-sm'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm dark:bg-gold-500 dark:text-noir-950'
                     : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
                 title={`Ver únicamente los turnos asignados a ${b.name}`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-slate-950 dark:bg-noir-950' : 'bg-emerald-500'} flex-shrink-0`}></span>
                 <span>{b.name}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                  isSelected ? 'bg-white/20 text-white dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
+                  isSelected ? 'bg-slate-950/15 text-slate-950 dark:bg-noir-950/20 dark:text-noir-950' : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-slate-300'
                 }`}>
                   {bWaiting}
                 </span>
@@ -983,9 +983,10 @@ export const ReceptionQueue = () => {
                     </span>
                     <button
                       onClick={() => handleStartService(apt.id)}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-blue-500/20 dark:text-blue-400 dark:border dark:border-blue-500/30 dark:hover:bg-blue-500 dark:hover:text-white transition-all text-xs font-bold shadow-sm cursor-pointer"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500/20 dark:text-blue-400 dark:border dark:border-blue-500/30 dark:hover:bg-blue-500 dark:hover:text-white transition-all text-xs font-bold shadow-sm cursor-pointer"
                     >
-                      <PlayCircle className="w-3.5 h-3.5" /> Al Sillón
+                      <PlayCircle className="w-3.5 h-3.5 text-white dark:text-blue-400" />
+                      <span>Al Sillón</span>
                     </button>
                   </div>
                 </div>
@@ -1168,14 +1169,14 @@ export const ReceptionQueue = () => {
                     }}
                     className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-slate-900 bg-slate-900 text-white dark:border-gold-500 dark:bg-gold-500/15 dark:text-gold-300 shadow-sm'
+                        ? 'border-amber-500 bg-amber-500/15 text-amber-900 dark:border-gold-500 dark:bg-gold-500/15 dark:text-gold-300 shadow-sm'
                         : 'border-slate-200 dark:border-industrial-800 hover:border-slate-400 dark:hover:border-industrial-700 bg-slate-50 dark:bg-noir-950 text-slate-700 dark:text-industrial-300'
                     }`}
                   >
                     <span className="text-sm flex-shrink-0">{srv.icon}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-bold truncate">{srv.shortName}</div>
-                      <div className={`text-[9px] font-mono ${isSelected ? 'text-slate-300 dark:text-gold-400' : 'text-slate-500 dark:text-gold-400'}`}>${srv.price.toLocaleString('es-CO')}</div>
+                      <div className={`text-[9px] font-mono ${isSelected ? 'text-amber-800 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-gold-400'}`}>${srv.price.toLocaleString('es-CO')}</div>
                     </div>
                   </button>
                 );
@@ -1229,16 +1230,16 @@ export const ReceptionQueue = () => {
                     onClick={() => setBarberId(b.id)}
                     className={`p-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-slate-900 bg-slate-900 text-white dark:border-gold-500 dark:bg-gold-500/15 dark:text-gold-300 ring-1 ring-slate-900 dark:ring-gold-500 shadow-sm'
+                        ? 'border-amber-500 bg-amber-500/15 text-amber-900 dark:border-gold-500 dark:bg-gold-500/15 dark:text-gold-300 ring-1 ring-amber-500 dark:ring-gold-500 shadow-sm'
                         : 'border-slate-200 dark:border-industrial-800 bg-slate-50 dark:bg-noir-950 text-slate-700 dark:text-industrial-300 hover:border-slate-400 dark:hover:border-industrial-700'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                      <span className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{b.name}</span>
+                      <span className={`text-xs font-bold truncate ${isSelected ? 'text-amber-950 dark:text-white' : 'text-slate-900 dark:text-white'}`}>{b.name}</span>
                     </div>
                     {isSelected && (
-                      <span className="text-[9px] font-mono font-bold text-white dark:text-gold-400 px-1.5 py-0.5 rounded bg-white/20 dark:bg-gold-500/20">
+                      <span className="text-[9px] font-mono font-bold text-amber-900 dark:text-gold-400 px-1.5 py-0.5 rounded bg-amber-500/20 dark:bg-gold-500/20">
                         Elegido
                       </span>
                     )}
@@ -1260,7 +1261,7 @@ export const ReceptionQueue = () => {
                 onClick={() => { setSelectedDate(todayStr); setAllowPast(false); }}
                 className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedDate === todayStr
-                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-black shadow-sm'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow-sm dark:bg-gold-500 dark:text-noir-950'
                     : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -1271,7 +1272,7 @@ export const ReceptionQueue = () => {
                 onClick={() => { setSelectedDate(tomorrowStr); setAllowPast(false); }}
                 className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedDate === tomorrowStr
-                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-black shadow-sm'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow-sm dark:bg-gold-500 dark:text-noir-950'
                     : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -1282,7 +1283,7 @@ export const ReceptionQueue = () => {
                 onClick={() => { setSelectedDate(dayAfterStr); setAllowPast(false); }}
                 className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedDate === dayAfterStr
-                    ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-noir-950 font-black shadow-sm'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow-sm dark:bg-gold-500 dark:text-noir-950'
                     : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -1346,7 +1347,7 @@ export const ReceptionQueue = () => {
                             setSelectedDate(nextTargetDate);
                             setAllowPast(false);
                           }}
-                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs transition-all shadow-sm dark:shadow-glow-gold cursor-pointer"
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-sm dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 cursor-pointer"
                         >
                           👉 {nextTargetLabel}
                         </button>
@@ -1385,8 +1386,8 @@ export const ReceptionQueue = () => {
                         onClick={() => setSelectedTime(s.time)}
                         className={`py-2 px-1 rounded-lg text-xs font-mono font-bold transition-all text-center cursor-pointer ${
                           selectedTime === s.time
-                            ? 'bg-slate-900 text-white dark:bg-gold-500 dark:text-noir-950 font-black shadow-sm dark:shadow-glow-gold'
-                            : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-800 dark:text-slate-300 hover:border-slate-400 dark:hover:border-gold-500/50'
+                            ? 'bg-amber-500 text-slate-950 font-black shadow-sm dark:bg-gold-500 dark:text-noir-950'
+                            : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-800 dark:text-slate-300 hover:border-amber-400 dark:hover:border-gold-500/50'
                         }`}
                       >
                         {s.time}
@@ -1401,9 +1402,9 @@ export const ReceptionQueue = () => {
           <div className="pt-3 pb-2 flex items-center justify-between gap-2 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
             <div className="min-w-0 flex-shrink-0">
               {!selectedTime ? (
-                <span className="text-[11px] text-slate-500 dark:text-amber-400 font-medium whitespace-nowrap">👆 Elige hora</span>
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold whitespace-nowrap">👆 Elige hora</span>
               ) : (
-                <span className="text-xs text-slate-900 dark:text-emerald-400 font-mono font-bold whitespace-nowrap bg-slate-100 dark:bg-emerald-500/10 border border-slate-200 dark:border-emerald-500/20 px-2 py-1 rounded-lg">
+                <span className="text-xs text-emerald-800 dark:text-emerald-400 font-mono font-bold whitespace-nowrap bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-1 rounded-lg">
                   {selectedTime} hrs
                 </span>
               )}
@@ -1419,7 +1420,7 @@ export const ReceptionQueue = () => {
               <button
                 type="submit"
                 disabled={submitting || !selectedTime}
-                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-black text-white dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 {submitting ? 'Agregando...' : 'Agregar Fila'}
               </button>
