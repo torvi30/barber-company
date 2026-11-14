@@ -9,7 +9,7 @@ import {
   showErrorAlert,
   showConfirmDialog
 } from '../lib/swal';
-import { buildWhatsAppLink } from '../lib/phoneUtils';
+import { buildWhatsAppLink, normalizeWhatsAppPhone, formatDisplayPhone } from '../lib/phoneUtils';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import {
   Scissors,
@@ -33,6 +33,7 @@ import {
   ArrowRight,
   UserPlus,
   Edit3,
+  FileText,
   Trash2,
   Users,
   AlertCircle,
@@ -941,9 +942,20 @@ export const BarberPortal = () => {
                             <Scissors className="w-3 h-3 text-gold-500" /> {apt.serviceName}
                           </p>
                           {apt.clientPhone && (
-                            <p className="text-[11px] text-slate-400 dark:text-industrial-500 font-mono mt-0.5">
-                              📞 {apt.clientPhone}
-                            </p>
+                            <a
+                              href={`tel:+${normalizeWhatsAppPhone(apt.clientPhone)}`}
+                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-mono mt-0.5"
+                              title="Tocar para llamar directamente al cliente"
+                            >
+                              <Phone className="w-3 h-3" />
+                              <span>{formatDisplayPhone(apt.clientPhone)}</span>
+                            </a>
+                          )}
+                          {apt.notes && (
+                            <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/20 text-[11px] text-slate-800 dark:text-slate-200 italic flex items-start gap-1">
+                              <FileText className="w-3 h-3 text-amber-600 dark:text-gold-400 flex-shrink-0 mt-0.5" />
+                              <span>"{apt.notes}"</span>
+                            </div>
                           )}
                         </div>
                       </div>

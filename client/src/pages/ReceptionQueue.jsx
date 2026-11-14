@@ -4,7 +4,7 @@ import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import { api } from '../services/api';
 import { showErrorAlert, showSuccessAlert } from '../lib/swal';
-import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
+import { buildWhatsAppLink, normalizeWhatsAppPhone, formatDisplayPhone } from '../lib/phoneUtils';
 import {
   UserPlus,
   PlayCircle,
@@ -33,7 +33,8 @@ import {
   User,
   Users,
   MessageSquare,
-  Phone
+  Phone,
+  FileText
 } from 'lucide-react';
 import { TRADITIONAL_SERVICES } from '../constants/services';
 
@@ -948,7 +949,7 @@ export const ReceptionQueue = () => {
                         <span className="font-medium text-slate-700 dark:text-slate-300">{apt.serviceName}</span>
                       </p>
 
-                      {/* Barbero Asignado Destacado & WhatsApp */}
+                      {/* Barbero Asignado Destacado & Teléfono / WhatsApp */}
                       <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-gold-500/15 border border-slate-200 dark:border-gold-500/30 text-slate-700 dark:text-gold-400 text-xs font-medium">
                           <User className="w-3.5 h-3.5 text-slate-400 dark:text-gold-400" />
@@ -956,22 +957,49 @@ export const ReceptionQueue = () => {
                         </span>
 
                         {apt.clientPhone && (
-                          <a
-                            href={buildWhatsAppLink(
-                              apt.clientPhone,
-                              `Hola ${apt.clientName || 'Cliente'} 💈 te saludamos de ${barbershopInfo?.name || 'la Barbería'}. ¿Cómo estás?`
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold transition-colors"
-                            title="Chat de WhatsApp con el cliente"
-                          >
-                            <MessageSquare className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                            <span>WhatsApp</span>
-                          </a>
+                          <div className="inline-flex items-center gap-1 bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-lg p-0.5 text-xs font-mono shadow-xs">
+                            <a
+                              href={`tel:+${normalizeWhatsAppPhone(apt.clientPhone)}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-white dark:hover:bg-noir-800 text-slate-700 dark:text-slate-300 font-semibold transition-all hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                              title="Tocar para llamar directamente"
+                            >
+                              <Phone className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <span>{formatDisplayPhone(apt.clientPhone)}</span>
+                            </a>
+                            <span className="w-px h-3 bg-slate-300 dark:bg-industrial-700"></span>
+                            <a
+                              href={buildWhatsAppLink(
+                                apt.clientPhone,
+                                `Hola ${apt.clientName || 'Cliente'} 💈 te saludamos de ${barbershopInfo?.name || 'la Barbería'}. ¿Cómo estás?`
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-bold transition-all cursor-pointer"
+                              title="Abrir chat en WhatsApp"
+                            >
+                              <MessageSquare className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>WhatsApp</span>
+                            </a>
+                          </div>
                         )}
                       </div>
+
+                      {/* Nota del Cliente */}
+                      {apt.notes && (
+                        <div className="mt-2 px-2.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/25 dark:border-gold-500/25 text-xs flex items-start gap-1.5 shadow-xs">
+                          <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <span className="text-[10px] uppercase font-mono font-bold text-amber-700 dark:text-gold-400 block tracking-wider">
+                              Nota del Cliente:
+                            </span>
+                            <span className="text-slate-800 dark:text-slate-200 italic text-[11px] leading-snug">
+                              "{apt.notes}"
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right flex-shrink-0">
@@ -1035,22 +1063,51 @@ export const ReceptionQueue = () => {
                           <User className="w-3.5 h-3.5" />
                           <span>Atendido por: <strong>{apt.barberName}</strong></span>
                         </span>
+
                         {apt.clientPhone && (
-                          <a
-                            href={buildWhatsAppLink(
-                              apt.clientPhone,
-                              `Hola ${apt.clientName || 'Cliente'} 💈 te saludamos de ${barbershopInfo?.name || 'la Barbería'}. Tu turno en sillón está en proceso.`
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold transition-colors"
-                          >
-                            <MessageSquare className="w-3 h-3" />
-                            <span>WhatsApp</span>
-                          </a>
+                          <div className="inline-flex items-center gap-1 bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-lg p-0.5 text-xs font-mono shadow-xs">
+                            <a
+                              href={`tel:+${normalizeWhatsAppPhone(apt.clientPhone)}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-white dark:hover:bg-noir-800 text-slate-700 dark:text-slate-300 font-semibold transition-all hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                              title="Tocar para llamar directamente"
+                            >
+                              <Phone className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <span>{formatDisplayPhone(apt.clientPhone)}</span>
+                            </a>
+                            <span className="w-px h-3 bg-slate-300 dark:bg-industrial-700"></span>
+                            <a
+                              href={buildWhatsAppLink(
+                                apt.clientPhone,
+                                `Hola ${apt.clientName || 'Cliente'} 💈 te saludamos de ${barbershopInfo?.name || 'la Barbería'}. Tu turno en sillón está en proceso.`
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-bold transition-all cursor-pointer"
+                              title="Abrir chat en WhatsApp"
+                            >
+                              <MessageSquare className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>WhatsApp</span>
+                            </a>
+                          </div>
                         )}
                       </div>
+
+                      {/* Nota del Cliente */}
+                      {apt.notes && (
+                        <div className="mt-2 px-2.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/25 dark:border-gold-500/25 text-xs flex items-start gap-1.5 shadow-xs">
+                          <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <span className="text-[10px] uppercase font-mono font-bold text-amber-700 dark:text-gold-400 block tracking-wider">
+                              Nota del Cliente:
+                            </span>
+                            <span className="text-slate-800 dark:text-slate-200 italic text-[11px] leading-snug">
+                              "{apt.notes}"
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <span className="font-mono text-sm sm:text-base text-slate-900 dark:text-white font-bold block">${Number(apt.price).toLocaleString('es-CO')}</span>
                   </div>

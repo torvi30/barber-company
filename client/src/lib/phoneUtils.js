@@ -68,3 +68,4 @@ export const buildWhatsAppLink = (phone, message = '') => {
   const query = message ? `?text=${encodeURIComponent(message)}` : '';
   return `https://wa.me/${cleanPhone}${query}`;
 };
+
