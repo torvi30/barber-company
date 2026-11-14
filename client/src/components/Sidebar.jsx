@@ -108,8 +108,8 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
         >
           {barbershopInfo?.logoUrl ? (
             <img
-              src={barbershopInfo.logoUrl}
-              alt={barbershopInfo.name}
+              src={barbershopInfo?.logoUrl}
+              alt={barbershopInfo?.name || 'Logo'}
               className="w-8 h-8 rounded-lg object-cover border border-gold-500/40 flex-shrink-0 group-hover:scale-105 transition-transform"
             />
           ) : (

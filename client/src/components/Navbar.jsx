@@ -72,7 +72,7 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
                 title="Haga clic para cambiar o personalizar el logotipo de la empresa"
               >
                 <img
-                  src={barbershopInfo.logoUrl}
+                  src={barbershopInfo?.logoUrl}
                   alt={barbershopInfo?.name || 'Logo'}
                   className="w-8 h-8 md:w-9 md:h-9 rounded-xl object-cover border border-amber-500/50 shadow-glow-gold flex-shrink-0 group-hover:scale-105 transition-transform"
                 />
@@ -286,7 +286,7 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
                     </span>
                     {!isSuperAdmin && (
                       <span className="text-[10px] text-slate-500 dark:text-industrial-400 truncate max-w-[120px]">
-                        {barbershopInfo.name}
+                        {barbershopInfo?.name || 'Mi Barbería'}
                       </span>
                     )}
                   </div>

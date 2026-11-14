@@ -7,8 +7,8 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
     if (!isOpen) return;
 
     // Bloquear el scroll de fondo mientras el modal esté abierto
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const originalOverflow = document?.body ? document.body.style.overflow : '';
+    if (document?.body) document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && onClose) {
@@ -18,7 +18,7 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      if (document?.body) document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -69,7 +69,7 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
     </div>
   );
 
-  return typeof document !== 'undefined'
+  return (typeof document !== 'undefined' && document.body)
     ? createPortal(modalContent, document.body)
     : modalContent;
 };

@@ -132,16 +132,16 @@ export const Landing = ({ onEnterAdmin }) => {
               {barbershopInfo?.logoUrl && (
                 <div className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm w-fit">
                   <img
-                    src={barbershopInfo.logoUrl}
-                    alt={barbershopInfo.name}
+                    src={barbershopInfo?.logoUrl}
+                    alt={barbershopInfo?.name || 'Barbería'}
                     className="w-12 h-12 rounded-xl object-cover border border-amber-500/40 shadow-glow-gold flex-shrink-0"
                   />
                   <div>
                     <h3 className="font-display font-black text-sm text-slate-900 dark:text-white">
-                      {barbershopInfo.name}
+                      {barbershopInfo?.name || 'BarberPulse Studio'}
                     </h3>
                     <p className="text-[11px] text-amber-600 dark:text-gold-400 font-mono">
-                      {barbershopInfo.slogan || 'Salón & Barbería Oficial'}
+                      {barbershopInfo?.slogan || 'Salón & Barbería Oficial'}
                     </p>
                   </div>
                 </div>
@@ -201,7 +201,7 @@ export const Landing = ({ onEnterAdmin }) => {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 dark:border-industrial-800/80 bg-slate-100 dark:bg-noir-900/40 px-6 py-6 text-center text-xs text-slate-500 dark:text-industrial-500 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto w-full transition-colors">
-        <p>© 2026 {barbershopInfo.name} — Todos los derechos reservados.</p>
+        <p>© 2026 {barbershopInfo?.name || 'BarberPulse'} — Todos los derechos reservados.</p>
         <p className="font-mono text-amber-700/80 dark:text-gold-500/80 mt-2 sm:mt-0 flex items-center gap-1.5 justify-center">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
           Powered by BarberPulse OS Multi-Tenant Cloud

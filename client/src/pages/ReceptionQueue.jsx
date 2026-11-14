@@ -96,21 +96,20 @@ export const ReceptionQueue = () => {
   const datesWithAppointments = React.useMemo(() => {
     const map = new Map();
     (appointments || []).forEach(a => {
-      const d = a.date || todayStr;
-      if (!map.has(d)) {
-        map.set(d, 0);
-      }
-      map.set(d, map.get(d) + 1);
+      if (!a) return;
+      const d = String(a.date || todayStr || '');
+      if (!d) return;
+      map.set(d, (map.get(d) || 0) + 1);
     });
     return Array.from(map.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
       .map(([date, count]) => {
-        const parts = date.split('-');
-        const day = parts[2] || parts[0];
+        const parts = String(date).split('-');
+        const day = parts[2] || parts[0] || '';
         const m = parts[1] || '';
         return {
           date,
-          label: `${day}/${m}`,
+          label: m ? `${day}/${m}` : day,
           count
         };
       });
@@ -120,13 +119,14 @@ export const ReceptionQueue = () => {
   const formatFriendlyDate = (dateStr) => {
     if (!dateStr) return '';
     try {
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const d = new Date(year, month - 1, day);
+      const parts = String(dateStr).split('-').map(Number);
+      if (parts.length < 3 || isNaN(parts[0])) return String(dateStr);
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
       const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
       const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-      return `${days[d.getDay()]}, ${day} de ${months[d.getMonth()]} de ${year}`;
+      return `${days[d.getDay()]}, ${parts[2]} de ${months[d.getMonth()]} de ${parts[0]}`;
     } catch {
-      return dateStr;
+      return String(dateStr);
     }
   };
 
