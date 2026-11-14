@@ -29,10 +29,19 @@ const AppContent = () => {
   const [settingsInitialTab, setSettingsInitialTab] = useState('profile');
 
   // Sesión Aislada de Barbero (Acceso por PIN de 4 Dígitos sin credenciales de Admin)
+  // Persiste en el celular indefinidamente hasta que el Administrador cambie su clave
   const [barberSession, setBarberSession] = useState(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlBarberId = urlParams.get('b') || urlParams.get('barberId');
       const saved = localStorage.getItem('barberpulse_barber_session');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      // Si la URL solicita explícitamente otro barbero diferente al guardado en este navegador
+      if (urlBarberId && parsed && (parsed.id || parsed.barberId) !== urlBarberId) {
+        return null;
+      }
+      return parsed;
     } catch {
       return null;
     }

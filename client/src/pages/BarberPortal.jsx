@@ -86,6 +86,40 @@ export const BarberPortal = ({
     }
   }, [barbers, tenantId, standaloneBarberMode, barberSession]);
 
+  // Validar si la administración cambió el PIN de seguridad o revocó al barbero
+  useEffect(() => {
+    if (!standaloneBarberMode || !barberSession) return;
+    const sessionBarberId = barberSession.id || barberSession.barberId;
+    if (!sessionBarberId || !barbers || barbers.length === 0) return;
+
+    const currentBarber = barbers.find(b => b.id === sessionBarberId);
+
+    // Si el barbero fue eliminado por la administración
+    if (!currentBarber) {
+      showErrorAlert(
+        'Acceso Suspendido',
+        'Tu cuenta de barbero ya no se encuentra activa en esta barbería. Consulta con administración.'
+      ).then(() => {
+        if (onLogoutBarber) onLogoutBarber();
+      });
+      return;
+    }
+
+    // Si el administrador cambió el PIN de seguridad
+    if (currentBarber.pin && barberSession.pin) {
+      const currentPin = String(currentBarber.pin).trim();
+      const savedPin = String(barberSession.pin).trim();
+      if (currentPin !== savedPin) {
+        showErrorAlert(
+          'Clave Actualizada',
+          'La administración ha actualizado tu PIN de seguridad. Por favor ingresa tu nueva clave para continuar.'
+        ).then(() => {
+          if (onLogoutBarber) onLogoutBarber();
+        });
+      }
+    }
+  }, [standaloneBarberMode, barberSession, barbers, onLogoutBarber]);
+
   // Modal / Drawer de Horarios (Rostering)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [scheduleForm, setScheduleForm] = useState(null);
@@ -232,8 +266,9 @@ export const BarberPortal = ({
     const pin = b.pin || '1234';
     const phone = b.phone || b.whatsapp || '';
     const shopName = barbershopInfo?.name || 'Imperio Barbershop';
-    const accessUrl = `${window.location.origin}?barbero=pin`;
-    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\nDesde tu celular podrás ver tus turnos, marcar descansos y revisar tus comisiones y metas en tiempo real:\n👉 ${accessUrl}`;
+    const shopSlug = barbershopInfo?.slug || barbershopInfo?.id || tenantId || '';
+    const accessUrl = `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}`;
+    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\n👉 *Ingresa a tu sillón aquí para digitar tu PIN:*\n${accessUrl}\n\n💡 _Tu sesión quedará guardada en tu celular y seguirá funcionando todos los días hasta que la administración cambie tu clave._`;
     const link = buildWhatsAppLink(phone, text);
     window.open(link, '_blank');
   };
@@ -248,7 +283,8 @@ export const BarberPortal = ({
       dailyTarget: b.dailyTarget || b.dailyGoal || 150000,
       role: 'barber',
       barbershopId: tenantId,
-      barbershopName: barbershopInfo?.name || 'Barbería'
+      barbershopName: barbershopInfo?.name || 'Barbería',
+      pin: b.pin || '1234'
     };
     localStorage.setItem('barberpulse_barber_session', JSON.stringify(previewSession));
     window.location.reload();

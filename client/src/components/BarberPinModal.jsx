@@ -17,12 +17,27 @@ export const BarberPinModal = ({
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Limpiar estado al abrir/cerrar
+  // Limpiar estado y detectar preselección de barbero por URL (?b=... o ?barberId=...)
   useEffect(() => {
     if (isOpen) {
       setPin('');
       setErrorMsg(null);
       setIsSuccess(false);
+
+      const p = new URLSearchParams(window.location.search);
+      const targetBarberId = p.get('b') || p.get('barberId') || p.get('barber');
+
+      if (targetBarberId && barbers && barbers.length > 0) {
+        const found = barbers.find(
+          b => String(b.id) === String(targetBarberId) ||
+               b.name?.toLowerCase() === targetBarberId?.toLowerCase()
+        );
+        if (found) {
+          setSelectedBarber(found);
+          return;
+        }
+      }
+
       if (barbers.length === 1) {
         setSelectedBarber(barbers[0]);
       }
@@ -88,6 +103,7 @@ export const BarberPinModal = ({
         setIsSuccess(true);
         const sessionData = {
           ...res.data,
+          pin: String(fullPin).trim(),
           loginTimestamp: Date.now()
         };
         localStorage.setItem('barberpulse_barber_session', JSON.stringify(sessionData));
