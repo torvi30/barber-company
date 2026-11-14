@@ -461,3 +461,40 @@ export async function fetchFirestoreClients(tenantId) {
   }
 }
 
+// --- 7. PRODUCTOS & INVENTARIO BOUTIQUE (PERSISTENCIA TOTAL EN LA NUBE) ---
+export async function saveFirestoreProduct(tenantId, product) {
+  if (!tenantId || !product) return null;
+  try {
+    const id = product.id || `prod_${Date.now()}`;
+    const docRef = doc(db, 'barbershops', tenantId, 'inventory', id);
+    const data = { ...product, id, updatedAt: serverTimestamp() };
+    await setDoc(docRef, data, { merge: true });
+    return data;
+  } catch (err) {
+    console.warn('Firestore notice (saveProduct):', err.message);
+    return product;
+  }
+}
+
+export async function fetchFirestoreProducts(tenantId) {
+  if (!tenantId) return [];
+  try {
+    const colRef = collection(db, 'barbershops', tenantId, 'inventory');
+    const snapshot = await getDocs(colRef);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('Firestore notice (fetchProducts):', err.message);
+    return [];
+  }
+}
+
+export async function deleteFirestoreProduct(tenantId, productId) {
+  if (!tenantId || !productId) return;
+  try {
+    const docRef = doc(db, 'barbershops', tenantId, 'inventory', productId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.warn('Firestore notice (deleteProduct):', err.message);
+  }
+}
+

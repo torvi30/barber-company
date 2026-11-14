@@ -6,6 +6,11 @@ import { Modal } from '../components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmDialog } from '../lib/swal';
 import { compressImageFile, uploadToCloudinary, getOptimizedImageUrl } from '../services/cloudinaryService';
 import {
+  saveFirestoreProduct,
+  fetchFirestoreProducts,
+  deleteFirestoreProduct
+} from '../services/firestoreService';
+import {
   Package,
   AlertTriangle,
   Plus,
@@ -242,16 +247,39 @@ export const Inventory = () => {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await api.getInventory(tenantId);
-      if (res.success) {
-        setInventory(res.data || []);
-        if (res.categories && res.categories.length > 0) {
-          setCategories(res.categories);
-        } else {
-          setCategories(['Pomadas & Ceras', 'Cuidado Barba', 'Afeitado & Afters', 'Herramientas & Navajas']);
-        }
-        if (res.metrics) setMetrics(res.metrics);
+      const [backendRes, fsProducts] = await Promise.all([
+        api.getInventory(tenantId).catch(() => ({ success: false })),
+        fetchFirestoreProducts(tenantId).catch(() => [])
+      ]);
+
+      const productMap = new Map();
+      (fsProducts || []).forEach(p => { if (p && p.id) productMap.set(p.id, p); });
+      if (backendRes.success && Array.isArray(backendRes.data)) {
+        backendRes.data.forEach(p => {
+          if (p && p.id) productMap.set(p.id, { ...(productMap.get(p.id) || {}), ...p });
+        });
       }
+
+      const mergedData = Array.from(productMap.values());
+      const finalData = mergedData.length > 0 ? mergedData : (backendRes.data || []);
+
+      setInventory(finalData);
+
+      const activeCategories = Array.from(new Set(finalData.map(i => i.category).filter(Boolean)));
+      if (activeCategories.length > 0) {
+        setCategories(activeCategories);
+      } else {
+        setCategories(['Pomadas & Ceras', 'Cuidado Barba', 'Afeitado & Afters', 'Herramientas & Navajas']);
+      }
+
+      const lowStockAlerts = finalData.filter(i => Number(i.stock) <= Number(i.minStock));
+      setMetrics({
+        totalItems: finalData.length,
+        lowStockCount: lowStockAlerts.length,
+        lowStockItems: lowStockAlerts,
+        totalValuation: finalData.reduce((s, i) => s + (Number(i.unitPrice || 0) * Number(i.stock || 0)), 0),
+        totalInvestment: finalData.reduce((s, i) => s + (Number(i.costPrice || 0) * Number(i.stock || 0)), 0)
+      });
     } catch (err) {
       console.error('Error al obtener inventario:', err);
     } finally {
@@ -267,13 +295,19 @@ export const Inventory = () => {
 
   const handleAdjustStock = async (id, delta) => {
     try {
-      const res = await api.updateStock(tenantId, id, delta);
-      if (res.success) {
-        setInventory(prev =>
-          prev.map(item => (item.id === id ? { ...item, stock: res.data.stock ?? (item.stock + delta) } : item))
-        );
-        fetchInventory();
-      }
+      const res = await api.updateStock(tenantId, id, delta).catch(() => ({ success: false }));
+      const newStock = res.success && res.data?.stock !== undefined ? res.data.stock : null;
+      setInventory(prev =>
+        prev.map(item => {
+          if (item.id === id) {
+            const updatedStock = newStock !== null ? newStock : Math.max(0, item.stock + delta);
+            saveFirestoreProduct(tenantId, { ...item, stock: updatedStock }).catch(console.warn);
+            return { ...item, stock: updatedStock };
+          }
+          return item;
+        })
+      );
+      fetchInventory();
     } catch (err) {
       showErrorAlert('Error de Stock', err.message);
     }
@@ -328,10 +362,13 @@ export const Inventory = () => {
 
     try {
       if (editingProduct) {
-        await api.updateProduct(tenantId, editingProduct.id, payload);
+        await api.updateProduct(tenantId, editingProduct.id, payload).catch(console.warn);
+        await saveFirestoreProduct(tenantId, { ...payload, id: editingProduct.id });
         showSuccessAlert('Producto Actualizado', `"${name}" ha sido actualizado correctamente.`);
       } else {
-        await api.createProduct(tenantId, payload);
+        const res = await api.createProduct(tenantId, payload).catch(() => ({ success: false }));
+        const createdId = res.success && res.data?.id ? res.data.id : `prod_${Date.now()}`;
+        await saveFirestoreProduct(tenantId, { ...payload, id: createdId });
         showSuccessAlert('Producto Publicado', `"${name}" fue subido con éxito a la tienda y stock.`);
       }
 
@@ -352,7 +389,8 @@ export const Inventory = () => {
 
     if (confirmed.isConfirmed) {
       try {
-        await api.deleteProduct(tenantId, prod.id);
+        await api.deleteProduct(tenantId, prod.id).catch(console.warn);
+        await deleteFirestoreProduct(tenantId, prod.id);
         showSuccessAlert('Eliminado', 'El producto fue retirado de la tienda.');
         fetchInventory();
       } catch (err) {

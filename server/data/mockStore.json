@@ -505,7 +505,8 @@
           }
         }
       }
-    ]
+    ],
+    "demo-barbershop-01": []
   },
   "appointments": {
     "tenant_imperio_barber_01": [
@@ -751,7 +752,10 @@
         "notes": "quiero el 7",
         "source": "PUBLIC_LANDING",
         "createdAt": "2026-11-14T04:18:59.150Z",
-        "completedAt": null
+        "completedAt": null,
+        "reminderSent": true,
+        "reminderSentAt": "2026-11-14T19:30:00.002Z",
+        "whatsappMessageId": "mock_wamid_1794684600002_hu0dq"
       }
     ],
     "tenant_la_fortaleza_02": [
@@ -775,7 +779,8 @@
         "completedAt": null
       }
     ],
-    "tenant_netx_baber_483": []
+    "tenant_netx_baber_483": [],
+    "demo-barbershop-01": []
   },
   "inventory": {
     "tenant_imperio_barber_01": [
