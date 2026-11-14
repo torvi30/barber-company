@@ -193,7 +193,7 @@ export const Landing = ({ onEnterAdmin }) => {
 
             {/* Right Column: Public Booking Wizard */}
             <div className="lg:col-span-7 w-full">
-              <PublicBookingWizard slug={effectiveSlug} />
+              <PublicBookingWizard slug={effectiveSlug} initialBarbershop={barbershopInfo} />
             </div>
           </div>
         )}

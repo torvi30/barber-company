@@ -41,7 +41,7 @@ export const api = {
 
   // --- Citas / Turnos (Staff / Operativo) ---
   getAppointments: (tenantId, date) => apiClient(`/appointments${date ? `?date=${date}` : ''}`, { method: 'GET' }, tenantId),
-  getAvailableSlots: (tenantId, barberId, date) => apiClient(`/appointments/available-slots?barberId=${barberId}&date=${date}`, { method: 'GET' }, tenantId),
+  getAvailableSlots: (tenantId, barberId, date, allowPast = false) => apiClient(`/appointments/available-slots?barberId=${barberId}&date=${date}${allowPast ? '&allowPast=true' : ''}`, { method: 'GET' }, tenantId),
   toggleSlot: (tenantId, payload) => apiClient('/appointments/toggle-slot', { method: 'POST', body: payload }, tenantId),
   createAppointment: (tenantId, appointmentData) => apiClient('/appointments', { method: 'POST', body: appointmentData }, tenantId),
   updateAppointmentStatus: (tenantId, id, payload) => apiClient(`/appointments/${id}/status`, { method: 'PATCH', body: payload }, tenantId),

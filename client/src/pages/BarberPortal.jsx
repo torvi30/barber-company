@@ -76,6 +76,7 @@ export const BarberPortal = () => {
   // Control rápido de turnos y disponibilidad activa
   const [barberSlots, setBarberSlots] = useState([]);
   const [loadingBarberSlots, setLoadingBarberSlots] = useState(false);
+  const [allowPastBarber, setAllowPastBarber] = useState(false);
 
   const getLocalDate = (d = new Date()) => {
     const year = d.getFullYear();
@@ -89,7 +90,7 @@ export const BarberPortal = () => {
     try {
       setLoadingBarberSlots(true);
       const today = getLocalDate(new Date());
-      const res = await api.getAvailableSlots(tenantId, selectedBarberId, today);
+      const res = await api.getAvailableSlots(tenantId, selectedBarberId, today, allowPastBarber);
       if (res.success && res.slots) {
         setBarberSlots(res.slots);
       }
@@ -104,7 +105,7 @@ export const BarberPortal = () => {
     if (selectedBarberId) {
       loadBarberSlots();
     }
-  }, [selectedBarberId, tenantId]);
+  }, [selectedBarberId, tenantId, allowPastBarber]);
 
   const handleToggleBarberSlot = async (slotTime, isBlocked) => {
     try {
@@ -669,6 +670,18 @@ export const BarberPortal = () => {
           <span className="text-[11px] font-semibold text-slate-500 dark:text-industrial-400 mr-1">Rápido:</span>
           <button
             type="button"
+            onClick={() => setAllowPastBarber(!allowPastBarber)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              allowPastBarber
+                ? 'bg-purple-600 text-white font-bold shadow-sm'
+                : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-gold-400'
+            }`}
+            title="Permite activar y probar turnos incluso fuera de jornada"
+          >
+            ⚡ {allowPastBarber ? 'Ensayo ON' : 'Desbloquear Ensayo'}
+          </button>
+          <button
+            type="button"
             disabled={loadingBarberSlots}
             onClick={() => {
               const pausedTimes = barberSlots.filter(s => s.reason === 'BLOCKED_MANUALLY').map(s => s.time);
@@ -724,14 +737,14 @@ export const BarberPortal = () => {
               <button
                 key={s.time}
                 type="button"
-                disabled={isBooked || isPast || isOutOfSchedule}
+                disabled={isBooked || (!allowPastBarber && isPast) || isOutOfSchedule}
                 onClick={() => handleToggleBarberSlot(s.time, isManualBlocked)}
                 className={`p-3 rounded-xl text-xs font-mono font-bold transition-all text-center flex flex-col items-center justify-center gap-1 border ${
                   isBooked
                     ? 'bg-slate-100 dark:bg-noir-950 border-slate-200 dark:border-industrial-850 text-slate-400 dark:text-industrial-500 cursor-not-allowed opacity-60'
                     : isManualBlocked
                     ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20'
-                    : isPast
+                    : (!allowPastBarber && isPast)
                     ? 'bg-slate-100/60 dark:bg-noir-950/60 border-slate-200 dark:border-industrial-900 text-slate-400 dark:text-industrial-600 opacity-40 cursor-not-allowed'
                     : isOutOfSchedule
                     ? 'bg-slate-100/40 dark:bg-noir-950/40 border-slate-200 dark:border-industrial-900 text-slate-400 dark:text-industrial-600 opacity-30 cursor-not-allowed'
@@ -740,7 +753,7 @@ export const BarberPortal = () => {
               >
                 <span className="text-sm font-bold">{s.time}</span>
                 <span className="text-[10px] font-normal tracking-wide">
-                  {isBooked ? 'Ocupado 🔒' : isManualBlocked ? 'Pausado ⏸️' : isPast ? 'Pasado' : isOutOfSchedule ? 'Fuera Horario' : 'Libre ✓'}
+                  {isBooked ? 'Ocupado 🔒' : isManualBlocked ? 'Pausado ⏸️' : (!allowPastBarber && isPast) ? 'Pasado' : isOutOfSchedule ? 'Fuera Horario' : 'Libre ✓'}
                 </span>
               </button>
             );

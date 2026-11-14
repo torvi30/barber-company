@@ -64,12 +64,24 @@ export const ReceptionQueue = () => {
   };
 
   const todayStr = getLocalDate(new Date());
+  const tomorrowStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return getLocalDate(d);
+  })();
+  const dayAfterStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return getLocalDate(d);
+  })();
+
   const [agendaDate, setAgendaDate] = useState(todayStr); // Fecha activa del Calendario de la Agenda
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedTime, setSelectedTime] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [isManageSlotsOpen, setIsManageSlotsOpen] = useState(false);
+  const [allowPast, setAllowPast] = useState(false);
 
   // Formato de fecha amigable en español
   const formatFriendlyDate = (dateStr) => {
@@ -126,7 +138,7 @@ export const ReceptionQueue = () => {
     if (!barberId) return;
     try {
       setLoadingSlots(true);
-      const res = await api.getAvailableSlots(tenantId, barberId, selectedDate);
+      const res = await api.getAvailableSlots(tenantId, barberId, selectedDate, allowPast);
       if (res.success && res.slots) {
         setAvailableSlots(res.slots);
         const firstOpen = res.slots.find(s => s.available);
@@ -148,7 +160,7 @@ export const ReceptionQueue = () => {
     if (isAddModalOpen || isManageSlotsOpen) {
       fetchSlots();
     }
-  }, [tenantId, barberId, selectedDate, isAddModalOpen, isManageSlotsOpen]);
+  }, [tenantId, barberId, selectedDate, allowPast, isAddModalOpen, isManageSlotsOpen]);
 
   const handleToggleSlot = async (slotTime, isCurrentlyBlocked) => {
     try {
@@ -771,18 +783,68 @@ export const ReceptionQueue = () => {
           </div>
 
           {/* Fecha y Horario con Disponibilidad Sincronizada */}
-          <div className="space-y-2 pt-1 border-t border-industrial-800/60">
-            <div className="flex items-center justify-between">
+          <div className="space-y-2.5 pt-1 border-t border-industrial-800/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="block text-xs font-semibold text-industrial-400 uppercase">
                 Fecha del Turno
               </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-noir-950 border border-industrial-800 rounded-lg px-2.5 py-1 text-xs text-gold-400 font-mono font-bold focus:outline-none"
-              />
+              
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedDate(todayStr); setAllowPast(false); }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    selectedDate === todayStr
+                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                      : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
+                  }`}
+                >
+                  Hoy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedDate(tomorrowStr); setAllowPast(false); }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    selectedDate === tomorrowStr
+                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                      : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
+                  }`}
+                >
+                  Mañana
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedDate(dayAfterStr); setAllowPast(false); }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    selectedDate === dayAfterStr
+                      ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                      : 'bg-noir-900 border border-industrial-800 text-industrial-400 hover:text-white'
+                  }`}
+                >
+                  Pasado Mañana
+                </button>
+
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-noir-950 border border-industrial-800 rounded-lg px-2 py-1 text-xs text-gold-400 font-mono font-bold focus:outline-none"
+                />
+              </div>
             </div>
+
+            {allowPast && (
+              <div className="px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-[11px] text-purple-300 font-medium flex items-center justify-between">
+                <span>⚡ Modo Ensayo activo: Mostrando todas las franjas horarias de hoy</span>
+                <button
+                  type="button"
+                  onClick={() => setAllowPast(false)}
+                  className="text-purple-400 hover:text-white underline text-[10px] ml-2"
+                >
+                  Restablecer
+                </button>
+              </div>
+            )}
 
             <div>
               <label className="block text-[11px] text-industrial-400 uppercase mb-1.5 flex items-center justify-between">
@@ -794,14 +856,36 @@ export const ReceptionQueue = () => {
                 const freeSlots = availableSlots.filter(s => s.available);
                 if (freeSlots.length === 0) {
                   return (
-                    <div className="p-3 text-center bg-noir-950 border border-amber-500/20 text-amber-400 text-xs rounded-xl">
-                      ⚠️ No hay turnos disponibles para este barbero en {selectedDate}.
+                    <div className="p-3.5 text-center bg-noir-950 border border-amber-500/20 text-xs rounded-xl space-y-2.5">
+                      <p className="text-amber-300 font-medium">
+                        {selectedDate === todayStr
+                          ? '⚠️ Los turnos diurnos de hoy ya finalizaron (cierre comercial 20:00).'
+                          : `⚠️ No hay turnos disponibles para este barbero el ${selectedDate}.`}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                        {selectedDate === todayStr && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDate(tomorrowStr)}
+                            className="px-3 py-1.5 rounded-xl bg-gold-500 text-noir-950 font-bold text-xs hover:bg-gold-400 transition-all shadow-sm cursor-pointer"
+                          >
+                            👉 Pasar a Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setAllowPast(true)}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 font-semibold text-xs transition-all cursor-pointer"
+                        >
+                          ⚡ Habilitar turnos de hoy para ensayo
+                        </button>
+                      </div>
                     </div>
                   );
                 }
 
                 return (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 p-1.5 bg-noir-950 rounded-xl border border-industrial-850">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 p-1.5 bg-noir-950 rounded-xl border border-industrial-850 max-h-48 overflow-y-auto">
                     {freeSlots.map((s) => (
                       <button
                         key={s.time}
@@ -1073,6 +1157,18 @@ export const ReceptionQueue = () => {
                   >
                     Mañana
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllowPast(!allowPast)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      allowPast
+                        ? 'bg-purple-600 text-white font-bold shadow-sm'
+                        : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-gold-400'
+                    }`}
+                    title="Permite activar o ensayar turnos incluso fuera de horario comercial"
+                  >
+                    ⚡ {allowPast ? 'Modo Ensayo ON' : 'Desbloquear Ensayo'}
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -1235,14 +1331,14 @@ export const ReceptionQueue = () => {
                         <button
                           key={s.time}
                           type="button"
-                          disabled={isBooked || isOutOfSchedule || isPast}
+                          disabled={isBooked || isOutOfSchedule || (!allowPast && isPast)}
                           onClick={() => handleToggleSlot(s.time, isManualBlocked)}
                           className={`p-2.5 rounded-xl text-xs font-mono font-bold transition-all text-left flex flex-col justify-between border select-none ${
                             isBooked
                               ? 'bg-slate-100 dark:bg-noir-900 border-slate-200 dark:border-industrial-800/80 text-slate-400 dark:text-industrial-500 cursor-not-allowed opacity-60'
                               : isManualBlocked
                               ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20'
-                              : isPast
+                              : (!allowPast && isPast)
                               ? 'bg-slate-100/60 dark:bg-noir-900 border-slate-200 dark:border-industrial-850 text-slate-400 dark:text-industrial-600 opacity-40 cursor-not-allowed'
                               : isOutOfSchedule
                               ? 'bg-slate-100/40 dark:bg-noir-900 border-slate-200 dark:border-industrial-850 text-slate-400 dark:text-industrial-600 opacity-30 cursor-not-allowed'
@@ -1252,7 +1348,7 @@ export const ReceptionQueue = () => {
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-sm tracking-tight">{s.time}</span>
                             <span className="text-[11px]">
-                              {isBooked ? '🔒' : isManualBlocked ? '⏸️' : isPast ? '⌛' : '✓'}
+                              {isBooked ? '🔒' : isManualBlocked ? '⏸️' : (!allowPast && isPast) ? '⌛' : '✓'}
                             </span>
                           </div>
                           <span className="text-[9px] uppercase tracking-wide font-sans mt-1 block font-medium">
@@ -1260,7 +1356,7 @@ export const ReceptionQueue = () => {
                               ? 'Cita Agendada'
                               : isManualBlocked
                               ? 'Pausado (Toca Activar)'
-                              : isPast
+                              : (!allowPast && isPast)
                               ? 'Turno Pasado'
                               : isOutOfSchedule
                               ? 'No Labora'

@@ -508,7 +508,47 @@
     ]
   },
   "appointments": {
-    "tenant_imperio_barber_01": [],
+    "tenant_imperio_barber_01": [
+      {
+        "id": "apt-1794630274458",
+        "barberId": "barber_imp_1",
+        "barberName": "Mateo Restrepo",
+        "clientName": "andres felipe",
+        "clientPhone": "3225466673",
+        "clientEmail": "",
+        "serviceName": "Cera",
+        "durationMinutes": 45,
+        "price": 12000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "WAITING",
+        "date": "2026-11-13",
+        "time": "23:24",
+        "notes": "",
+        "createdAt": "2026-11-14T04:24:34.458Z",
+        "completedAt": null
+      },
+      {
+        "id": "apt-1794629939150",
+        "barberId": "barber_imp_1",
+        "barberName": "Mateo Restrepo",
+        "clientName": "andres ramirez",
+        "clientPhone": "3225466673",
+        "clientEmail": "victortamayopine@gmail.com",
+        "serviceName": "Corte",
+        "durationMinutes": 30,
+        "price": 25000,
+        "tip": 0,
+        "paymentMethod": "CASH",
+        "status": "SCHEDULED",
+        "date": "2026-11-14",
+        "time": "15:30",
+        "notes": "quiero el 7",
+        "source": "PUBLIC_LANDING",
+        "createdAt": "2026-11-14T04:18:59.150Z",
+        "completedAt": null
+      }
+    ],
     "tenant_la_fortaleza_02": [],
     "tenant_netx_baber_483": []
   },
@@ -518,8 +558,57 @@
   },
   "cashClosures": {},
   "clients": {
-    "demo-barbershop-01": []
+    "demo-barbershop-01": [],
+    "tenant_imperio_barber_01": [
+      {
+        "id": "cli-1794629939151",
+        "name": "andres ramirez",
+        "phone": "3225466673",
+        "email": "victortamayopine@gmail.com",
+        "tier": "NEW",
+        "totalVisits": 1,
+        "totalSpent": 0,
+        "lastVisit": "2026-11-13",
+        "preferredBarberId": "barber_imp_1",
+        "preferredBarberName": "Mateo Restrepo",
+        "styleProfile": {
+          "haircutType": "Corte",
+          "guardSides": "A convenir en cita",
+          "topLength": "Tijera normal",
+          "beardNotes": "Sin notas aún",
+          "productPreference": "Pomada Mate",
+          "technicalNotes": "Cliente registrado automáticamente al agendar turno (2026-11-14 15:30)"
+        },
+        "visitHistory": [
+          {
+            "id": "vis-1794630274459",
+            "date": "2026-11-13",
+            "time": "23:24",
+            "service": "Cera",
+            "barber": "Mateo Restrepo",
+            "price": 12000,
+            "status": "WAITING",
+            "recordedAt": "2026-11-14T04:24:34.459Z"
+          },
+          {
+            "id": "vis-1794629939151",
+            "date": "2026-11-14",
+            "time": "15:30",
+            "service": "Corte",
+            "barber": "Mateo Restrepo",
+            "price": 25000,
+            "status": "SCHEDULED",
+            "recordedAt": "2026-11-14T04:18:59.151Z"
+          }
+        ],
+        "createdAt": "2026-11-14T04:18:59.151Z",
+        "updatedAt": "2026-11-14T04:24:34.459Z"
+      }
+    ]
   },
   "notifications": {},
-  "blockedSlots": {}
+  "blockedSlots": {},
+  "cash_movements": {
+    "tenant_imperio_barber_01": []
+  }
 }

@@ -36,14 +36,14 @@ const getDefaultBookingDate = () => {
   return getLocalDate(now);
 };
 
-export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
-  const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : 'black-gold';
+export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingComplete }) => {
+  const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : (initialBarbershop?.slug || initialBarbershop?.id || 'black-gold');
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialBarbershop);
   const [error, setError] = useState('');
-  const [barbershop, setBarbershop] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedBarber, setSelectedBarber] = useState(null);
+  const [barbershop, setBarbershop] = useState(initialBarbershop);
+  const [selectedService, setSelectedService] = useState(initialBarbershop?.services?.[0] || null);
+  const [selectedBarber, setSelectedBarber] = useState(initialBarbershop?.barbers?.[0] || null);
   const [selectedDate, setSelectedDate] = useState(getDefaultBookingDate());
   const [selectedTime, setSelectedTime] = useState(null);
   const [slots, setSlots] = useState([]);
@@ -70,17 +70,17 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
     let isMounted = true;
     const loadBarbershop = async () => {
       try {
-        setLoading(true);
+        if (!barbershop) setLoading(true);
         setError('');
         const res = await api.getPublicBarbershop(effectiveSlug);
         if (!isMounted) return;
         if (res.success && res.data) {
           setBarbershop(res.data);
           if (res.data.services?.length > 0) {
-            setSelectedService(res.data.services[0]);
+            setSelectedService(prev => prev || res.data.services[0]);
           }
           if (res.data.barbers?.length > 0) {
-            setSelectedBarber(res.data.barbers[0]);
+            setSelectedBarber(prev => prev || res.data.barbers[0]);
           }
         } else {
           throw new Error(res.message || 'Error al conectar con la barbería');
@@ -94,15 +94,17 @@ export const PublicBookingWizard = ({ slug, onBookingComplete }) => {
             if (!isMounted) return;
             if (fallbackRes.success && fallbackRes.data) {
               setBarbershop(fallbackRes.data);
-              if (fallbackRes.data.services?.length > 0) setSelectedService(fallbackRes.data.services[0]);
-              if (fallbackRes.data.barbers?.length > 0) setSelectedBarber(fallbackRes.data.barbers[0]);
+              if (fallbackRes.data.services?.length > 0) setSelectedService(prev => prev || fallbackRes.data.services[0]);
+              if (fallbackRes.data.barbers?.length > 0) setSelectedBarber(prev => prev || fallbackRes.data.barbers[0]);
               return;
             }
           } catch (e) {
             console.warn('Fallback error:', e);
           }
         }
-        setError(err.message || 'No fue posible conectar con la barbería.');
+        if (!barbershop) {
+          setError(err.message || 'No fue posible conectar con la barbería.');
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
