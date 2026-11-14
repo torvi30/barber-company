@@ -99,23 +99,40 @@ export const ReceptionQueue = () => {
     }
   }, [realtimeAppointment]);
 
-  // Ref para abrir el selector nativo de fecha con 1 clic en cualquier dispositivo
-  const dateInputRef = useRef(null);
+  // Ref y estado para el popover del calendario personalizado
+  const calendarRef = useRef(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarViewDate, setCalendarViewDate] = useState(() => {
+    const parts = (agendaDate || todayStr).split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, 1);
+  });
 
-  const handleOpenDatePicker = () => {
-    if (dateInputRef.current) {
-      if (typeof dateInputRef.current.showPicker === 'function') {
-        try {
-          dateInputRef.current.showPicker();
-          return;
-        } catch (e) {
-          // fallback
-        }
+  // Sincronizar vista del popover cuando cambia la fecha de la agenda
+  useEffect(() => {
+    if (agendaDate) {
+      const parts = agendaDate.split('-').map(Number);
+      if (parts.length >= 2) {
+        setCalendarViewDate(new Date(parts[0], parts[1] - 1, 1));
       }
-      dateInputRef.current.focus();
-      dateInputRef.current.click();
     }
-  };
+  }, [agendaDate]);
+
+  // Cerrar el popover del calendario al hacer clic por fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target)) {
+        setIsCalendarOpen(false);
+      }
+    };
+    if (isCalendarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isCalendarOpen]);
 
   // Formato compacto para botón selector (ej: "Hoy, 14 Nov" o "Vie, 13 Nov")
   const formatDateDisplay = (dateStr) => {
@@ -234,6 +251,65 @@ export const ReceptionQueue = () => {
       console.warn(e);
     }
   };
+
+  // Mapa de citas por fecha para marcar los días con turnos en el calendario desplegable
+  const appointmentDatesMap = useMemo(() => {
+    const map = new Map();
+    (appointments || []).forEach(a => {
+      if (!a?.date) return;
+      map.set(a.date, (map.get(a.date) || 0) + 1);
+    });
+    return map;
+  }, [appointments]);
+
+  // Cuadrícula de días para el popover del calendario (Lunes a Domingo)
+  const calendarDaysGrid = useMemo(() => {
+    const year = calendarViewDate.getFullYear();
+    const month = calendarViewDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    // Lunes = 0, Domingo = 6
+    const startOffset = (firstDay.getDay() + 6) % 7;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const grid = [];
+
+    // Días del mes anterior
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
+      const d = new Date(year, month - 1, dayNum);
+      grid.push({
+        dateStr: getLocalDate(d),
+        dayNum,
+        isCurrentMonth: false
+      });
+    }
+
+    // Días del mes actual
+    for (let d = 1; d <= daysInMonth; d++) {
+      const curr = new Date(year, month, d);
+      grid.push({
+        dateStr: getLocalDate(curr),
+        dayNum: d,
+        isCurrentMonth: true
+      });
+    }
+
+    // Días del mes siguiente para completar la cuadrícula de 7 columnas
+    const remaining = (7 - (grid.length % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      const next = new Date(year, month + 1, d);
+      grid.push({
+        dateStr: getLocalDate(next),
+        dayNum: d,
+        isCurrentMonth: false
+      });
+    }
+
+    return grid;
+  }, [calendarViewDate]);
 
   // Estados de gestión de turnos avanzada
   const [manageTab, setManageTab] = useState('slots'); // 'slots' | 'schedule'
@@ -540,27 +616,119 @@ export const ReceptionQueue = () => {
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          {/* Botón Central con fecha e input nativo transparente que responde en todo dispositivo */}
-          <div className="relative inline-flex items-center">
-            <div
-              onClick={handleOpenDatePicker}
+          {/* Botón Central con Calendario Popover Integrado y Perfectamente Ubicado Debajo */}
+          <div className="relative inline-flex items-center" ref={calendarRef}>
+            <button
+              type="button"
+              onClick={() => setIsCalendarOpen(!isCalendarOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 hover:border-gold-500/50 text-slate-900 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-sm select-none"
+              title="Abrir calendario interactivo"
             >
               <Calendar className="w-4 h-4 text-gold-500 flex-shrink-0" />
               <span className="capitalize">{formatDateDisplay(agendaDate)}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </div>
-            {/* Input nativo transparente para que en móvil y desktop abra el calendario al instante */}
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={agendaDate}
-              onChange={(e) => {
-                if (e.target.value) setAgendaDate(e.target.value);
-              }}
-              className="absolute inset-0 opacity-0 pointer-events-auto cursor-pointer w-full h-full"
-              title="Cambiar fecha en el calendario"
-            />
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isCalendarOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Popover del Calendario (Anclado directamente debajo del botón sin desviarse de la pantalla) */}
+            {isCalendarOpen && (
+              <div className="absolute top-full left-0 mt-2 z-50 w-72 sm:w-80 p-3.5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-md">
+                {/* Cabecera del Mes con Navegación */}
+                <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-industrial-800">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-600 dark:text-industrial-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Mes anterior"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <span className="text-xs font-bold font-display uppercase tracking-wider text-slate-900 dark:text-white">
+                    {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][calendarViewDate.getMonth()]} {calendarViewDate.getFullYear()}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setCalendarViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-600 dark:text-industrial-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Mes siguiente"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Días de la Semana: L M X J V S D */}
+                <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+                  {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => (
+                    <span key={idx} className="text-[10px] font-mono font-bold text-slate-400 dark:text-industrial-500 py-0.5">
+                      {day}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Cuadrícula de Días */}
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {calendarDaysGrid.map((item, idx) => {
+                    const isSelected = item.dateStr === agendaDate;
+                    const isToday = item.dateStr === todayStr;
+                    const aptCount = appointmentDatesMap.get(item.dateStr) || 0;
+
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setAgendaDate(item.dateStr);
+                          setIsCalendarOpen(false);
+                        }}
+                        className={`relative py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
+                            : isToday
+                            ? 'border border-amber-500/50 text-amber-500 dark:text-amber-400 font-bold hover:bg-amber-500/10'
+                            : item.isCurrentMonth
+                            ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-noir-800'
+                            : 'text-slate-300 dark:text-industrial-600 hover:bg-slate-50 dark:hover:bg-noir-950/40'
+                        }`}
+                      >
+                        <span>{item.dayNum}</span>
+                        {/* Indicador de citas para ese día */}
+                        {aptCount > 0 && (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                              isSelected ? 'bg-noir-950' : 'bg-gold-500'
+                            }`}
+                            title={`${aptCount} turnos`}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Pie del Popover: Acceso rápido a Hoy y Cerrar */}
+                <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-industrial-800 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAgendaDate(todayStr);
+                      setCalendarViewDate(new Date());
+                      setIsCalendarOpen(false);
+                    }}
+                    className="text-[11px] font-bold text-gold-500 hover:text-gold-400 hover:underline cursor-pointer"
+                  >
+                    Ir a Hoy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCalendarOpen(false)}
+                    className="text-[11px] text-slate-400 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <button
