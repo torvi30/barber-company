@@ -941,21 +941,19 @@ export const ReceptionQueue = () => {
                           : `⚠️ No hay turnos disponibles para este barbero el ${selectedDate}.`}
                       </p>
                       <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                        {selectedDate === todayStr && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedDate(tomorrowStr)}
-                            className="px-3 py-1.5 rounded-xl bg-gold-500 text-noir-950 font-bold text-xs hover:bg-gold-400 transition-all shadow-sm cursor-pointer"
-                          >
-                            👉 Pasar a Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDate(tomorrowStr)}
+                          className="px-3 py-1.5 rounded-xl bg-gold-500 text-noir-950 font-bold text-xs hover:bg-gold-400 transition-all shadow-sm cursor-pointer"
+                        >
+                          👉 Pasar a Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)})
+                        </button>
                         <button
                           type="button"
                           onClick={() => setAllowPast(true)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 font-semibold text-xs transition-all cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 hover:bg-purple-500/30 font-semibold text-xs transition-all cursor-pointer flex items-center gap-1"
                         >
-                          ⚡ Habilitar turnos de hoy para ensayo
+                          ⚡ Habilitar turnos para ensayo (Modo Test)
                         </button>
                       </div>
                     </div>
@@ -984,20 +982,30 @@ export const ReceptionQueue = () => {
             </div>
           </div>
 
-          <div className="pt-3 pb-2 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer"
-            >
-              Agregar a la Fila
-            </button>
+          <div className="pt-3 pb-3 sm:pb-2 flex items-center justify-between gap-3 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
+            <div>
+              {!selectedTime ? (
+                <span className="text-[11px] text-amber-400 font-medium">👆 Selecciona una hora</span>
+              ) : (
+                <span className="text-[11px] text-emerald-400 font-mono font-bold">Turno: {selectedTime} hrs</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-industrial-800 text-industrial-400 hover:text-white text-xs font-semibold cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || !selectedTime}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {submitting ? 'Agregando...' : 'Agregar a la Fila'}
+              </button>
+            </div>
           </div>
         </form>
       </Modal>

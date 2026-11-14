@@ -24,10 +24,12 @@ export const showSuccessAlert = (title, text) => {
     icon: 'success',
     title,
     text,
-    timer: 3500,
+    timer: 2500,
     timerProgressBar: true,
     showConfirmButton: true,
-    confirmButtonText: 'Genial / Entendido'
+    confirmButtonText: 'Listo',
+    allowOutsideClick: true,
+    allowEscapeKey: true
   });
 };
 

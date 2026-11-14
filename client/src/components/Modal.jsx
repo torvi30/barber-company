@@ -1,16 +1,26 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
   useEffect(() => {
     if (!isOpen) return;
+
+    // Bloquear el scroll de fondo mientras el modal esté abierto
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && onClose) {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -21,20 +31,21 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
     }
   };
 
-  return (
+  const modalContent = (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn overscroll-contain cursor-pointer"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fadeIn cursor-pointer"
       role="dialog"
       aria-modal="true"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full ${maxWidth} bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-3.5 sm:p-6 text-slate-900 dark:text-slate-100 max-h-[calc(100dvh-2.5rem)] flex flex-col transition-colors cursor-default`}
+        className={`relative w-full ${maxWidth} bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-6 text-slate-900 dark:text-slate-100 max-h-[92dvh] sm:max-h-[88vh] flex flex-col transition-colors cursor-default my-auto`}
       >
-        <div className="flex items-center justify-between pb-2.5 sm:pb-4 border-b border-slate-100 dark:border-industrial-800 flex-shrink-0">
+        {/* Cabecera del Modal con Botón X de alta respuesta */}
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 dark:border-industrial-800 flex-shrink-0">
           <h3 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white font-display flex items-center gap-2 truncate">
-            <span className="w-2 h-2 rounded-full bg-gold-500 flex-shrink-0"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-gold-500 flex-shrink-0 shadow-glow-gold"></span>
             <span className="truncate">{title}</span>
           </h3>
           <button
@@ -44,17 +55,23 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
               if (onClose) onClose();
             }}
             aria-label="Cerrar ventana"
-            className="p-1.5 rounded-xl text-slate-400 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-noir-800 transition-colors cursor-pointer flex-shrink-0"
+            className="p-2 rounded-xl text-slate-400 dark:text-industrial-400 hover:text-white hover:bg-rose-500/20 hover:text-rose-400 transition-colors cursor-pointer flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="mt-2.5 sm:mt-4 overflow-y-auto flex-1 pr-1 pb-3 overscroll-contain">
+        {/* Contenido con scroll independiente garantizado */}
+        <div className="mt-3 overflow-y-auto flex-1 pr-1 pb-4 overscroll-contain">
           {children}
         </div>
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };
+
 

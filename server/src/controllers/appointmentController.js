@@ -137,7 +137,7 @@ export const getAvailableSlots = async (req, res) => {
       if (daySchedule?.end && slotMinutes >= toMinutes(daySchedule.end)) {
         return { time, available: false, reason: 'OUT_OF_SCHEDULE' };
       }
-      if (!isAllowPast && date === todayStr && slotMinutes <= currentMinutes) {
+      if (!isAllowPast && (date < todayStr || (date === todayStr && slotMinutes <= currentMinutes))) {
         return { time, available: false, reason: 'PAST' };
       }
       if (manualBlocked.includes(time)) {

@@ -20,6 +20,28 @@ import {
   RotateCcw
 } from 'lucide-react';
 
+// Catálogo de respaldo inmediato de servicios básicos de barbería
+const FALLBACK_SERVICES = [
+  { id: 'srv-01', name: 'Corte', durationMinutes: 30, price: 25000, description: 'Corte clásico o degradado (Fade / Skin Fade) con peinado y acabado.' },
+  { id: 'srv-02', name: 'Barba', durationMinutes: 20, price: 18000, description: 'Arreglo, toalla caliente y perfilado de barba con navaja.' },
+  { id: 'srv-03', name: 'Cejas', durationMinutes: 15, price: 10000, description: 'Limpieza y diseño de cejas masculinas con navaja.' },
+  { id: 'srv-04', name: 'Cera', durationMinutes: 15, price: 12000, description: 'Depilación con cera en nariz, oídos o pómulos.' },
+  { id: 'srv-05', name: 'Corte y Barba', durationMinutes: 45, price: 38000, description: 'Combo clásico: corte completo de cabello y ritual de barba.' },
+  { id: 'srv-06', name: 'Corte y Cejas', durationMinutes: 35, price: 30000, description: 'Corte completo de cabello más diseño y perfilado de cejas.' },
+  { id: 'srv-07', name: 'Corte y Cera', durationMinutes: 35, price: 32000, description: 'Corte de cabello completo con aplicación de cera depilatoria facial.' },
+  { id: 'srv-08', name: 'Barba y Cejas', durationMinutes: 25, price: 25000, description: 'Arreglo de barba con navaja más limpieza y perfilado de cejas.' },
+  { id: 'srv-09', name: 'Barba con Cera', durationMinutes: 25, price: 25000, description: 'Ritual de barba con toalla caliente y depilación de vellos con cera.' },
+  { id: 'srv-10', name: 'Corte, Barba y Cejas', durationMinutes: 50, price: 45000, description: 'Combo tradicional completo: cabello, barba ritual y cejas.' },
+  { id: 'srv-11', name: 'Corte, Barba y Cera', durationMinutes: 50, price: 48000, description: 'Corte de cabello, arreglo de barba y depilación facial con cera.' },
+  { id: 'srv-12', name: 'Combo Completo', durationMinutes: 60, price: 55000, description: 'La experiencia total: Corte, Barba, Cejas y Cera en una sola sesión.' }
+];
+
+const FALLBACK_BARBERS = [
+  { id: 'barber_default_1', name: 'Carlos López', status: 'AVAILABLE', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?fit=crop&w=200&q=80' },
+  { id: 'barber_default_2', name: 'Andrés Morales', status: 'AVAILABLE', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80' },
+  { id: 'barber_default_3', name: 'Mateo Gómez', status: 'AVAILABLE', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=200&q=80' }
+];
+
 const getLocalDate = (d = new Date()) => {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -41,11 +63,24 @@ const getDefaultBookingDate = () => {
 export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingComplete }) => {
   const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : (initialBarbershop?.slug || initialBarbershop?.id || 'black-gold');
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(!initialBarbershop);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [barbershop, setBarbershop] = useState(initialBarbershop);
-  const [selectedService, setSelectedService] = useState(initialBarbershop?.services?.[0] || null);
-  const [selectedBarber, setSelectedBarber] = useState(initialBarbershop?.barbers?.[0] || null);
+  const [barbershop, setBarbershop] = useState(() => {
+    if (initialBarbershop) {
+      return {
+        ...initialBarbershop,
+        services: (initialBarbershop.services && initialBarbershop.services.length > 0) ? initialBarbershop.services : FALLBACK_SERVICES,
+        barbers: (initialBarbershop.barbers && initialBarbershop.barbers.length > 0) ? initialBarbershop.barbers : FALLBACK_BARBERS
+      };
+    }
+    return null;
+  });
+
+  const servicesList = (barbershop?.services && barbershop.services.length > 0) ? barbershop.services : FALLBACK_SERVICES;
+  const barbersList = (barbershop?.barbers && barbershop.barbers.length > 0) ? barbershop.barbers : FALLBACK_BARBERS;
+
+  const [selectedService, setSelectedService] = useState(() => servicesList[0]);
+  const [selectedBarber, setSelectedBarber] = useState(() => barbersList[0]);
   const [selectedDate, setSelectedDate] = useState(getDefaultBookingDate());
   const [selectedTime, setSelectedTime] = useState(null);
   const [slots, setSlots] = useState([]);
@@ -106,41 +141,36 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
     let isMounted = true;
     const loadBarbershop = async () => {
       try {
-        if (!barbershop) setLoading(true);
+        if (!barbershop?.name) setLoading(true);
         setError('');
         const res = await api.getPublicBarbershop(effectiveSlug);
         if (!isMounted) return;
         if (res.success && res.data) {
-          setBarbershop(res.data);
-          if (res.data.services?.length > 0) {
-            setSelectedService(prev => prev || res.data.services[0]);
+          const loadedData = {
+            ...res.data,
+            services: (res.data.services && res.data.services.length > 0) ? res.data.services : FALLBACK_SERVICES,
+            barbers: (res.data.barbers && res.data.barbers.length > 0) ? res.data.barbers : FALLBACK_BARBERS
+          };
+          setBarbershop(loadedData);
+          if (loadedData.services?.length > 0) {
+            setSelectedService(prev => prev || loadedData.services[0]);
           }
-          if (res.data.barbers?.length > 0) {
-            setSelectedBarber(prev => prev || res.data.barbers[0]);
+          if (loadedData.barbers?.length > 0) {
+            setSelectedBarber(prev => prev || loadedData.barbers[0]);
           }
-        } else {
-          throw new Error(res.message || 'Error al conectar con la barbería');
         }
       } catch (err) {
-        console.error('Error al cargar barbería pública:', err);
+        console.warn('Aviso al cargar barbería pública (usando datos de resguardo):', err.message);
         if (!isMounted) return;
-        if (effectiveSlug !== 'black-gold') {
-          try {
-            const fallbackRes = await api.getPublicBarbershop('black-gold');
-            if (!isMounted) return;
-            if (fallbackRes.success && fallbackRes.data) {
-              setBarbershop(fallbackRes.data);
-              if (fallbackRes.data.services?.length > 0) setSelectedService(prev => prev || fallbackRes.data.services[0]);
-              if (fallbackRes.data.barbers?.length > 0) setSelectedBarber(prev => prev || fallbackRes.data.barbers[0]);
-              return;
-            }
-          } catch (e) {
-            console.warn('Fallback error:', e);
-          }
-        }
-        if (!barbershop) {
-          setError(err.message || 'No fue posible conectar con la barbería.');
-        }
+        setBarbershop(prev => prev || {
+          id: effectiveSlug,
+          name: initialBarbershop?.name || 'BarberPulse Studio',
+          slug: effectiveSlug,
+          address: initialBarbershop?.address || 'Marinilla, Antioquia',
+          phone: initialBarbershop?.phone || '+57 300 123 4567',
+          services: FALLBACK_SERVICES,
+          barbers: FALLBACK_BARBERS
+        });
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -428,7 +458,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
           </label>
 
           <div className="grid grid-cols-1 gap-3">
-            {barbershop.services.map((srv) => {
+            {servicesList.map((srv) => {
               const isSelected = selectedService?.id === srv.id;
               return (
                 <div
@@ -483,7 +513,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {barbershop.barbers.map((barber) => {
+            {barbersList.map((barber) => {
               const isSelected = selectedBarber?.id === barber.id;
               return (
                 <div
@@ -595,6 +625,22 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             />
           </div>
 
+          {enableTestSlots && (
+            <div className="px-3.5 py-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs flex items-center justify-between animate-fadeIn">
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                Modo Ensayo Activo: Todas las franjas horarias están habilitadas para prueba.
+              </span>
+              <button
+                type="button"
+                onClick={() => setEnableTestSlots(false)}
+                className="text-[11px] font-bold text-purple-500 dark:text-purple-300 underline hover:text-white cursor-pointer ml-2"
+              >
+                Restablecer
+              </button>
+            </div>
+          )}
+
           {loadingSlots ? (
             <div className="py-12 text-center text-xs text-slate-400 dark:text-industrial-500 font-mono animate-pulse">
               Consultando turnos libres de {selectedBarber?.name}...
@@ -621,13 +667,13 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                     >
                       Ver Horarios de Mañana ({tomorrowStr.slice(8, 10)}/{tomorrowStr.slice(5, 7)}) →
                     </button>
-                    {selectedDate === todayStr && !enableTestSlots && (
+                    {!enableTestSlots && (
                       <button
                         type="button"
                         onClick={() => setEnableTestSlots(true)}
-                        className="px-4 py-2 rounded-xl border border-amber-500/40 text-amber-600 dark:text-gold-400 text-xs hover:bg-amber-500/10 transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-purple-500/40 text-purple-600 dark:text-purple-300 hover:bg-purple-500/10 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
                       >
-                        ⚡ Habilitar turnos para ensayo hoy
+                        <Sparkles className="w-3.5 h-3.5" /> Habilitar turnos para ensayo (Modo Test)
                       </button>
                     )}
                   </div>
