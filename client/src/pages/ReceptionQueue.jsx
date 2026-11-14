@@ -796,13 +796,13 @@ export const ReceptionQueue = () => {
                 }
 
                 return (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-h-36 overflow-y-auto p-1.5 bg-noir-950 rounded-xl border border-industrial-850">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 p-1.5 bg-noir-950 rounded-xl border border-industrial-850">
                     {freeSlots.map((s) => (
                       <button
                         key={s.time}
                         type="button"
                         onClick={() => setSelectedTime(s.time)}
-                        className={`py-2 px-1 rounded-lg text-xs font-mono font-bold transition-all text-center ${
+                        className={`py-2 px-1 rounded-lg text-xs font-mono font-bold transition-all text-center cursor-pointer ${
                           selectedTime === s.time
                             ? 'bg-gold-500 text-noir-950 font-black shadow-glow-gold'
                             : 'bg-noir-900 border border-industrial-800 text-slate-300 hover:border-gold-500/50'
@@ -817,17 +817,17 @@ export const ReceptionQueue = () => {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          <div className="pt-3 pb-2 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-noir-900 border-t border-slate-100 dark:border-industrial-800 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-sm"
+              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-bold text-sm shadow-glow-gold"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer"
             >
               Agregar a la Fila
             </button>
@@ -1219,7 +1219,7 @@ export const ReceptionQueue = () => {
                 }
 
                 return (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-72 overflow-y-auto p-2.5 bg-slate-50 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-2.5 bg-slate-50 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800">
                     {filteredSlots.map((s) => {
                       const isBooked = s.reason === 'BOOKED';
                       const isManualBlocked = s.reason === 'BLOCKED_MANUALLY';

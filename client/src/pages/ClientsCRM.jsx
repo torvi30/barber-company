@@ -803,17 +803,17 @@ export const ClientsCRM = () => {
             </select>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3 border-t border-industrial-800">
+          <div className="pt-3 pb-2 flex justify-end gap-3 border-t border-industrial-800 sticky bottom-0 bg-noir-900 -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 mt-4 z-20">
             <button
               type="button"
               onClick={() => setIsNewClientModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs"
+              className="px-4 py-2 rounded-xl text-industrial-400 hover:text-white text-xs cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs shadow-glow-gold"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer"
             >
               Guardar en Directorio
             </button>

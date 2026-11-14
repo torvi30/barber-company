@@ -120,7 +120,7 @@ const AppContent = () => {
       />
 
       {/* Barra de Navegación Inferior Móvil (Mobile Bottom Bar) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-noir-900/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 z-50 flex items-center justify-around px-2 shadow-sm transition-colors">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-noir-900/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 z-40 flex items-center justify-around px-2 shadow-sm transition-colors">
         {isSuperAdmin && (
           <button
             onClick={() => setActiveTab('superadmin')}
