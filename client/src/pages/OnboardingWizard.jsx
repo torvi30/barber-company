@@ -72,7 +72,7 @@ export const OnboardingWizard = ({ onComplete, onCancel }) => {
       });
 
       if (res.success && res.data?.tenant) {
-        registerNewTenant(res.data.tenant);
+        await registerNewTenant(res.data.tenant);
         if (onComplete) onComplete(res.data.tenant);
       }
     } catch (err) {

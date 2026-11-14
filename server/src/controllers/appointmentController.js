@@ -1,4 +1,4 @@
-import { getTenantCollection, isMock, mockStore, db } from '../config/firebase.js';
+import { getTenantCollection, isMock, mockStore, db, persistStore } from '../config/firebase.js';
 import { validateAppointment, AppointmentStatus } from '../models/schemas.js';
 import { dispatchNotification } from '../services/notificationService.js';
 import { recordClientAppointment } from './clientController.js';
@@ -227,6 +227,7 @@ export const createAppointment = async (req, res) => {
       }
 
       tenantAppointments.data.unshift(newAppointment);
+      persistStore();
     } else {
       // 2. CHEQUEO Y ESCRITURA EN TRANSACCIÓN FIRESTORE REAL
       const queryExisting = await tenantAppointments
@@ -318,6 +319,7 @@ export const toggleSlot = async (req, res) => {
     } else {
       mockStore.blockedSlots[blockKey] = mockStore.blockedSlots[blockKey].filter(t => !timesToProcess.includes(t));
     }
+    persistStore();
 
     const io = req.app.get('io');
     if (io) {
@@ -368,6 +370,7 @@ export const updateAppointmentStatus = async (req, res) => {
         return res.status(404).json({ success: false, error: 'Cita no encontrada' });
       }
       tenantAppointments.data[index] = { ...tenantAppointments.data[index], ...updates };
+      persistStore();
       const currentApt = tenantAppointments.data[index];
 
       // Si la cita fue completada, registrar visita con pago en historial del cliente

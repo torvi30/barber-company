@@ -1,4 +1,4 @@
-import { mockStore, isMock, db } from '../config/firebase.js';
+import { mockStore, isMock, db, persistStore } from '../config/firebase.js';
 
 export const SUPERADMIN_EMAILS = [
   'victortamayopine@gmail.com',
@@ -50,7 +50,9 @@ export const syncUser = async (req, res) => {
       mockStore.users.push(user);
     }
 
-    // Persistir en Firestore si está conectado
+    if (isMock) {
+      persistStore();
+    }
     if (!isMock && db) {
       try {
         await db.collection('users').doc(uid).set({
@@ -249,7 +251,9 @@ export const updateBarbershopSettings = async (req, res) => {
     if (slogan !== undefined) barbershop.slogan = slogan;
     if (municipality !== undefined) barbershop.municipality = municipality;
 
-    // Persistir en Firestore si está conectado
+    if (isMock) {
+      persistStore();
+    }
     if (!isMock && db) {
       try {
         await db.collection('barbershops').doc(barbershopId).set(barbershop, { merge: true });
@@ -345,7 +349,9 @@ export const updateUserProfile = async (req, res) => {
       mockStore.users.push(user);
     }
 
-    // Persistir en Firestore si está conectado
+    if (isMock) {
+      persistStore();
+    }
     if (!isMock && db) {
       try {
         await db.collection('users').doc(uid).set({

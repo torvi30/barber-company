@@ -1,17 +1,24 @@
 import admin from 'firebase-admin';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dataDir = path.resolve(__dirname, '../../data');
+const storeFilePath = path.join(dataDir, 'mockStore.json');
 
 let db;
 let isMock = true;
 
 /**
- * Clean Multi-Tenant In-Memory Store
- * STRICT MULTI-TENANCY (ADR 002): Initialized 100% EMPTY.
- * Zero hardcoded companies, zero burned users, zero fake appointments.
+ * Clean Multi-Tenant Store con Persistencia Local Automática
+ * Garantiza que ninguna barbería, barbero o cita se pierda al reiniciar el servidor.
  */
-const mockStore = {
+let mockStore = {
   barbershops: {},
   users: [],
   barbers: {},
@@ -19,8 +26,54 @@ const mockStore = {
   inventory: {},
   cashClosures: {},
   clients: {},
-  notifications: {}
+  notifications: {},
+  blockedSlots: {}
 };
+
+// Cargar store previo desde disco si existe
+try {
+  if (fs.existsSync(storeFilePath)) {
+    const rawData = fs.readFileSync(storeFilePath, 'utf8');
+    const parsed = JSON.parse(rawData);
+    if (parsed && typeof parsed === 'object') {
+      mockStore = { ...mockStore, ...parsed };
+      console.log(`💾 [Store] Cargadas ${Object.keys(mockStore.barbershops || {}).length} barberías persistidas desde disco.`);
+    }
+  }
+} catch (err) {
+  console.warn('⚠️ [Store Read Notice]:', err.message);
+}
+
+let persistTimer = null;
+export const persistStore = () => {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    try {
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      fs.writeFileSync(storeFilePath, JSON.stringify(mockStore, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Error al persistir store en disco:', err.message);
+    }
+  }, 250);
+};
+
+export const persistStoreSync = () => {
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(storeFilePath, JSON.stringify(mockStore, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error al persistir store en disco (Sync):', err.message);
+  }
+};
+
+// Persistir automáticamente al cerrar el proceso
+process.on('SIGINT', () => { persistStoreSync(); process.exit(0); });
+process.on('SIGTERM', () => { persistStoreSync(); process.exit(0); });
+process.on('beforeExit', () => { persistStoreSync(); });
 
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
@@ -39,7 +92,7 @@ try {
     console.log('🔥 [Firestore] Conectado con GOOGLE_APPLICATION_CREDENTIALS.');
   } else {
     isMock = true;
-    console.log('⚡ [Firestore] Almacén Multi-Tenant dinámico listo (iniciado desde 0 sin datos quemados).');
+    console.log('⚡ [Firestore/Store] Almacén Multi-Tenant dinámico persistente listo en disco.');
   }
 } catch (err) {
   console.warn('⚠️ [Firestore Init Notice]:', err.message);

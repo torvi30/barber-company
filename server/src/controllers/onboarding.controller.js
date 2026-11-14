@@ -1,4 +1,4 @@
-import { isMock, mockStore, db } from '../config/firebase.js';
+import { isMock, mockStore, db, persistStore } from '../config/firebase.js';
 
 // Catálogo base de servicios para barberías — inicialización instantánea al crear un nuevo tenant
 const BARBERSHOP_DEFAULTS = {
@@ -126,6 +126,8 @@ export const registerNewBusiness = async (req, res) => {
 
       if (!mockStore.inventory) mockStore.inventory = {};
       mockStore.inventory[tenantId] = preset.products;
+
+      persistStore();
     } else {
       await db.collection('barbershops').doc(tenantId).set(newTenant);
       await db.collection('barbershops').doc(tenantId).collection('barbers').doc(initialBarber.id).set(initialBarber);

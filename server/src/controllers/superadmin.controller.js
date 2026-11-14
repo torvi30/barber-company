@@ -1,4 +1,4 @@
-import { isMock, mockStore, db } from '../config/firebase.js';
+import { isMock, mockStore, db, persistStore } from '../config/firebase.js';
 
 /**
  * Normaliza y formatea números de WhatsApp eliminando espacios y agregando código de país
@@ -233,6 +233,7 @@ export const updateTenantSubscription = async (req, res) => {
     // Persistir
     if (isMock) {
       Object.assign(mockStore.barbershops[id], updates);
+      persistStore();
     } else {
       await db.collection('barbershops').doc(id).update(updates);
     }

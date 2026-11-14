@@ -1,4 +1,4 @@
-import { getTenantCollection, isMock } from '../config/firebase.js';
+import { getTenantCollection, isMock, persistStore } from '../config/firebase.js';
 
 /**
  * Obtener todos los barberos del tenant
@@ -147,6 +147,7 @@ export const updateBarberStatus = async (req, res) => {
       if (!barber) return res.status(404).json({ success: false, error: 'Barbero no encontrado' });
 
       barber.status = status;
+      persistStore();
 
       // Broadcast Socket.io
       const io = req.app.get('io');
@@ -199,6 +200,7 @@ export const updateBarberSchedule = async (req, res) => {
       if (schedule) barber.schedule = schedule;
       if (dailyTarget !== undefined) barber.dailyTarget = Number(dailyTarget);
       if (commissionRate !== undefined) barber.commissionRate = Number(commissionRate);
+      persistStore();
 
       return res.json({ success: true, message: 'Turno laboral actualizado', data: barber });
     }
@@ -310,6 +312,7 @@ export const createBarber = async (req, res) => {
     if (isMock) {
       if (!barbersCollection.data) barbersCollection.data = [];
       barbersCollection.data.push(newBarber);
+      persistStore();
     } else {
       const docRef = await barbersCollection.add(newBarber);
       newBarber.id = docRef.id;
@@ -380,6 +383,7 @@ export const updateBarber = async (req, res) => {
       };
 
       barbersCollection.data[index] = updated;
+      persistStore();
 
       const io = req.app.get('io');
       if (io) {
@@ -434,6 +438,7 @@ export const deleteBarber = async (req, res) => {
       }
 
       barbersCollection.data = barbersCollection.data.filter(b => b.id !== id);
+      persistStore();
 
       const io = req.app.get('io');
       if (io) {

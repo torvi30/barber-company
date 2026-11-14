@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { initSocket, getSocket } from '../services/socket';
-import { saveFirestoreTenant } from '../services/firestoreService';
+import {
+  saveFirestoreTenant,
+  fetchFirestoreTenants,
+  fetchFirestoreBarbers,
+  saveFirestoreBarber,
+  deleteFirestoreBarber,
+  fetchFirestoreAppointments,
+  saveFirestoreAppointment,
+  updateFirestoreAppointmentStatus
+} from '../services/firestoreService';
 import { useAuth } from './AuthContext';
 
 const BarbershopContext = createContext();
@@ -65,7 +74,7 @@ export const BarbershopProvider = ({ children }) => {
     }
   }, []);
 
-  // Carga de datos del tenant activo (Citas y Barberos)
+  // Carga de datos del tenant activo (Citas y Barberos sincronizados con Firestore + Backend)
   const loadTenantData = useCallback(async (currentTenantId) => {
     const tid = currentTenantId || tenantId;
     if (!tid) {
@@ -77,12 +86,28 @@ export const BarbershopProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const [aptRes, barberRes] = await Promise.all([
-        api.getAppointments(tid),
-        api.getBarbers(tid)
+      const [aptRes, barberRes, fsBarbers, fsAppointments] = await Promise.all([
+        api.getAppointments(tid).catch(() => ({ success: false, data: [] })),
+        api.getBarbers(tid).catch(() => ({ success: false, data: [] })),
+        fetchFirestoreBarbers(tid).catch(() => []),
+        fetchFirestoreAppointments(tid).catch(() => [])
       ]);
-      if (aptRes.success) setAppointments(aptRes.data || []);
-      if (barberRes.success) setBarbers(barberRes.data || []);
+
+      // Fusionar barberos sin duplicados
+      const barberMap = new Map();
+      (fsBarbers || []).forEach(b => { if (b && b.id) barberMap.set(b.id, b); });
+      if (barberRes.success && Array.isArray(barberRes.data)) {
+        barberRes.data.forEach(b => { if (b && b.id) barberMap.set(b.id, { ...(barberMap.get(b.id) || {}), ...b }); });
+      }
+      setBarbers(Array.from(barberMap.values()));
+
+      // Fusionar citas sin duplicados
+      const aptMap = new Map();
+      (fsAppointments || []).forEach(a => { if (a && a.id) aptMap.set(a.id, a); });
+      if (aptRes.success && Array.isArray(aptRes.data)) {
+        aptRes.data.forEach(a => { if (a && a.id) aptMap.set(a.id, { ...(aptMap.get(a.id) || {}), ...a }); });
+      }
+      setAppointments(Array.from(aptMap.values()));
     } catch (error) {
       console.error('Error al cargar datos del tenant:', error);
     } finally {
@@ -90,39 +115,46 @@ export const BarbershopProvider = ({ children }) => {
     }
   }, [tenantId]);
 
-  // Cargar lista de tenants desde la base de datos dinámica
+  // Cargar lista de tenants desde Firestore + Backend (Persistencia Total)
   const loadTenants = useCallback(async () => {
     try {
-      if (isSuperAdmin) {
-        const res = await api.getSuperAdminTenants();
-        if (res.success && res.data) {
-          setTenantList(res.data);
-          if (res.data.length > 0) {
-            const currentMatch = res.data.find(t => t.id === tenantId);
-            const active = currentMatch || res.data[0];
-            setTenantId(active.id);
-            setBarbershopInfo(active);
-            loadTenantData(active.id);
-          } else {
-            setTenantId('');
-            setBarbershopInfo(DEFAULT_BLANK_TENANT);
-            setAppointments([]);
-            setBarbers([]);
-            setLoading(false);
-          }
+      // 1. Cargar desde Firestore (Nube de Firebase)
+      const firestoreTenants = await fetchFirestoreTenants().catch(() => []);
+
+      // 2. Cargar desde API Backend
+      let backendTenants = [];
+      try {
+        if (isSuperAdmin) {
+          const res = await api.getSuperAdminTenants();
+          if (res.success && Array.isArray(res.data)) backendTenants = res.data;
+        } else if (currentUser?.companyId) {
+          const res = await api.getPublicBarbershop(currentUser.companyId);
+          if (res.success && res.data) backendTenants = [res.data];
         }
-      } else if (currentUser?.companyId) {
-        const res = await api.getPublicBarbershop(currentUser.companyId);
-        if (res.success && res.data) {
-          setTenantList([res.data]);
-          setTenantId(res.data.id);
-          setBarbershopInfo(res.data);
-          loadTenantData(res.data.id);
-        }
+      } catch (e) {
+        console.warn('Backend tenants load notice:', e.message);
+      }
+
+      // Fusionar tenants de ambas fuentes sin perder ninguno
+      const mergedMap = new Map();
+      firestoreTenants.forEach(t => { if (t && t.id) mergedMap.set(t.id, t); });
+      backendTenants.forEach(t => { if (t && t.id) mergedMap.set(t.id, { ...(mergedMap.get(t.id) || {}), ...t }); });
+
+      const allTenants = Array.from(mergedMap.values());
+
+      if (allTenants.length > 0) {
+        setTenantList(allTenants);
+        const currentMatch = allTenants.find(t => t.id === tenantId);
+        const active = currentMatch || allTenants[0];
+        setTenantId(active.id);
+        setBarbershopInfo(active);
+        loadTenantData(active.id);
       } else {
         setTenantList([]);
         setTenantId('');
         setBarbershopInfo(DEFAULT_BLANK_TENANT);
+        setAppointments([]);
+        setBarbers([]);
         setLoading(false);
       }
     } catch (err) {
@@ -152,7 +184,9 @@ export const BarbershopProvider = ({ children }) => {
   };
 
   // Registrar nueva barbería desde el Wizard de Onboarding (SuperAdmin)
-  const registerNewTenant = (newTenant) => {
+  const registerNewTenant = async (newTenant) => {
+    // Persistir de inmediato en Firestore Cloud
+    await saveFirestoreTenant(newTenant);
     setTenantList(prev => [newTenant, ...prev.filter(t => t.id !== newTenant.id)]);
     switchTenant(newTenant);
   };
@@ -234,43 +268,60 @@ export const BarbershopProvider = ({ children }) => {
   }, [tenantId, loadTenantData, playBarberChime]);
 
   const createAppointment = async (appointmentData) => {
-    const res = await api.createAppointment(tenantId, appointmentData);
-    if (res.success) {
-      setAppointments((prev) => [res.data, ...prev.filter(a => a.id !== res.data.id)]);
-    }
-    return res;
+    const res = await api.createAppointment(tenantId, appointmentData).catch(() => ({ success: false }));
+    const saved = res.success ? res.data : {
+      ...appointmentData,
+      id: appointmentData.id || `apt_${Date.now()}`,
+      status: appointmentData.status || 'WAITING',
+      createdAt: new Date().toISOString()
+    };
+    await saveFirestoreAppointment(tenantId, saved);
+    setAppointments((prev) => [saved, ...prev.filter(a => a.id !== saved.id)]);
+    return { success: true, data: saved };
   };
 
   const updateStatus = async (id, status, paymentMethod, tip) => {
-    const res = await api.updateAppointmentStatus(tenantId, id, { status, paymentMethod, tip });
-    if (res.success) {
+    const res = await api.updateAppointmentStatus(tenantId, id, { status, paymentMethod, tip }).catch(() => ({ success: false }));
+    await updateFirestoreAppointmentStatus(tenantId, id, status, paymentMethod, tip);
+    if (res.success && res.data) {
       setAppointments((prev) => prev.map((a) => (a.id === id ? res.data : a)));
+    } else {
+      setAppointments((prev) => prev.map((a) => (a.id === id ? {
+        ...a,
+        status,
+        ...(paymentMethod && { paymentMethod }),
+        ...(tip !== undefined && { tip: Number(tip) })
+      } : a)));
     }
-    return res;
+    return res.success ? res : { success: true };
   };
 
   const addBarber = async (barberData) => {
-    const res = await api.createBarber(tenantId, barberData);
-    if (res.success && res.data) {
-      setBarbers((prev) => [...prev.filter(b => b.id !== res.data.id), res.data]);
-    }
-    return res;
+    const res = await api.createBarber(tenantId, barberData).catch(() => ({ success: false }));
+    const saved = res.success ? res.data : {
+      ...barberData,
+      id: barberData.id || `barb_${Date.now()}`,
+      active: true,
+      status: barberData.status || 'AVAILABLE'
+    };
+    await saveFirestoreBarber(tenantId, saved);
+    setBarbers((prev) => [...prev.filter(b => b.id !== saved.id), saved]);
+    return { success: true, data: saved };
   };
 
   const editBarber = async (id, barberData) => {
-    const res = await api.updateBarber(tenantId, id, barberData);
-    if (res.success && res.data) {
-      setBarbers((prev) => prev.map((b) => (b.id === id ? res.data : b)));
-    }
-    return res;
+    const res = await api.updateBarber(tenantId, id, barberData).catch(() => ({ success: false }));
+    const updated = res.success ? res.data : { ...barberData, id };
+    await saveFirestoreBarber(tenantId, updated);
+    setBarbers((prev) => prev.map((b) => (b.id === id ? updated : b)));
+    return { success: true, data: updated };
   };
 
   const removeBarber = async (id) => {
-    const res = await api.deleteBarber(tenantId, id);
-    if (res.success) {
-      setBarbers((prev) => prev.filter((b) => b.id !== id));
-    }
-    return res;
+    const res = await api.deleteBarber(tenantId, id).catch(() => ({ success: false }));
+    await deleteFirestoreBarber(tenantId, id);
+    setBarbers((prev) => prev.filter((b) => b.id !== id));
+    return { success: true };
   };
 
   const toggleStoreModule = async (enabled) => {

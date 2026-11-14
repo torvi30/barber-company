@@ -39,17 +39,216 @@ export async function saveFirestoreTenant(tenant) {
   }
 }
 
+export const INITIAL_SEED_TENANTS = [
+  {
+    id: "tenant_imperio_barber_01",
+    name: "Imperio Barbershop",
+    slug: "imperio-barber",
+    businessType: "barbershop",
+    municipality: "Marinilla",
+    department: "Antioquia",
+    address: "Cra 50 # 48-12, Parque Principal",
+    whatsapp: "+57 311 456 7890",
+    phone: "+57 311 456 7890",
+    ownerName: "Victor Tamayo",
+    ownerEmail: "victortamayopine@gmail.com",
+    currency: "COP",
+    openingCashDefault: 100000,
+    subscriptionStatus: "active",
+    subscriptionPlan: "pro",
+    logoUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=300&q=80",
+    slogan: "El Santuario del Caballero Moderno",
+    storeEnabled: true,
+    barbers: [
+      {
+        id: "barber_imp_1",
+        name: "Mateo Restrepo",
+        whatsapp: "3124567891",
+        email: "mateo.restrepo@imperio.com",
+        commissionRate: 50,
+        dailyGoal: 180000,
+        specialties: "Skin Fade, Ritual de Toalla Caliente, Barba Tradicional",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      },
+      {
+        id: "barber_imp_2",
+        name: "Sebastián Gómez",
+        whatsapp: "3124567892",
+        email: "sebastian.gomez@imperio.com",
+        commissionRate: 50,
+        dailyGoal: 150000,
+        specialties: "Corte Clásico a Tijera, Peinado Pompadour, Perfilado Cejas",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      },
+      {
+        id: "barber_imp_3",
+        name: "David Henao",
+        whatsapp: "3124567893",
+        email: "david.henao@imperio.com",
+        commissionRate: 50,
+        dailyGoal: 160000,
+        specialties: "Mid Fade, Diseños Freestyle, Barba Completa con Navaja",
+        avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      }
+    ]
+  },
+  {
+    id: "tenant_la_fortaleza_02",
+    name: "La Fortaleza Barber Club",
+    slug: "la-fortaleza",
+    businessType: "barbershop",
+    municipality: "Medellín",
+    department: "Antioquia",
+    address: "Calle 10 # 43E-28, El Poblado",
+    whatsapp: "+57 320 890 1234",
+    phone: "+57 320 890 1234",
+    ownerName: "Daniel Alzate",
+    ownerEmail: "danielb.alzate1@gmail.com",
+    currency: "COP",
+    openingCashDefault: 100000,
+    subscriptionStatus: "active",
+    subscriptionPlan: "pro",
+    logoUrl: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?fit=crop&w=300&q=80",
+    slogan: "Tradición, Estilo y Maestría Clásica",
+    storeEnabled: true,
+    barbers: [
+      {
+        id: "barber_fort_1",
+        name: "Camilo Valencia",
+        whatsapp: "3108901235",
+        email: "camilo.valencia@lafortaleza.com",
+        commissionRate: 55,
+        dailyGoal: 200000,
+        specialties: "Low Fade, High Fade, Taper Fade, Cejas con Navaja",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      },
+      {
+        id: "barber_fort_2",
+        name: "Alejandro Morales",
+        whatsapp: "3108901236",
+        email: "alejandro.morales@lafortaleza.com",
+        commissionRate: 50,
+        dailyGoal: 170000,
+        specialties: "Arreglo & Ritual de Barba, Masaje Capilar, Vapor de Ozono",
+        avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      },
+      {
+        id: "barber_fort_3",
+        name: "Julián Ramírez",
+        whatsapp: "3108901237",
+        email: "julian.ramirez@lafortaleza.com",
+        commissionRate: 50,
+        dailyGoal: 160000,
+        specialties: "Corte Clásico Tradicional, Pompadour, Combo VIP",
+        avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      }
+    ]
+  },
+  {
+    id: "tenant_netx_baber_483",
+    name: "Netx Baber",
+    slug: "netx-baber",
+    businessType: "barbershop",
+    municipality: "Marinilla",
+    department: "Antioquia",
+    address: "Parque Principal",
+    whatsapp: "+57 322 546 6673",
+    phone: "+57 322 546 6673",
+    ownerName: "Victor Tamayo",
+    ownerEmail: "victortamayopine@gmail.com",
+    currency: "COP",
+    openingCashDefault: 100000,
+    subscriptionStatus: "active",
+    subscriptionPlan: "pro",
+    logoUrl: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?fit=crop&w=300&q=80",
+    slogan: "Cortes Premium y Estilo Vanguardista",
+    storeEnabled: true,
+    barbers: [
+      {
+        id: "barber_netx_1",
+        name: "Carlos López",
+        whatsapp: "3225466673",
+        email: "carlos.lopez@netxbaber.com",
+        commissionRate: 50,
+        dailyGoal: 150000,
+        specialties: "Skin Fade + Ritual de Toalla Caliente, Corte Clásico a Tijera, Perfilado",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      },
+      {
+        id: "barber_netx_2",
+        name: "Andrés Morales",
+        whatsapp: "3112223334",
+        email: "andres.morales@netxbaber.com",
+        commissionRate: 50,
+        dailyGoal: 120000,
+        specialties: "Fade Urbano, Barba, Cejas",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      },
+      {
+        id: "barber_netx_3",
+        name: "Mateo Gómez",
+        whatsapp: "3001112233",
+        email: "mateo.gomez@netxbaber.com",
+        commissionRate: 50,
+        dailyGoal: 130000,
+        specialties: "Corte Tradicional, Afeitado",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=200&q=80",
+        status: "AVAILABLE",
+        active: true
+      }
+    ]
+  }
+];
+
+export async function ensureFirestoreSeed() {
+  try {
+    for (const t of INITIAL_SEED_TENANTS) {
+      const { barbers = [], ...tenantData } = t;
+      await saveFirestoreTenant(tenantData);
+      for (const b of barbers) {
+        await saveFirestoreBarber(t.id, b);
+      }
+    }
+  } catch (err) {
+    console.warn('Notice seeding Firestore:', err.message);
+  }
+}
+
 export async function fetchFirestoreTenants() {
   try {
     const colRef = collection(db, 'barbershops');
     const snapshot = await getDocs(colRef);
-    return snapshot.docs.map(docSnap => ({
+    const docs = snapshot.docs.map(docSnap => ({
       id: docSnap.id,
       ...docSnap.data()
     }));
+
+    if (docs.length === 0) {
+      // Sembrar inmediatamente en Firestore si está vacío
+      await ensureFirestoreSeed();
+      return INITIAL_SEED_TENANTS.map(({ barbers, ...rest }) => rest);
+    }
+
+    return docs;
   } catch (err) {
     console.warn('Firestore notice (fetchTenants):', err.message);
-    return [];
+    return INITIAL_SEED_TENANTS.map(({ barbers, ...rest }) => rest);
   }
 }
 
@@ -69,10 +268,21 @@ export async function fetchFirestoreBarbers(tenantId) {
   try {
     const colRef = collection(db, 'barbershops', tenantId, 'barbers');
     const snapshot = await getDocs(colRef);
-    return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const barbers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (barbers.length > 0) return barbers;
+
+    const seed = INITIAL_SEED_TENANTS.find(t => t.id === tenantId);
+    if (seed && seed.barbers) {
+      for (const b of seed.barbers) {
+        saveFirestoreBarber(tenantId, b).catch(() => {});
+      }
+      return seed.barbers;
+    }
+    return [];
   } catch (err) {
     console.warn('Firestore notice (fetchBarbers):', err.message);
-    return [];
+    const seed = INITIAL_SEED_TENANTS.find(t => t.id === tenantId);
+    return seed?.barbers || [];
   }
 }
 
