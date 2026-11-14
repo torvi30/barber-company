@@ -67,6 +67,14 @@ export const getAppointments = async (req, res) => {
   }
 };
 
+// Obtener fecha local YYYY-MM-DD sin desface de zona horaria UTC
+export const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 /**
  * Consulta de horarios disponibles (Slot Availability Engine)
  * Filtra citas pasadas, días no laborables y colisiones de duración
@@ -74,7 +82,7 @@ export const getAppointments = async (req, res) => {
 export const getAvailableSlots = async (req, res) => {
   try {
     const { barbershopId } = req;
-    const { barberId, date = new Date().toISOString().split('T')[0] } = req.query;
+    const { barberId, date = getLocalDateString(new Date()) } = req.query;
 
     if (!barberId) {
       return res.status(400).json({ success: false, error: 'El parámetro "barberId" es requerido.' });
@@ -83,7 +91,7 @@ export const getAvailableSlots = async (req, res) => {
     const tenantAppointments = getTenantCollection(barbershopId, 'appointments');
     let appointments = [];
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString(new Date());
 
     if (isMock) {
       appointments = (tenantAppointments.data || []).filter(
@@ -173,7 +181,7 @@ export const createAppointment = async (req, res) => {
       return res.status(400).json({ success: false, errors: validation.errors });
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString(new Date());
     const appointmentDate = req.body.date || todayStr;
     const appointmentTime = req.body.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const { barberId } = req.body;

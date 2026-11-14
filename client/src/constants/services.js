@@ -62,3 +62,4 @@ export const TRADITIONAL_SERVICES = [
     description: 'Servicio completo de barbería tradicional: cabello, barba ritual y cejas en una sola sesión.'
   }
 ];
+

@@ -77,11 +77,18 @@ export const BarberPortal = () => {
   const [barberSlots, setBarberSlots] = useState([]);
   const [loadingBarberSlots, setLoadingBarberSlots] = useState(false);
 
+  const getLocalDate = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const loadBarberSlots = async () => {
     if (!selectedBarberId) return;
     try {
       setLoadingBarberSlots(true);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDate(new Date());
       const res = await api.getAvailableSlots(tenantId, selectedBarberId, today);
       if (res.success && res.slots) {
         setBarberSlots(res.slots);
@@ -101,7 +108,7 @@ export const BarberPortal = () => {
 
   const handleToggleBarberSlot = async (slotTime, isBlocked) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDate(new Date());
       await api.toggleSlot(tenantId, {
         barberId: selectedBarberId,
         date: today,
@@ -119,7 +126,7 @@ export const BarberPortal = () => {
     if (!timesToToggle || timesToToggle.length === 0) return;
     try {
       setLoadingBarberSlots(true);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDate(new Date());
       await api.toggleSlot(tenantId, {
         barberId: selectedBarberId,
         date: today,

@@ -1,6 +1,6 @@
 import { getTenantCollection, isMock, mockStore, db } from '../config/firebase.js';
 import { validateAppointment, AppointmentStatus } from '../models/schemas.js';
-import { OPERATING_SLOTS, toMinutes, checkSlotCollision } from './appointmentController.js';
+import { OPERATING_SLOTS, toMinutes, checkSlotCollision, getLocalDateString } from './appointmentController.js';
 import { dispatchNotification } from '../services/notificationService.js';
 import { recordClientAppointment } from './clientController.js';
 
@@ -82,7 +82,7 @@ export const getBarbershopBySlug = async (req, res) => {
 export const getPublicSlots = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { barberId, date = new Date().toISOString().split('T')[0] } = req.query;
+    const { barberId, date = getLocalDateString(new Date()) } = req.query;
 
     if (!barberId) {
       return res.status(400).json({ success: false, error: 'Parámetro barberId requerido.' });
@@ -100,7 +100,7 @@ export const getPublicSlots = async (req, res) => {
 
     const tenantAppointments = getTenantCollection(barbershopId, 'appointments');
     let appointments = [];
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString(new Date());
 
     if (isMock) {
       appointments = (tenantAppointments.data || []).filter(
@@ -218,7 +218,7 @@ export const createPublicBooking = async (req, res) => {
     }
 
     const tenantAppointments = getTenantCollection(barbershopId, 'appointments');
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString(new Date());
     const duration = Number(durationMinutes || 45);
 
     // 1. CHEQUEO ANTI-COLISIÓN

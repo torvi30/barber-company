@@ -18,13 +18,20 @@ import {
   Send
 } from 'lucide-react';
 
+const getLocalDate = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [barbershop, setBarbershop] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBarber, setSelectedBarber] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDate(new Date()));
   const [selectedTime, setSelectedTime] = useState(null);
   const [slots, setSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -419,7 +426,7 @@ export const PublicBookingWizard = ({ slug = 'black-gold', onBookingComplete }) 
             </label>
             <input
               type="date"
-              min={new Date().toISOString().split('T')[0]}
+              min={getLocalDate(new Date())}
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-gold-500 font-mono"

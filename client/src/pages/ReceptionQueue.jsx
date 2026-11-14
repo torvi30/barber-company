@@ -54,7 +54,16 @@ export const ReceptionQueue = () => {
   const [serviceName, setServiceName] = useState(TRADITIONAL_SERVICES[0].name);
   const [price, setPrice] = useState(TRADITIONAL_SERVICES[0].price);
   const [barberId, setBarberId] = useState(barbers[0]?.id || 'barber-01');
-  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Obtener fecha local YYYY-MM-DD sin desfase horario de UTC
+  const getLocalDate = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalDate(new Date());
   const [agendaDate, setAgendaDate] = useState(todayStr); // Fecha activa del Calendario de la Agenda
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedTime, setSelectedTime] = useState('');
@@ -82,7 +91,7 @@ export const ReceptionQueue = () => {
       const [year, month, day] = agendaDate.split('-').map(Number);
       const d = new Date(year, month - 1, day);
       d.setDate(d.getDate() + days);
-      setAgendaDate(d.toISOString().split('T')[0]);
+      setAgendaDate(getLocalDate(d));
     } catch (e) {
       console.warn(e);
     }
@@ -411,10 +420,14 @@ export const ReceptionQueue = () => {
             onClick={() => {
               const tom = new Date();
               tom.setDate(tom.getDate() + 1);
-              setAgendaDate(tom.toISOString().split('T')[0]);
+              setAgendaDate(getLocalDate(tom));
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              agendaDate === new Date(Date.now() + 86400000).toISOString().split('T')[0]
+              (() => {
+                const tom = new Date();
+                tom.setDate(tom.getDate() + 1);
+                return agendaDate === getLocalDate(tom);
+              })()
                 ? 'bg-gold-500 text-noir-950 shadow-glow-gold'
                 : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
             }`}
@@ -1027,9 +1040,9 @@ export const ReceptionQueue = () => {
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Fecha:</span>
                   <button
                     type="button"
-                    onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                    onClick={() => setSelectedDate(todayStr)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                      selectedDate === new Date().toISOString().split('T')[0]
+                      selectedDate === todayStr
                         ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
                         : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400'
                     }`}
@@ -1041,10 +1054,14 @@ export const ReceptionQueue = () => {
                     onClick={() => {
                       const tom = new Date();
                       tom.setDate(tom.getDate() + 1);
-                      setSelectedDate(tom.toISOString().split('T')[0]);
+                      setSelectedDate(getLocalDate(tom));
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                      selectedDate === new Date(Date.now() + 86400000).toISOString().split('T')[0]
+                      (() => {
+                        const tom = new Date();
+                        tom.setDate(tom.getDate() + 1);
+                        return selectedDate === getLocalDate(tom);
+                      })()
                         ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
                         : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400'
                     }`}
