@@ -48,7 +48,8 @@ const AppContent = () => {
   };
 
   const handleOpenSettings = (tab = 'profile') => {
-    setSettingsInitialTab(tab);
+    const validTab = (typeof tab === 'string' && ['profile', 'identity', 'modules'].includes(tab)) ? tab : 'profile';
+    setSettingsInitialTab(validTab);
     setShowSettingsModal(true);
   };
 

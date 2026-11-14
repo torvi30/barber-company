@@ -43,10 +43,11 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
   const [internalInitialTab, setInternalInitialTab] = useState('identity');
 
   const handleOpenSettings = (tab = 'identity') => {
+    const validTab = (typeof tab === 'string' && ['profile', 'identity', 'modules'].includes(tab)) ? tab : 'identity';
     if (onOpenSettings) {
-      onOpenSettings(tab);
+      onOpenSettings(validTab);
     } else {
-      setInternalInitialTab(tab);
+      setInternalInitialTab(validTab);
       setInternalSettingsModal(true);
     }
   };
@@ -232,45 +233,66 @@ export const Navbar = ({ onOpenOnboarding, onOpenSuperAdmin, activeTab, onTabCha
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Botón de Ajustes & Módulos */}
-          <button
-            onClick={handleOpenSettings}
-            className="p-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-amber-600 dark:hover:text-gold-400 transition-colors shadow-sm cursor-pointer"
-            title="Ajustes de Barbería, Logotipo y Módulos"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Cluster Ejecutivo Unificado de Herramientas (Theme + Settings) */}
+          <div className="flex items-center p-0.5 sm:p-1 bg-slate-100 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800 shadow-xs">
+            {/* Botón de Modo Claro / Modo Oscuro */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-1.5 sm:p-2 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-amber-600 dark:hover:text-gold-400 hover:bg-white dark:hover:bg-noir-900 transition-all cursor-pointer"
+              title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+            </button>
 
-          {/* Botón de Modo Claro / Modo Oscuro */}
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-amber-600 dark:hover:text-gold-400 transition-colors shadow-sm"
-            title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
-          >
-            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-          </button>
+            {/* Separador sutil */}
+            <span className="w-px h-4 bg-slate-200 dark:bg-industrial-800" />
 
-          {/* Socket Status */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-[11px] text-slate-600 dark:text-industrial-400 shadow-sm">
-            <span className={`w-1.5 h-1.5 rounded-full ${socketConnected ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-            <span className="hidden sm:inline">En Línea</span>
+            {/* Botón de Ajustes & Módulos */}
+            <button
+              type="button"
+              onClick={() => handleOpenSettings('identity')}
+              className="p-1.5 sm:p-2 rounded-xl text-slate-600 dark:text-industrial-400 hover:text-amber-600 dark:hover:text-gold-400 hover:bg-white dark:hover:bg-noir-900 transition-all cursor-pointer"
+              title="Ajustes de Barbería, Logotipo y Módulos"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Menú de Usuario con Aislamiento y Logout */}
+          {/* Menú de Usuario con Indicador de Conexión Live Integrado */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 pl-1.5 hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 sm:gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 hover:border-amber-500/40 transition-all cursor-pointer shadow-xs"
+              title="Mi Cuenta & Sesión"
             >
-              <img
-                src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-                alt={currentUser?.name}
-                className="w-7 h-7 rounded-full border border-gold-500/40 object-cover"
-              />
-              <div className="hidden md:block text-left text-xs font-semibold text-slate-700 dark:text-slate-200">
-                {currentUser?.name || 'Usuario'}
+              <div className="relative flex-shrink-0">
+                <img
+                  src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+                  alt={currentUser?.name || 'Usuario'}
+                  className="w-7 h-7 rounded-xl object-cover border border-amber-500/40"
+                />
+                {/* Live Socket Dot integrado */}
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-noir-950 ${
+                    socketConnected ? 'bg-emerald-500' : 'bg-rose-500'
+                  }`}
+                  title={socketConnected ? 'En línea' : 'Desconectado'}
+                />
               </div>
+
+              <div className="hidden md:flex flex-col text-left pr-1">
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[110px]">
+                  {currentUser?.name || 'Usuario'}
+                </span>
+                <span className="text-[9px] font-mono font-semibold text-amber-600 dark:text-gold-400">
+                  {isSuperAdmin ? 'SuperAdmin' : 'Admin'}
+                </span>
+              </div>
+
+              <ChevronDown className="w-3 h-3 text-slate-400 dark:text-industrial-500 mr-0.5" />
             </button>
 
             {showUserMenu && (

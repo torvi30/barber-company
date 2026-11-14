@@ -71,11 +71,12 @@ const AVATAR_PRESETS = [
   { label: 'Executive Cut', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?fit=crop&w=200&q=80' }
 ];
 
-export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
+export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
   const { barbershopInfo, updateCompanySettings, toggleStoreModule } = useBarbershop();
   const { currentUser, isSuperAdmin, updateCurrentUserProfile, resetPassword } = useAuth();
 
-  const [activeTab, setActiveTab] = useState(initialTab); // 'profile' | 'identity' | 'modules'
+  const sanitizeTab = (t) => (typeof t === 'string' && ['profile', 'identity', 'modules'].includes(t)) ? t : 'identity';
+  const [activeTab, setActiveTab] = useState(() => sanitizeTab(initialTab));
 
   // --- Estado de Perfil Personal ---
   const [displayName, setDisplayName] = useState('');
@@ -104,7 +105,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
   // Sincronizar datos al abrir modal
   useEffect(() => {
     if (isOpen) {
-      setActiveTab(initialTab || 'profile');
+      setActiveTab(sanitizeTab(initialTab));
       if (currentUser) {
         setDisplayName(currentUser.displayName || currentUser.name || '');
         setAvatarUrl(currentUser.avatarUrl || currentUser.avatar || '');
@@ -313,45 +314,45 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
       maxWidth="max-w-2xl"
     >
       <div className="space-y-5">
-        {/* Pestañas de Navegación del Panel */}
-        <div className="flex border-b border-slate-200 dark:border-industrial-800 gap-2">
+        {/* Selector de Pestañas Ejecutivo Segmentado */}
+        <div className="grid grid-cols-3 p-1 bg-slate-100 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800 gap-1 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`pb-3 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`py-2 px-2 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'profile'
-                ? 'border-gold-500 text-amber-600 dark:text-gold-400'
-                : 'border-transparent text-slate-500 dark:text-industrial-400 hover:text-slate-800 dark:hover:text-white'
+                ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <User className="w-4 h-4" />
-            <span>Mi Perfil Personal</span>
+            <User className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
+            <span className="truncate">Mi Perfil</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('identity')}
-            className={`pb-3 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`py-2 px-2 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'identity'
-                ? 'border-gold-500 text-amber-600 dark:text-gold-400'
-                : 'border-transparent text-slate-500 dark:text-industrial-400 hover:text-slate-800 dark:hover:text-white'
+                ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Identidad & Logotipo</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
+            <span className="truncate">Identidad & Logo</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('modules')}
-            className={`pb-3 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`py-2 px-2 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'modules'
-                ? 'border-gold-500 text-amber-600 dark:text-gold-400'
-                : 'border-transparent text-slate-500 dark:text-industrial-400 hover:text-slate-800 dark:hover:text-white'
+                ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Módulos del Sistema</span>
+            <ShoppingBag className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
+            <span className="truncate">Módulos</span>
           </button>
         </div>
 
@@ -595,7 +596,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
               <button
                 type="submit"
                 disabled={isSavingProfile}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
+                className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
               >
                 {isSavingProfile ? 'Guardando...' : 'Guardar Mi Perfil'}
               </button>
@@ -912,7 +913,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
                 <button
                   type="submit"
                   disabled={isSavingSalon}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
+                  className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
                 >
                   {isSavingSalon ? 'Guardando...' : 'Guardar Identidad'}
                 </button>
@@ -1003,7 +1004,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'profile' }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold transition-all cursor-pointer font-mono"
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all cursor-pointer font-mono"
               >
                 Listo / Cerrar
               </button>
