@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { showErrorAlert } from '../lib/swal';
+import { useBarbershop } from '../context/BarbershopContext';
 import {
   ShoppingBag,
   Plus,
@@ -14,11 +15,14 @@ import {
   CheckCircle2,
   Package,
   Store,
-  ExternalLink
+  ExternalLink,
+  MessageCircle,
+  Home
 } from 'lucide-react';
 
-export const PublicStore = ({ slug }) => {
+export const PublicStore = ({ slug, onGoToBooking }) => {
   const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : 'black-gold';
+  const { barbershopInfo } = useBarbershop();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -301,22 +305,22 @@ export const PublicStore = ({ slug }) => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-noir-900 border-t sm:border border-industrial-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[88vh] overflow-y-auto overscroll-contain cursor-default shadow-2xl animate-slideUp flex flex-col space-y-4"
+            className="w-full max-w-lg bg-white dark:bg-noir-900 border-t sm:border border-slate-200 dark:border-industrial-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[88vh] overflow-y-auto overscroll-contain cursor-default shadow-2xl animate-slideUp flex flex-col space-y-4 transition-colors"
           >
             {/* Tirador táctil para móvil */}
-            <div className="w-10 h-1 bg-industrial-700 rounded-full mx-auto sm:hidden -mt-1 mb-1"></div>
+            <div className="w-10 h-1 bg-slate-300 dark:bg-industrial-700 rounded-full mx-auto sm:hidden -mt-1 mb-1"></div>
 
             {/* Cabecera compacta */}
-            <div className="flex items-center justify-between pb-3 border-b border-industrial-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-industrial-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gold-500/15 border border-gold-500/30 flex items-center justify-center text-gold-400">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 dark:bg-gold-500/15 border border-amber-500/30 dark:border-gold-500/30 flex items-center justify-center text-amber-600 dark:text-gold-400">
                   <ShoppingBag className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-white text-base leading-tight">
+                  <h3 className="font-display font-bold text-slate-900 dark:text-white text-base leading-tight">
                     Bolsa de Productos
                   </h3>
-                  <span className="text-[11px] text-industrial-400 font-mono">
+                  <span className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono">
                     {cart.reduce((s, i) => s + i.qty, 0)} {cart.reduce((s, i) => s + i.qty, 0) === 1 ? 'producto' : 'productos'} seleccionado(s)
                   </span>
                 </div>
@@ -324,55 +328,105 @@ export const PublicStore = ({ slug }) => {
               <button
                 type="button"
                 onClick={() => setIsCartOpen(false)}
-                className="p-1.5 rounded-xl text-industrial-400 hover:text-white hover:bg-noir-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-slate-400 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-noir-800 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {orderConfirmed ? (
-              <div className="py-6 text-center space-y-4 animate-fadeIn">
-                <div className="w-14 h-14 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-400">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h4 className="font-bold text-white text-lg">¡Pedido Reservado con Éxito!</h4>
-                <p className="text-xs text-industrial-400 max-w-xs mx-auto leading-relaxed">
-                  Tu reserva <strong className="font-mono text-gold-400">{orderConfirmed.id}</strong> fue guardada para pagar y recoger en el mostrador de la barbería.
-                </p>
+            {orderConfirmed ? (() => {
+              const rawPhone = (barbershopInfo?.whatsapp || barbershopInfo?.phone || '573004567890').replace(/[^\d]/g, '');
+              const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
+              const itemsList = (orderConfirmed.items || []).map(i => `• ${i.name} (x${i.qty})`).join('\n');
+              const msg = encodeURIComponent(
+                `Hola ${barbershopInfo?.name || 'la Barbería'} 🛍️ Acabo de hacer un pedido desde su Tienda Online.\n\n` +
+                `• Código: #${orderConfirmed.id}\n` +
+                `• Cliente: ${orderConfirmed.clientName}\n` +
+                (itemsList ? `• Productos:\n${itemsList}\n` : '') +
+                `• Total a abonar en mostrador: $${Number(orderConfirmed.totalAmount).toLocaleString('es-CO')}\n\n` +
+                `¿Me confirman para pasar a recogerlo? ¡Muchas gracias!`
+              );
+              const waLink = `https://wa.me/${cleanPhone}?text=${msg}`;
 
-                <div className="p-3.5 rounded-2xl bg-noir-950 border border-industrial-800 text-left font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-industrial-400">Cliente:</span>
-                    <span className="text-white font-bold">{orderConfirmed.clientName}</span>
+              return (
+                <div className="py-4 text-center space-y-4 animate-fadeIn">
+                  <div className="w-14 h-14 bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 shadow-sm">
+                    <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-industrial-400">Total a pagar:</span>
-                    <span className="text-gold-400 font-bold">${Number(orderConfirmed.totalAmount).toFixed(2)}</span>
+                  <div>
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-gold-400 block mb-1">
+                      Pedido Guardado con Éxito
+                    </span>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-lg sm:text-xl font-display">
+                      ¡Te esperamos, {orderConfirmed.clientName.split(' ')[0]}!
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-industrial-400 max-w-xs mx-auto leading-relaxed mt-1">
+                      Tu reserva <strong className="font-mono text-amber-600 dark:text-gold-400">#{orderConfirmed.id}</strong> quedó guardada para pagar y recoger en el mostrador.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-left font-mono text-xs space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 dark:text-industrial-400">Cliente:</span>
+                      <span className="text-slate-900 dark:text-white font-bold">{orderConfirmed.clientName}</span>
+                    </div>
+                    {orderConfirmed.items && orderConfirmed.items.length > 0 && (
+                      <div className="pt-1.5 border-t border-slate-200 dark:border-industrial-800/80 space-y-1">
+                        <span className="text-[10px] text-slate-400 dark:text-industrial-500 block uppercase">Productos:</span>
+                        {orderConfirmed.items.map((it, idx) => (
+                          <div key={idx} className="flex justify-between text-[11px] text-slate-700 dark:text-slate-300">
+                            <span>{it.name} (x{it.qty})</span>
+                            <span className="font-bold">${(Number(it.unitPrice) * it.qty).toLocaleString('es-CO')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-1.5 border-t border-slate-200 dark:border-industrial-800/80">
+                      <span className="text-slate-400 dark:text-industrial-400">Total a pagar:</span>
+                      <span className="text-amber-600 dark:text-gold-400 font-bold text-sm">${Number(orderConfirmed.totalAmount).toLocaleString('es-CO')}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+                    >
+                      <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+                      <span>Confirmar Pedido por WhatsApp</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOrderConfirmed(null);
+                        setIsCartOpen(false);
+                      }}
+                      className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-noir-800 dark:hover:bg-noir-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-industrial-700 cursor-pointer"
+                    >
+                      <Home className="w-4 h-4 text-amber-600 dark:text-gold-400" />
+                      <span>Volver al Catálogo de Productos</span>
+                    </button>
+
+                    {onGoToBooking && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrderConfirmed(null);
+                          setIsCartOpen(false);
+                          onGoToBooking();
+                        }}
+                        className="w-full py-2 text-amber-600 dark:text-gold-400 hover:underline text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer pt-1"
+                      >
+                        <span>¿Deseas también agendar tu corte? Ir a Reservas →</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Hola! Acabo de hacer el pedido ${orderConfirmed.id} en la tienda online por un valor de $${Number(orderConfirmed.totalAmount).toFixed(2)}. Mi nombre es ${orderConfirmed.clientName}.`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shadow-lg transition-all cursor-pointer"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Confirmar por WhatsApp con la Barbería</span>
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOrderConfirmed(null);
-                    setIsCartOpen(false);
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-noir-800 hover:bg-noir-700 text-industrial-300 text-xs transition-colors cursor-pointer"
-                >
-                  Continuar explorando
-                </button>
-              </div>
-            ) : cart.length === 0 ? (
+              );
+            })() : cart.length === 0 ? (
               <div className="py-10 text-center space-y-3">
                 <ShoppingBag className="w-10 h-10 text-industrial-600 mx-auto" />
                 <p className="text-xs text-industrial-400">

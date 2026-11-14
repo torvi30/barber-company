@@ -123,7 +123,13 @@ export const Landing = ({ onEnterAdmin }) => {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 md:py-10 flex-1 w-full">
         {isStoreEnabled && activeTab === 'store' ? (
-          <PublicStore slug={effectiveSlug} />
+          <PublicStore
+            slug={effectiveSlug}
+            onGoToBooking={() => {
+              setActiveTab('booking');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
             {/* Left Column: Brand Story & Live Proof (Visible en desktop/tablet, en móvil el cliente va directo al wizard de reserva limpio) */}

@@ -141,10 +141,11 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
   const [submitting, setSubmitting] = useState(false);
   const [collisionError, setCollisionError] = useState('');
   const [confirmedBooking, setConfirmedBooking] = useState(null);
-  const [returnCountdown, setReturnCountdown] = useState(15);
+  const [waClicked, setWaClicked] = useState(false);
 
   const handleResetToHome = () => {
     setConfirmedBooking(null);
+    setWaClicked(false);
     setStep(1);
     setSelectedTime(null);
     setClientName('');
@@ -153,28 +154,10 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
     setNotes('');
     setCollisionError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Temporizador para volver al inicio automáticamente tras reserva exitosa
-  useEffect(() => {
-    if (!confirmedBooking) {
-      setReturnCountdown(15);
-      return;
+    if (typeof onBookingComplete === 'function') {
+      onBookingComplete();
     }
-
-    const interval = setInterval(() => {
-      setReturnCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleResetToHome();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [confirmedBooking]);
+  };
 
   // Cargar datos de la barbería por slug
   useEffect(() => {
@@ -321,126 +304,105 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
   // Pantalla de Confirmación Exitosa (Ticket de Cita)
   if (confirmedBooking) {
+    const rawPhone = (barbershop?.whatsapp || barbershop?.phone || '573004567890').replace(/[^\d]/g, '');
+    const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
+    const msg = encodeURIComponent(
+      `Hola ${barbershop?.name || 'la Barbería'} 💈 Acabo de reservar mi turno desde su web.\n\n` +
+      `• Cliente: ${confirmedBooking.clientName}\n` +
+      `• Servicio: ${confirmedBooking.serviceName}\n` +
+      `• Barbero: ${confirmedBooking.barberName}\n` +
+      `• Fecha y Hora: ${confirmedBooking.date} a las ${confirmedBooking.time} hrs\n` +
+      `• Ticket: #${confirmedBooking.id}\n\n` +
+      `¿Me confirman si recibieron mi reserva? ¡Muchas gracias!`
+    );
+    const waLink = `https://wa.me/${cleanPhone}?text=${msg}`;
+
     return (
-      <div className="bg-noir-900 border border-gold-500/30 rounded-3xl p-8 shadow-2xl relative overflow-hidden animate-fadeIn">
+      <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-gold-500/30 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl dark:shadow-2xl relative overflow-hidden animate-fadeIn transition-colors">
         <div className="absolute top-0 right-0 w-40 h-40 bg-gold-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="text-center space-y-3 pb-6 border-b border-industrial-800">
-          <div className="w-16 h-16 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-lg">
-            <CheckCircle2 className="w-8 h-8" />
+        <div className="text-center space-y-2.5 pb-5 border-b border-slate-100 dark:border-industrial-800">
+          <div className="w-14 h-14 bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 shadow-sm">
+            <CheckCircle2 className="w-7 h-7" />
           </div>
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-gold-400">
-            Reserva Confirmada & Registrada
+          <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-gold-400">
+            Reserva Registrada con Éxito
           </span>
-          <h3 className="text-2xl font-display font-bold text-white">
-            ¡Nos vemos pronto, {confirmedBooking.clientName.split(' ')[0]}!
+          <h3 className="text-xl sm:text-2xl font-display font-bold text-slate-900 dark:text-white">
+            ¡Te esperamos, {confirmedBooking.clientName.split(' ')[0]}!
           </h3>
-          <p className="text-xs text-industrial-400 max-w-sm mx-auto">
-            Tu barbero ya fue notificado en su pantalla en vivo. No es necesario realizar pago previo.
+          <p className="text-xs text-slate-500 dark:text-industrial-400 max-w-sm mx-auto leading-relaxed">
+            Tu turno quedó asegurado en tiempo real. Confírmalo con tu barbero vía WhatsApp para que quede listo en su pantalla.
           </p>
         </div>
 
         {/* Boarding Pass Ticket */}
-        <div className="mt-6 bg-noir-950 border border-industrial-800 rounded-2xl p-5 space-y-4">
-          <div className="flex justify-between items-start pb-4 border-b border-industrial-800/80">
+        <div className="mt-5 bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-inner">
+          <div className="flex justify-between items-start pb-3 border-b border-slate-200 dark:border-industrial-800/80">
             <div>
-              <span className="text-[10px] text-industrial-500 uppercase tracking-wider block">Establecimiento</span>
-              <span className="text-sm font-bold text-white">{barbershop.name}</span>
-              <span className="text-xs text-industrial-400 block">{barbershop.address}</span>
+              <span className="text-[10px] text-slate-400 dark:text-industrial-500 uppercase tracking-wider block font-medium">Establecimiento</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white">{barbershop?.name || 'BarberPulse Studio'}</span>
+              <span className="text-xs text-slate-500 dark:text-industrial-400 block">{barbershop?.address || 'Sede Principal'}</span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-industrial-500 uppercase tracking-wider block">Código Ticket</span>
-              <span className="text-xs font-mono font-bold text-gold-400">{confirmedBooking.id}</span>
+              <span className="text-[10px] text-slate-400 dark:text-industrial-500 uppercase tracking-wider block font-medium">Código Ticket</span>
+              <span className="text-xs font-mono font-bold text-amber-600 dark:text-gold-400">#{confirmedBooking.id}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-industrial-500 block">Servicio:</span>
-              <span className="font-semibold text-white">{confirmedBooking.serviceName}</span>
+              <span className="text-slate-400 dark:text-industrial-500 block text-[11px]">Servicio:</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{confirmedBooking.serviceName}</span>
             </div>
             <div>
-              <span className="text-industrial-500 block">Master Barbero:</span>
-              <span className="font-semibold text-gold-400">{confirmedBooking.barberName}</span>
+              <span className="text-slate-400 dark:text-industrial-500 block text-[11px]">Master Barbero:</span>
+              <span className="font-semibold text-amber-600 dark:text-gold-400">{confirmedBooking.barberName}</span>
             </div>
             <div>
-              <span className="text-industrial-500 block">Fecha Programada:</span>
-              <span className="font-semibold text-white font-mono">{confirmedBooking.date}</span>
+              <span className="text-slate-400 dark:text-industrial-500 block text-[11px]">Fecha Programada:</span>
+              <span className="font-semibold text-slate-900 dark:text-white font-mono">{confirmedBooking.date}</span>
             </div>
             <div>
-              <span className="text-industrial-500 block">Horario de Inicio:</span>
-              <span className="font-bold text-emerald-400 text-sm font-mono">{confirmedBooking.time} hrs</span>
+              <span className="text-slate-400 dark:text-industrial-500 block text-[11px]">Horario de Inicio:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm font-mono">{confirmedBooking.time} hrs</span>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-industrial-800/80 flex items-center justify-between text-xs">
-            <span className="text-industrial-400">Total a abonar en tienda:</span>
-            <span className="text-lg font-bold font-mono text-white">${Number(confirmedBooking.price).toFixed(2)}</span>
+          <div className="pt-2.5 border-t border-slate-200 dark:border-industrial-800/80 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-industrial-400">Total a abonar en tienda:</span>
+            <span className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white">${Number(confirmedBooking.price).toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Botón directo de WhatsApp para el cliente */}
-        {(() => {
-          const rawPhone = (barbershop.whatsapp || barbershop.phone || '573004567890').replace(/[^\d]/g, '');
-          const cleanPhone = rawPhone.length === 10 && rawPhone.startsWith('3') ? `57${rawPhone}` : rawPhone;
-          const msg = encodeURIComponent(
-            `Hola ${barbershop.name} 💈 Acabo de reservar mi turno desde su web.\n\n` +
-            `• Cliente: ${confirmedBooking.clientName}\n` +
-            `• Servicio: ${confirmedBooking.serviceName}\n` +
-            `• Barbero: ${confirmedBooking.barberName}\n` +
-            `• Fecha y Hora: ${confirmedBooking.date} a las ${confirmedBooking.time} hrs\n` +
-            `• Ticket: #${confirmedBooking.id}\n\n` +
-            `¿Me confirman si recibieron mi reserva? ¡Muchas gracias!`
-          );
-          const waLink = `https://wa.me/${cleanPhone}?text=${msg}`;
-
-          return (
-            <div className="mt-5 space-y-2.5">
-              {/* Temporizador automático de retorno */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-noir-950/90 border border-industrial-800 text-[11px] text-industrial-400">
-                <span className="flex items-center gap-1.5 font-mono">
-                  <Clock className="w-3.5 h-3.5 text-gold-400 animate-pulse" />
-                  Regresando al inicio en <strong className="text-white">{returnCountdown}s</strong>
-                </span>
-                <button
-                  type="button"
-                  onClick={handleResetToHome}
-                  className="text-gold-400 hover:text-white font-bold text-xs underline cursor-pointer"
-                >
-                  Volver Ya
-                </button>
-              </div>
-
-              <a
-                href={waLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] transition-all"
-              >
-                <MessageCircle className="w-4 h-4 fill-current" />
-                <span>Enviar Comprobante por WhatsApp a la Barbería</span>
-              </a>
-
-              <button
-                type="button"
-                onClick={handleResetToHome}
-                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-noir-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow-gold hover:scale-[1.01] transition-all cursor-pointer"
-              >
-                <Home className="w-4 h-4" />
-                <span>Volver al Inicio / Hacer Otra Reserva</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="w-full py-2.5 rounded-xl bg-noir-800 hover:bg-noir-700 text-industrial-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Recargar Página Principal</span>
-              </button>
+        {/* Acciones de WhatsApp y Retorno */}
+        <div className="mt-5 space-y-2.5">
+          {waClicked && (
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-center text-xs text-emerald-800 dark:text-emerald-300 font-medium animate-fadeIn">
+              ✓ Se abrió la conversación de WhatsApp con tu barbero.
             </div>
-          );
-        })()}
+          )}
+
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setWaClicked(true)}
+            className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+            <span>Confirmar Turno por WhatsApp</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={handleResetToHome}
+            className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-noir-800 dark:hover:bg-noir-700 text-slate-700 dark:text-slate-200 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 border border-slate-200 dark:border-industrial-700 hover:scale-[1.005] active:scale-[0.99] transition-all cursor-pointer"
+          >
+            <Home className="w-4 h-4 text-amber-600 dark:text-gold-400" />
+            <span>Volver al Inicio / Nueva Reserva</span>
+          </button>
+        </div>
       </div>
     );
   }
