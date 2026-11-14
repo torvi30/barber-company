@@ -27,39 +27,6 @@ import {
   Camera
 } from 'lucide-react';
 
-const PRESET_LOGOS = [
-  {
-    id: 'classic-pole',
-    name: 'Barber Pole & Clásico',
-    url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?fit=crop&w=300&h=300&q=80'
-  },
-  {
-    id: 'golden-scissors',
-    name: 'Tijeras de Oro & Estilo',
-    url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?fit=crop&w=300&h=300&q=80'
-  },
-  {
-    id: 'gentlemen-club',
-    name: 'Club de Caballeros',
-    url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?fit=crop&w=300&h=300&q=80'
-  },
-  {
-    id: 'precision-blade',
-    name: 'Navaja & Acero Puro',
-    url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?fit=crop&w=300&h=300&q=80'
-  },
-  {
-    id: 'vintage-leather',
-    name: 'Sillón Cuero Tradicional',
-    url: 'https://images.unsplash.com/photo-1512690459411-b9245aed614b?fit=crop&w=300&h=300&q=80'
-  },
-  {
-    id: 'royal-crown',
-    name: 'Royal Master Barber',
-    url: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?fit=crop&w=300&h=300&q=80'
-  }
-];
-
 const AVATAR_PRESETS = [
   { label: 'Fade Master', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80' },
   { label: 'Blade Classic', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=200&q=80' },
@@ -94,7 +61,6 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
   const [salonWhatsapp, setSalonWhatsapp] = useState('');
   const [salonAddress, setSalonAddress] = useState('');
   const [salonMunicipality, setSalonMunicipality] = useState('');
-  const [previewTheme, setPreviewTheme] = useState('dark'); // 'dark' | 'light'
   const [logoUploadFeedback, setLogoUploadFeedback] = useState(null);
   const [isSavingSalon, setIsSavingSalon] = useState(false);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
@@ -726,48 +692,6 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                   <span>{logoUploadFeedback}</span>
                 </div>
               )}
-
-              {/* Galería de Logos Prediseñados */}
-              <div className="pt-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-industrial-400 block mb-2 font-bold">
-                  Catálogo de Logos Barbería Premium (1 Clic)
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                  {PRESET_LOGOS.map((preset) => {
-                    const isSelected = salonLogoUrl === preset.url;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => {
-                          setSalonLogoUrl(preset.url);
-                          setLogoUploadFeedback(`Seleccionado: ${preset.name}`);
-                        }}
-                        className={`p-2 rounded-xl border transition-all flex flex-col items-center gap-1.5 cursor-pointer relative group ${
-                          isSelected
-                            ? 'bg-amber-500/10 border-amber-500 shadow-sm'
-                            : 'bg-white dark:bg-noir-900 border-slate-200 dark:border-industrial-800 hover:border-amber-500/50'
-                        }`}
-                        title={preset.name}
-                      >
-                        <img
-                          src={preset.url}
-                          alt={preset.name}
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
-                        <span className="text-[9px] font-semibold text-slate-700 dark:text-industrial-300 truncate w-full text-center">
-                          {preset.name}
-                        </span>
-                        {isSelected && (
-                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-xs">
-                            ✓
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
 
             {/* Campos de Información del Negocio */}
