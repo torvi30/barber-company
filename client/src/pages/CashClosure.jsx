@@ -29,7 +29,11 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Scissors,
+  Filter,
+  UserCheck,
+  Search
 } from 'lucide-react';
 
 const EXPENSE_CATEGORIES = [
@@ -42,10 +46,11 @@ const EXPENSE_CATEGORIES = [
 ];
 
 export const CashClosure = () => {
-  const { tenantId, barbershopInfo } = useBarbershop();
+  const { tenantId, barbershopInfo, appointments = [], barbers = [] } = useBarbershop();
   const currency = barbershopInfo?.currency || 'COP';
 
-  const [activeTab, setActiveTab] = useState('reconciliation'); // 'reconciliation' | 'movements' | 'history'
+  const [selectedBarberId, setSelectedBarberId] = useState('ALL');
+  const [activeTab, setActiveTab] = useState('movements'); // 'movements' | 'settlement' | 'reconciliation' | 'history'
   const [openingCash, setOpeningCash] = useState(100000);
   const [actualCash, setActualCash] = useState('');
   const [notes, setNotes] = useState('');
@@ -167,23 +172,131 @@ export const CashClosure = () => {
     );
   }
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const todayCompletedAppointments = (appointments || []).filter(a => {
+    if (!a || a.status !== 'COMPLETED') return false;
+    const aDate = a.date || (a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : todayStr);
+    return aDate === todayStr;
+  });
+
+  const barberFilteredServices = selectedBarberId === 'ALL'
+    ? todayCompletedAppointments
+    : todayCompletedAppointments.filter(a => a.barberId === selectedBarberId || a.barberName === selectedBarberId);
+
+  // Totales reales en vivo por barbero o globales
+  const totalCashCollected = barberFilteredServices
+    .filter(a => !a.paymentMethod || a.paymentMethod === 'CASH')
+    .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+  const totalCardCollected = barberFilteredServices
+    .filter(a => a.paymentMethod === 'CARD')
+    .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+  const totalTransferCollected = barberFilteredServices
+    .filter(a => a.paymentMethod === 'TRANSFER')
+    .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+  const grossRevenue = barberFilteredServices
+    .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+  const totalTipsCollected = barberFilteredServices
+    .reduce((sum, a) => sum + (Number(a.tip) || 0), 0);
+
+  const completedServicesCount = barberFilteredServices.length;
+
   const rawData = summaryData || defaultSummary;
-  const metrics = rawData?.metrics || defaultSummary.metrics;
   const drawerReconciliation = rawData?.drawerReconciliation || defaultSummary.drawerReconciliation;
-  const commissions = {
-    ...defaultSummary.commissions,
-    ...(rawData?.commissions || {}),
-    breakdown: Array.isArray(rawData?.commissions?.breakdown) ? rawData.commissions.breakdown : []
-  };
   const movements = {
     ...defaultSummary.movements,
     ...(rawData?.movements || {}),
     list: Array.isArray(rawData?.movements?.list) ? rawData.movements.list : []
   };
-  const expectedCash = drawerReconciliation.expectedCashInDrawer || openingCash;
+
+  // Conciliación de caja en vivo
+  const salonCashServices = todayCompletedAppointments
+    .filter(a => !a.paymentMethod || a.paymentMethod === 'CASH')
+    .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+  const totalCashExpenses = (movements?.list || [])
+    .filter(m => m.type === 'EXPENSE')
+    .reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
+
+  const totalCashIncomes = (movements?.list || [])
+    .filter(m => m.type === 'INCOME')
+    .reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
+
+  const calculatedExpectedCash = openingCash + salonCashServices + totalCashIncomes - totalCashExpenses;
+  const expectedCash = (drawerReconciliation.expectedCashInDrawer && drawerReconciliation.expectedCashInDrawer !== openingCash)
+    ? drawerReconciliation.expectedCashInDrawer
+    : calculatedExpectedCash;
+
   const numericActualCash = actualCash === '' ? expectedCash : Number(actualCash);
   const discrepancy = numericActualCash - expectedCash;
   const suggestedCashDrop = Math.max(0, numericActualCash - openingCash);
+
+  // Liquidaciones por barbero calculadas en vivo
+  const calculatedCommissions = (barbers || []).map(b => {
+    const bServices = todayCompletedAppointments.filter(a => a.barberId === b.id || a.barberName === b.name);
+    const grossGenerated = bServices.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+    const tipsEarned = bServices.reduce((sum, a) => sum + (Number(a.tip) || 0), 0);
+    const rate = Number(b.commissionRate !== undefined ? b.commissionRate : 0.5);
+    const ratePercent = Math.round(rate > 1 ? rate : rate * 100);
+    const effectiveRate = rate > 1 ? rate / 100 : rate;
+    const commissionEarned = Math.round(grossGenerated * effectiveRate);
+    const totalPayout = commissionEarned + tipsEarned;
+    return {
+      barberId: b.id,
+      barberName: b.name,
+      avatar: b.avatar,
+      servicesCompleted: bServices.length,
+      commissionRatePercent: ratePercent,
+      grossGenerated,
+      commissionEarned,
+      tipsEarned,
+      totalPayout
+    };
+  });
+
+  const commissions = {
+    totalPayout: calculatedCommissions.reduce((sum, c) => sum + c.totalPayout, 0),
+    netShopRetained: Math.max(0, grossRevenue - calculatedCommissions.reduce((sum, c) => sum + c.totalPayout, 0)),
+    breakdown: calculatedCommissions
+  };
+
+  // Feed unificado de movimientos
+  const serviceMovements = barberFilteredServices.map(a => ({
+    id: `srv-${a.id}`,
+    type: 'SERVICE',
+    title: a.serviceName || 'Servicio de Barbería',
+    subtitle: `Cliente: ${a.clientName || 'Cliente General'}`,
+    barberName: a.barberName || 'Barbero Asignado',
+    barberId: a.barberId,
+    time: a.time || '--:--',
+    amount: Number(a.price) || 0,
+    tip: Number(a.tip) || 0,
+    paymentMethod: a.paymentMethod || 'CASH',
+    date: a.date || todayStr
+  }));
+
+  const cashMovements = (selectedBarberId === 'ALL' ? (movements?.list || []) : []).map(m => ({
+    id: `mov-${m.id}`,
+    type: m.type,
+    title: m.description || (m.type === 'EXPENSE' ? 'Gasto Menor' : 'Entrada Extraordinaria'),
+    subtitle: `Categoría: ${EXPENSE_CATEGORIES.find(c => c.id === m.category)?.label || m.category} • Por: ${m.registeredBy || 'Caja'}`,
+    barberName: m.registeredBy || 'Caja',
+    barberId: null,
+    time: m.time || '--:--',
+    amount: Number(m.amount) || 0,
+    tip: 0,
+    paymentMethod: 'CASH',
+    date: m.date || todayStr,
+    rawMovement: m
+  }));
+
+  const allDailyMovements = [...serviceMovements, ...cashMovements];
+  const activeBarberObj = (barbers || []).find(b => b.id === selectedBarberId);
+  const selectedBarberName = selectedBarberId === 'ALL' ? 'Todos los Especialistas' : (activeBarberObj?.name || 'Barbero Seleccionado');
 
   // Ejecución de Cierre Diario con SweetAlert2 y Guardado en Firestore
   const handleExecuteClosure = async (e) => {
@@ -359,49 +472,201 @@ export const CashClosure = () => {
         </div>
       </div>
 
+      {/* Selector de Especialistas / Barberos */}
+      <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm space-y-2.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold text-slate-700 dark:text-industrial-300 flex items-center gap-1.5 uppercase font-mono tracking-wider">
+            <Users className="w-3.5 h-3.5 text-gold-400" />
+            Filtrar por Especialista:
+          </span>
+          {selectedBarberId !== 'ALL' && (
+            <button
+              onClick={() => setSelectedBarberId('ALL')}
+              className="text-[11px] text-gold-500 hover:text-gold-400 font-bold font-mono transition-colors cursor-pointer"
+            >
+              Mostrar Todos ({todayCompletedAppointments.length}) ✕
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            onClick={() => setSelectedBarberId('ALL')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              selectedBarberId === 'ALL'
+                ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                : 'bg-slate-50 dark:bg-noir-950 text-slate-600 dark:text-industrial-400 border border-slate-200 dark:border-industrial-800 hover:border-gold-500/40 hover:text-white'
+            }`}
+          >
+            <span>✨ Todos</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              selectedBarberId === 'ALL' ? 'bg-noir-950 text-gold-300' : 'bg-slate-200 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'
+            }`}>
+              {todayCompletedAppointments.length}
+            </span>
+          </button>
+
+          {(barbers || []).map((b) => {
+            const bCuts = todayCompletedAppointments.filter(a => a.barberId === b.id || a.barberName === b.name).length;
+            const isSelected = selectedBarberId === b.id;
+            return (
+              <button
+                key={b.id}
+                onClick={() => setSelectedBarberId(b.id)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+                    : 'bg-slate-50 dark:bg-noir-950 text-slate-600 dark:text-industrial-400 border border-slate-200 dark:border-industrial-800 hover:border-gold-500/40 hover:text-white'
+                }`}
+              >
+                {b.avatar ? (
+                  <img src={b.avatar} alt={b.name} className="w-5 h-5 rounded-full object-cover border border-white/20" />
+                ) : (
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isSelected ? 'bg-noir-950 text-gold-400' : 'bg-industrial-800 text-gold-400'
+                  }`}>
+                    {b.name?.charAt(0) || 'B'}
+                  </div>
+                )}
+                <span>{b.name}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                  isSelected ? 'bg-noir-950 text-gold-300' : 'bg-slate-200 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'
+                }`}>
+                  {bCuts}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Grid Compacto de Indicadores Clave (2x2 en móvil, 4 col en desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        {/* Efectivo Servicios */}
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 mb-1">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider font-mono truncate">
+              Efectivo
+            </span>
+            <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0" />
+          </div>
+          <div className="text-base sm:text-xl lg:text-2xl font-bold font-mono text-slate-900 dark:text-white truncate">
+            {formatMoney(totalCashCollected)}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-industrial-500 mt-0.5 truncate">
+            Papel moneda en gaveta
+          </p>
+        </div>
+
+        {/* Datáfono / Tarjetas */}
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 mb-1">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider font-mono truncate">
+              Datáfono
+            </span>
+            <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 flex-shrink-0" />
+          </div>
+          <div className="text-base sm:text-xl lg:text-2xl font-bold font-mono text-slate-900 dark:text-white truncate">
+            {formatMoney(totalCardCollected)}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-industrial-500 mt-0.5 truncate">
+            Terminal bancaria
+          </p>
+        </div>
+
+        {/* Transferencias App */}
+        <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 mb-1">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider font-mono truncate">
+              Transferencia
+            </span>
+            <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 flex-shrink-0" />
+          </div>
+          <div className="text-base sm:text-xl lg:text-2xl font-bold font-mono text-slate-900 dark:text-white truncate">
+            {formatMoney(totalTransferCollected)}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-industrial-500 mt-0.5 truncate">
+            Nequi / Bancolombia
+          </p>
+        </div>
+
+        {/* Facturación Bruta */}
+        <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 dark:from-gold-500/10 dark:to-noir-900 border border-amber-500/30 dark:border-gold-500/30 rounded-2xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between text-amber-700 dark:text-gold-400 mb-1">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider font-mono truncate">
+              Facturación
+            </span>
+            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          </div>
+          <div className="text-base sm:text-xl lg:text-2xl font-display font-black text-slate-900 dark:text-white truncate">
+            {formatMoney(grossRevenue)}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-amber-700/80 dark:text-gold-400/80 mt-0.5 truncate">
+            {completedServicesCount} {completedServicesCount === 1 ? 'corte realizado' : 'cortes realizados'}
+          </p>
+        </div>
+      </div>
+
       {/* Selector de Pestañas de la Caja */}
       <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-800 overflow-x-auto">
         <button
-          onClick={() => setActiveTab('reconciliation')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'reconciliation'
-              ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
-              : 'text-slate-600 dark:text-industrial-400 hover:text-white'
-          }`}
-        >
-          <Coins className="w-3.5 h-3.5" />
-          <span>Arqueo y Cierre de Hoy</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('movements')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'movements'
               ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
               : 'text-slate-600 dark:text-industrial-400 hover:text-white'
           }`}
         >
           <Receipt className="w-3.5 h-3.5" />
-          <span>Gastos & Movimientos</span>
-          {movements?.list?.length > 0 && (
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-              activeTab === 'movements' ? 'bg-noir-950 text-gold-300' : 'bg-industrial-800 text-industrial-300'
+          <span>Movimientos del Día</span>
+          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+            activeTab === 'movements' ? 'bg-noir-950 text-gold-300' : 'bg-slate-200 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'
+          }`}>
+            {allDailyMovements.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('settlement')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'settlement'
+              ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+              : 'text-slate-600 dark:text-industrial-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Liquidaciones</span>
+          {commissions.breakdown.length > 0 && (
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              activeTab === 'settlement' ? 'bg-noir-950 text-gold-300' : 'bg-slate-200 dark:bg-industrial-800 text-slate-600 dark:text-industrial-300'
             }`}>
-              {movements.list.length}
+              {commissions.breakdown.length}
             </span>
           )}
         </button>
 
         <button
+          onClick={() => setActiveTab('reconciliation')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'reconciliation'
+              ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
+              : 'text-slate-600 dark:text-industrial-400 hover:text-white'
+          }`}
+        >
+          <Coins className="w-3.5 h-3.5" />
+          <span>Arqueo & Gaveta</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('history')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'history'
               ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold'
               : 'text-slate-600 dark:text-industrial-400 hover:text-white'
           }`}
         >
           <History className="w-3.5 h-3.5" />
-          <span>Historial de Cierres</span>
+          <span>Historial</span>
         </button>
       </div>
 
@@ -448,53 +713,6 @@ export const CashClosure = () => {
               </div>
             </div>
           )}
-
-          {/* Grid de Medios de Pago */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider font-mono">Efectivo Servicios</span>
-                <Coins className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="text-2xl font-bold font-mono text-slate-900 dark:text-white">
-                {formatMoney(metrics.totalCashCollected)}
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-industrial-400 mt-1">Cobros en papel moneda hoy</p>
-            </div>
-
-            <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider font-mono">Datáfono / Tarjetas</span>
-                <CreditCard className="w-4 h-4 text-sky-400" />
-              </div>
-              <div className="text-2xl font-bold font-mono text-slate-900 dark:text-white">
-                {formatMoney(metrics.totalCardCollected)}
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-industrial-400 mt-1">Conciliado con terminal bancaria</p>
-            </div>
-
-            <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider font-mono">Transferencias App</span>
-                <Smartphone className="w-4 h-4 text-purple-400" />
-              </div>
-              <div className="text-2xl font-bold font-mono text-slate-900 dark:text-white">
-                {formatMoney(metrics.totalTransferCollected)}
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-industrial-400 mt-1">Nequi, Daviplata, Bancolombia</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 dark:from-gold-500/10 dark:to-noir-900 border border-amber-500/30 dark:border-gold-500/30 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-amber-700 dark:text-gold-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider font-mono">Facturación Bruta</span>
-                <DollarSign className="w-4 h-4" />
-              </div>
-              <div className="text-2xl font-display font-black text-slate-900 dark:text-white">
-                {formatMoney(metrics.grossRevenue)}
-              </div>
-              <p className="text-[11px] text-amber-700/80 dark:text-gold-400/80 mt-1">{metrics.completedServicesCount} servicios completados</p>
-            </div>
-          </div>
 
           {/* Arqueo de Caja Físico (Conciliación Gaveta vs Cash Drop) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -685,12 +903,17 @@ export const CashClosure = () => {
                   onClick={() => setActiveTab('movements')}
                   className="px-3 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 text-xs font-bold transition-all cursor-pointer font-mono"
                 >
-                  Ver Detalles →
+                  Ver Movimientos →
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      )}
 
+      {/* PESTAÑA: LIQUIDACIONES DE COMISIONES */}
+      {activeTab === 'settlement' && (
+        <div className="space-y-6 animate-fadeIn">
           {/* Reparto de Comisiones por Barbero */}
           <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-industrial-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -813,105 +1036,191 @@ export const CashClosure = () => {
         </div>
       )}
 
-      {/* PESTAÑA 2: GASTOS MENORES & MOVIMIENTOS */}
+      {/* PESTAÑA 1: MOVIMIENTOS DEL DÍA (SERVICIOS Y GASTOS) */}
       {activeTab === 'movements' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
+        <div className="space-y-4 animate-fadeIn">
+          {/* Barra de Contexto del Filtro */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
             <div>
-              <h3 className="text-base font-display font-bold text-slate-900 dark:text-white">
-                Movimientos de Caja & Gastos Menores
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-display font-bold text-slate-900 dark:text-white">
+                  Movimientos del Día
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-gold-500/15 border border-gold-500/30 text-gold-400 text-[10px] font-mono font-bold">
+                  {selectedBarberName}
+                </span>
+              </div>
               <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5">
-                Salidas de dinero para café, cuchillas, aseo o entradas extraordinarias. Se deducen automáticamente del arqueo.
+                {selectedBarberId === 'ALL'
+                  ? 'Consolidado general de todos los servicios cobrados y gastos menores.'
+                  : `Visualizando únicamente los servicios completados por ${selectedBarberName}.`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => {
                   setMovementType('EXPENSE');
                   setIsMovementModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold transition-all cursor-pointer"
               >
                 <ArrowDownLeft className="w-3.5 h-3.5 text-rose-400" />
-                <span>+ Registrar Gasto</span>
+                <span>+ Gasto Menor</span>
               </button>
               <button
                 onClick={() => {
                   setMovementType('INCOME');
                   setIsMovementModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 text-xs font-bold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 text-xs font-bold transition-all cursor-pointer"
               >
                 <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
-                <span>+ Entrada Extraordinaria</span>
+                <span>+ Entrada Extra</span>
               </button>
             </div>
           </div>
 
           {/* Tarjetas de Resumen de Movimientos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
-              <div className="text-xs font-mono font-bold uppercase text-rose-400 mb-1">Total Gastos Menores (Salidas)</div>
-              <div className="text-2xl font-bold font-mono text-rose-400">
-                -{formatMoney(drawerReconciliation.cashExpenses)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-mono font-bold uppercase text-rose-400 mb-0.5">Gastos Menores Deducidos</div>
+                <div className="text-xl font-bold font-mono text-rose-400">
+                  -{formatMoney(drawerReconciliation.cashExpenses)}
+                </div>
+                <div className="text-[10px] text-slate-400 dark:text-industrial-500">Insumos y salidas de caja</div>
               </div>
-              <div className="text-[11px] text-slate-400 dark:text-industrial-500 mt-1">Deducido del arqueo de gaveta hoy</div>
+              <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+                <ArrowDownLeft className="w-5 h-5" />
+              </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
-              <div className="text-xs font-mono font-bold uppercase text-emerald-400 mb-1">Total Entradas Extraordinarias</div>
-              <div className="text-2xl font-bold font-mono text-emerald-400">
-                +{formatMoney(drawerReconciliation.cashIncomes)}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-mono font-bold uppercase text-emerald-400 mb-0.5">Entradas Extraordinarias</div>
+                <div className="text-xl font-bold font-mono text-emerald-400">
+                  +{formatMoney(drawerReconciliation.cashIncomes)}
+                </div>
+                <div className="text-[10px] text-slate-400 dark:text-industrial-500">Ingresos extra en gaveta</div>
               </div>
-              <div className="text-[11px] text-slate-400 dark:text-industrial-500 mt-1">Sumado al efectivo esperado en gaveta</div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
             </div>
           </div>
 
-          {/* Tabla de Movimientos del Día */}
+          {/* Lista de Movimientos */}
           <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-200 dark:border-industrial-800">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                Registro del Día ({movements?.list?.length || 0})
-              </h4>
+            <div className="p-4 border-b border-slate-200 dark:border-industrial-800 flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-bold uppercase font-mono tracking-wider text-slate-700 dark:text-industrial-300 flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-gold-400" />
+                Transacciones Registradas ({allDailyMovements.length})
+              </span>
+              <span className="text-xs font-mono text-slate-500 dark:text-industrial-400">
+                Total Facturado: <strong className="text-slate-900 dark:text-white font-bold">{formatMoney(grossRevenue)}</strong>
+              </span>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-industrial-800/60">
-              {movements?.list?.map((mov) => {
+              {allDailyMovements.map((mov) => {
+                if (mov.type === 'SERVICE') {
+                  const methodBadge = {
+                    CASH: { label: 'EFECTIVO', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+                    CARD: { label: 'DATÁFONO', color: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
+                    TRANSFER: { label: 'TRANSFERENCIA', color: 'bg-purple-500/15 text-purple-400 border-purple-500/30' }
+                  }[mov.paymentMethod] || { label: mov.paymentMethod, color: 'bg-slate-500/15 text-slate-400 border-slate-500/30' };
+
+                  return (
+                    <div key={mov.id} className="p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-noir-850/60 transition-colors gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-gold-500/10 border border-gold-500/20 text-gold-400 flex items-center justify-center flex-shrink-0">
+                          <Scissors className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                              {mov.title}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${methodBadge.color}`}>
+                              {methodBadge.label}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono mt-0.5 truncate">
+                            {mov.subtitle} • <span className="text-gold-400 font-bold">{mov.barberName}</span> • {mov.time}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex-shrink-0 font-mono">
+                        <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                          {formatMoney(mov.amount)}
+                        </div>
+                        {mov.tip > 0 && (
+                          <div className="text-[10px] text-emerald-400">
+                            +{formatMoney(mov.tip)} propina
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Gasto menor o Entrada extraordinaria
                 const isExpense = mov.type === 'EXPENSE';
                 return (
-                  <div key={mov.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-noir-850/60 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-xl ${isExpense ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                  <div key={mov.id} className="p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-noir-850/60 transition-colors gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border ${
+                        isExpense ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}>
                         {isExpense ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                       </div>
-                      <div>
-                        <div className="font-bold text-sm text-slate-900 dark:text-white">{mov.description}</div>
-                        <div className="text-[11px] text-slate-400 dark:text-industrial-500 font-mono mt-0.5">
-                          Categoría: {EXPENSE_CATEGORIES.find(c => c.id === mov.category)?.label || mov.category} • Por: {mov.registeredBy}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                            {mov.title}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+                            isExpense
+                              ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                              : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          }`}>
+                            {isExpense ? 'GASTO CAJA' : 'ENTRADA EXTRA'}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-industrial-400 font-mono mt-0.5 truncate">
+                          {mov.subtitle} • {mov.time}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className={`font-mono font-bold text-sm ${isExpense ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className={`font-mono font-bold text-sm sm:text-base ${isExpense ? 'text-rose-400' : 'text-emerald-400'}`}>
                         {isExpense ? '-' : '+'}{formatMoney(mov.amount)}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteMovement(mov.id)}
-                        title="Eliminar movimiento"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {mov.rawMovement && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMovement(mov.rawMovement.id)}
+                          title="Eliminar movimiento"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
               })}
-              {(!movements?.list || movements.list.length === 0) && (
-                <div className="p-8 text-center text-xs text-slate-400 dark:text-industrial-400 font-mono">
-                  No hay gastos menores ni entradas extraordinarias registradas hoy.
+
+              {allDailyMovements.length === 0 && (
+                <div className="p-12 text-center text-xs text-slate-400 dark:text-industrial-400 font-mono space-y-2">
+                  <Coins className="w-8 h-8 text-industrial-600 mx-auto opacity-50" />
+                  <p>No hay servicios ni movimientos registrados para este filtro hoy.</p>
+                  <p className="text-[11px] text-industrial-500">
+                    Los cortes atendidos y cobrados en la Agenda se reflejarán automáticamente aquí en vivo.
+                  </p>
                 </div>
               )}
             </div>
