@@ -56,7 +56,7 @@ export const BarberPortal = ({
   barberSession = null,
   onLogoutBarber = null
 }) => {
-  const { tenantId, barbers, updateStatus, cancelAppointment, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
+  const { tenantId, barbers = [], appointments: contextAppointments = [], updateStatus, cancelAppointment, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
   const [selectedBarberId, setSelectedBarberId] = useState(
     standaloneBarberMode && (barberSession?.id || barberSession?.barberId)
       ? (barberSession.id || barberSession.barberId)
@@ -354,7 +354,7 @@ export const BarberPortal = ({
   };
 
   const handleDeleteBarber = async (b) => {
-    if (barbers.length <= 1) {
+    if (!barbers || barbers.length <= 1) {
       await showErrorAlert('Operación No Permitida', 'Tu barbería debe tener al menos un especialista registrado.');
       return;
     }
@@ -390,7 +390,26 @@ export const BarberPortal = ({
       setLoading(true);
       const res = await api.getBarberDashboard(tenantId, selectedBarberId);
       if (res && res.success && res.barber) {
-        setDashboardData(res);
+        const rawApts = res.appointments;
+        const normalizedApts = {
+          current: rawApts?.current || null,
+          upcoming: Array.isArray(rawApts?.upcoming) ? rawApts.upcoming : (Array.isArray(rawApts) ? rawApts : []),
+          history: Array.isArray(rawApts?.history) ? rawApts.history : []
+        };
+        setDashboardData({
+          barber: res.barber,
+          metrics: res.metrics || {
+            servicesCount: 0,
+            inChairCount: 0,
+            upcomingCount: 0,
+            grossServices: 0,
+            commissionEarned: 0,
+            tipsEarned: 0,
+            totalPersonalEarnings: 0,
+            targetProgressPercent: 0
+          },
+          appointments: normalizedApts
+        });
         setDailyTargetInput(res.barber.dailyTarget || 150000);
         setCommissionRateInput(res.barber.commissionPercent || 50);
         setScheduleForm(res.barber.schedule || {
@@ -403,34 +422,64 @@ export const BarberPortal = ({
           sunday: { working: false }
         });
       } else {
-        const currentB = barbers.find(b => b.id === selectedBarberId) || { name: 'Especialista', commissionRate: 0.5 };
+        const currentB = (barbers || []).find(b => b.id === selectedBarberId) || { id: selectedBarberId, name: 'Especialista', commissionRate: 0.5 };
+        const myApts = (contextAppointments || []).filter(a => a.barberId === selectedBarberId);
+        const inChair = myApts.find(a => a.status === 'IN_CHAIR') || null;
+        const upcoming = myApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
+        const completed = myApts.filter(a => a.status === 'COMPLETED');
+        const gross = completed.reduce((sum, a) => sum + Number(a.price || 0), 0);
+        const tips = completed.reduce((sum, a) => sum + Number(a.tip || 0), 0);
+        const rate = Number(currentB.commissionRate || 0.5);
+        const comm = gross * (rate > 1 ? rate / 100 : rate);
+
         setDashboardData({
           barber: currentB,
           metrics: {
-            todayCommission: 0,
-            todayTips: 0,
-            totalEarningsToday: 0,
-            completedCuts: 0,
-            targetProgress: 0,
-            dailyTarget: currentB.dailyTarget || 150000
+            servicesCount: completed.length,
+            inChairCount: inChair ? 1 : 0,
+            upcomingCount: upcoming.length,
+            grossServices: gross,
+            commissionEarned: comm,
+            tipsEarned: tips,
+            totalPersonalEarnings: comm + tips,
+            targetProgressPercent: Math.min(100, Math.round((gross / (currentB.dailyTarget || 150000)) * 100))
           },
-          appointments: []
+          appointments: {
+            current: inChair,
+            upcoming: upcoming,
+            history: completed
+          }
         });
       }
     } catch (err) {
       console.warn('Error al cargar dashboard del barbero, usando datos locales:', err.message);
-      const currentB = barbers.find(b => b.id === selectedBarberId) || { name: 'Especialista', commissionRate: 0.5 };
+      const currentB = (barbers || []).find(b => b.id === selectedBarberId) || { id: selectedBarberId, name: 'Especialista', commissionRate: 0.5 };
+      const myApts = (contextAppointments || []).filter(a => a.barberId === selectedBarberId);
+      const inChair = myApts.find(a => a.status === 'IN_CHAIR') || null;
+      const upcoming = myApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
+      const completed = myApts.filter(a => a.status === 'COMPLETED');
+      const gross = completed.reduce((sum, a) => sum + Number(a.price || 0), 0);
+      const tips = completed.reduce((sum, a) => sum + Number(a.tip || 0), 0);
+      const rate = Number(currentB.commissionRate || 0.5);
+      const comm = gross * (rate > 1 ? rate / 100 : rate);
+
       setDashboardData({
         barber: currentB,
         metrics: {
-          todayCommission: 0,
-          todayTips: 0,
-          totalEarningsToday: 0,
-          completedCuts: 0,
-          targetProgress: 0,
-          dailyTarget: currentB.dailyTarget || 150000
+          servicesCount: completed.length,
+          inChairCount: inChair ? 1 : 0,
+          upcomingCount: upcoming.length,
+          grossServices: gross,
+          commissionEarned: comm,
+          tipsEarned: tips,
+          totalPersonalEarnings: comm + tips,
+          targetProgressPercent: Math.min(100, Math.round((gross / (currentB.dailyTarget || 150000)) * 100))
         },
-        appointments: []
+        appointments: {
+          current: inChair,
+          upcoming: upcoming,
+          history: completed
+        }
       });
     } finally {
       setLoading(false);
@@ -490,7 +539,7 @@ export const BarberPortal = ({
     sunday: 'Domingo'
   };
 
-  if (barbers.length === 0) {
+  if (!barbers || barbers.length === 0) {
     return (
       <div className="py-16 text-center space-y-4 max-w-md mx-auto p-8 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-3xl shadow-lg animate-fadeIn my-10">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-gold-600/20 to-gold-400/20 border border-gold-500/30 flex items-center justify-center mx-auto text-gold-400 shadow-glow-gold/10">
@@ -541,7 +590,27 @@ export const BarberPortal = ({
     );
   }
 
-  const { barber, metrics, appointments } = dashboardData;
+  const barber = dashboardData?.barber || {};
+  const metrics = dashboardData?.metrics || {
+    servicesCount: 0,
+    inChairCount: 0,
+    upcomingCount: 0,
+    grossServices: 0,
+    commissionEarned: 0,
+    tipsEarned: 0,
+    totalPersonalEarnings: 0,
+    targetProgressPercent: 0
+  };
+  const rawAppointments = dashboardData?.appointments;
+  const appointments = {
+    current: rawAppointments?.current || null,
+    upcoming: Array.isArray(rawAppointments?.upcoming)
+      ? rawAppointments.upcoming
+      : (Array.isArray(rawAppointments) ? rawAppointments : []),
+    history: Array.isArray(rawAppointments?.history)
+      ? rawAppointments.history
+      : []
+  };
   const commissionDisplay = barber.commissionPercent > 100
     ? Math.round(barber.commissionPercent / 100)
     : Math.round(barber.commissionPercent || 50);
@@ -688,7 +757,7 @@ export const BarberPortal = ({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Equipo ({barbers.length})</span>
+              <span>Equipo ({barbers?.length || 0})</span>
             </button>
           )}
         </div>
@@ -1378,7 +1447,7 @@ export const BarberPortal = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-industrial-800">
             <div>
               <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white">
-                Equipo de Especialistas ({barbers.length})
+                Equipo de Especialistas ({barbers?.length || 0})
               </h3>
               <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5">
                 Administra los barberos del salón, sus tasas de comisión y datos de contacto.

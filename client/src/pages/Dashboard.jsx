@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const Dashboard = () => {
-  const { tenantId, barbers, appointments } = useBarbershop();
+  const { tenantId, barbers = [], appointments = [] } = useBarbershop();
   const [cashSummary, setCashSummary] = useState(null);
   const [inventoryMetrics, setInventoryMetrics] = useState({ totalItems: 0, lowStockCount: 0 });
 

@@ -167,7 +167,19 @@ export const CashClosure = () => {
     );
   }
 
-  const { metrics, drawerReconciliation, commissions, movements } = summaryData || defaultSummary;
+  const rawData = summaryData || defaultSummary;
+  const metrics = rawData?.metrics || defaultSummary.metrics;
+  const drawerReconciliation = rawData?.drawerReconciliation || defaultSummary.drawerReconciliation;
+  const commissions = {
+    ...defaultSummary.commissions,
+    ...(rawData?.commissions || {}),
+    breakdown: Array.isArray(rawData?.commissions?.breakdown) ? rawData.commissions.breakdown : []
+  };
+  const movements = {
+    ...defaultSummary.movements,
+    ...(rawData?.movements || {}),
+    list: Array.isArray(rawData?.movements?.list) ? rawData.movements.list : []
+  };
   const expectedCash = drawerReconciliation.expectedCashInDrawer || openingCash;
   const numericActualCash = actualCash === '' ? expectedCash : Number(actualCash);
   const discrepancy = numericActualCash - expectedCash;
