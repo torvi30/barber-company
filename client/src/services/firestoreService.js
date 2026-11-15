@@ -262,6 +262,160 @@ export async function deleteFirestoreTenant(tenantId) {
   }
 }
 
+/**
+ * Normaliza y formatea números de teléfono para enlace de WhatsApp (+57 Colombia por defecto)
+ */
+export function formatWhatsAppNumber(phone) {
+  if (!phone) return '';
+  let cleaned = String(phone).replace(/[^\d]/g, '');
+  if (cleaned.length === 10 && cleaned.startsWith('3')) {
+    cleaned = '57' + cleaned;
+  }
+  return cleaned;
+}
+
+/**
+ * Formatea tenants crudos desde Firestore con campos calculados de facturación y urgencia
+ */
+export function formatTenantsForSuperAdmin(rawTenants) {
+  const now = Date.now();
+  return (rawTenants || []).map(t => {
+    const periodEnd = t.currentPeriodEnd ? new Date(t.currentPeriodEnd).getTime() : (now + 1000 * 60 * 60 * 24 * 30);
+    const daysUntilCutoff = Math.round((periodEnd - now) / (1000 * 60 * 60 * 24));
+
+    let billingStatus = 'ACTIVE';
+    let urgencyLevel = 'NORMAL';
+
+    if (t.subscriptionStatus === 'suspended' || t.subscriptionStatus === 'canceled') {
+      billingStatus = 'SUSPENDED';
+      urgencyLevel = 'CRITICAL';
+    } else if (daysUntilCutoff < 0 || t.subscriptionStatus === 'past_due') {
+      billingStatus = 'PAST_DUE';
+      urgencyLevel = 'DANGER';
+    } else if (daysUntilCutoff <= 3) {
+      billingStatus = 'EXPIRING_SOON';
+      urgencyLevel = 'WARNING';
+    } else if (t.subscriptionStatus === 'trial') {
+      billingStatus = 'TRIAL';
+      urgencyLevel = daysUntilCutoff <= 3 ? 'WARNING' : 'NORMAL';
+    }
+
+    const cleanPhone = formatWhatsAppNumber(t.whatsapp || t.phone);
+
+    return {
+      id: t.id,
+      name: t.name || 'Barbería sin Nombre',
+      slug: t.slug || t.id,
+      businessType: t.businessType || 'barbershop',
+      municipality: t.municipality || 'Marinilla',
+      department: t.department || 'Antioquia',
+      address: t.address || 'Ubicación no registrada',
+      ownerName: t.ownerName || 'Dueño del Negocio',
+      ownerEmail: t.ownerEmail || `admin@${t.slug || 'barberia'}.com`,
+      whatsapp: t.whatsapp || t.phone || '+573000000000',
+      cleanWhatsApp: cleanPhone,
+      currency: t.currency || 'COP',
+      subscriptionPlan: t.subscriptionPlan || 'pro',
+      subscriptionStatus: t.subscriptionStatus || 'active',
+      billingStatus,
+      urgencyLevel,
+      currentPeriodEnd: t.currentPeriodEnd || new Date(periodEnd).toISOString(),
+      daysUntilCutoff,
+      monthlyRate: t.subscriptionPlan === 'basic' ? 29 : 59,
+      storeEnabled: t.storeEnabled !== false,
+      createdAt: t.createdAt || new Date().toISOString()
+    };
+  }).sort((a, b) => {
+    const urgencyScore = { CRITICAL: 4, DANGER: 3, WARNING: 2, NORMAL: 1 };
+    return (urgencyScore[b.urgencyLevel] || 0) - (urgencyScore[a.urgencyLevel] || 0);
+  });
+}
+
+/**
+ * Calcula las métricas globales para la Consola SuperAdmin (MRR & Resumen de Estados)
+ */
+export function calculateSuperAdminMetrics(formattedTenants) {
+  let totalMRR_USD = 0;
+  let activeCount = 0;
+  let trialCount = 0;
+  let pastDueCount = 0;
+  let suspendedCount = 0;
+  let expiringSoonCount = 0;
+  const municipalityCounts = {};
+
+  (formattedTenants || []).forEach(t => {
+    const price = t.monthlyRate || (t.subscriptionPlan === 'basic' ? 29 : 59);
+    if (t.subscriptionStatus === 'active' && t.billingStatus !== 'SUSPENDED') {
+      totalMRR_USD += price;
+      activeCount++;
+    } else if (t.subscriptionStatus === 'trial') {
+      trialCount++;
+    } else if (t.billingStatus === 'PAST_DUE') {
+      pastDueCount++;
+    } else if (t.billingStatus === 'SUSPENDED') {
+      suspendedCount++;
+    }
+
+    if (t.billingStatus === 'EXPIRING_SOON') {
+      expiringSoonCount++;
+    }
+
+    const mun = t.municipality || 'Marinilla';
+    municipalityCounts[mun] = (municipalityCounts[mun] || 0) + 1;
+  });
+
+  return {
+    totalTenants: (formattedTenants || []).length,
+    totalMRR_USD,
+    totalMRR_COP: totalMRR_USD * 4200,
+    statusSummary: {
+      active: activeCount,
+      trial: trialCount,
+      pastDue: pastDueCount,
+      suspended: suspendedCount,
+      expiringSoon: expiringSoonCount
+    },
+    municipalityDistribution: municipalityCounts
+  };
+}
+
+/**
+ * Generador de plantillas y links de WhatsApp para cobranza / alertas del SuperAdmin
+ */
+export function generateWhatsAppAlertTemplate(tenant, alertType = 'expiring_soon') {
+  if (!tenant) return null;
+  const cleanPhone = formatWhatsAppNumber(tenant.whatsapp || tenant.phone);
+  const owner = tenant.ownerName || 'Estimado Dueño';
+  const businessName = tenant.name || 'tu barbería';
+  const planName = tenant.subscriptionPlan === 'basic' ? 'Plan Básico ($29 USD)' : 'Plan Pro ($59 USD)';
+
+  let message = '';
+  switch (alertType) {
+    case 'expiring_soon':
+      message = `👋 Hola *${owner}*, te saludamos desde el equipo central de *BarberPulse OS*. 💈✨\n\nTe escribimos para recordarte que la suscripción de *${businessName}* (${planName}) está próxima a vencer en los próximos días.\n\nPara evitar interrupciones en la agenda en vivo, recordatorios de WhatsApp a tus clientes o reportes de caja, puedes renovar directamente desde tu panel en la sección "Suscripción & Plan", o si lo prefieres, te enviamos el link de pago por este medio.\n\n¿Deseas que te generemos la orden de renovación? ¡Quedamos atentos a cualquier duda!`;
+      break;
+    case 'past_due':
+      message = `⚠️ *AVISO IMPORTANTE DE FACTURACIÓN - BarberPulse OS*\n\nHola *${owner}*, esperamos te encuentres muy bien.\nTe informamos que tu suscripción para *${businessName}* presenta un pago pendiente y ha entrado en período de mora.\n\nActualmente cuentas con un margen de cortesía de 3 días antes de que los módulos operativos (cierre de caja y agenda automatizada) queden pausados.\n\n💳 Puedes regularizar tu pago de forma instantánea ingresando a tu panel administrativo o respondiendo a este mensaje para ayudarte. ¡Estamos para apoyarte!`;
+      break;
+    case 'suspended':
+      message = `🚫 *SERVICIO PAUSADO TEMPORALMENTE - BarberPulse OS*\n\nEstimado/a *${owner}*,\nEl acceso operativo para *${businessName}* ha sido suspendido debido a la expiración de la suscripción.\n\nPara reactivar tus agendas, catálogos y sincronización en tiempo real sin perder tus datos ni historiales de clientes, por favor contáctanos por este medio o efectúa tu renovación inmediata.\n\n¡Tu base de datos está 100% segura y lista para ser reactivada en 1 clic!`;
+      break;
+    default:
+      message = `Hola *${owner}*, te contactamos desde la administración de *BarberPulse OS* respecto a *${businessName}*.`;
+  }
+
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}` : null;
+
+  return {
+    success: true,
+    cleanPhone,
+    message,
+    whatsappUrl,
+    businessName,
+    owner
+  };
+}
+
 // --- 2. BARBEROS / ESPECIALISTAS ---
 export async function fetchFirestoreBarbers(tenantId) {
   if (!tenantId) return [];
