@@ -108,7 +108,7 @@ export const CashClosure = () => {
     }
   };
 
-  // Carga de resumen diario
+  // Carga de resumen diario con soporte Firestore Spark
   const fetchSummary = async () => {
     if (!tenantId) {
       setSummaryData(defaultSummary);
@@ -117,11 +117,27 @@ export const CashClosure = () => {
     }
     try {
       setLoading(true);
-      const res = await api.getCashSummary(tenantId, openingCash);
+      const res = await api.getCashSummary(tenantId, openingCash).catch(() => null);
       if (res && res.success && res.data) {
         setSummaryData(res.data);
       } else {
-        setSummaryData(defaultSummary);
+        // Fallback robusto a Firestore en vivo
+        const fsMovements = await fetchFirestoreCashMovements(tenantId).catch(() => []);
+        const totalExpenses = (fsMovements || []).filter(m => m.type === 'EXPENSE').reduce((s, m) => s + (Number(m.amount) || 0), 0);
+        const totalIncomes = (fsMovements || []).filter(m => m.type === 'INCOME').reduce((s, m) => s + (Number(m.amount) || 0), 0);
+        setSummaryData({
+          ...defaultSummary,
+          drawerReconciliation: {
+            ...defaultSummary.drawerReconciliation,
+            cashExpenses: totalExpenses,
+            cashIncomes: totalIncomes
+          },
+          movements: {
+            totalCashIn: totalIncomes,
+            totalCashOut: totalExpenses,
+            list: fsMovements || []
+          }
+        });
       }
     } catch (err) {
       console.warn('Cargando resumen de caja con valores base:', err.message);
@@ -321,24 +337,40 @@ export const CashClosure = () => {
 
     try {
       const payload = {
+        id: `closure_${Date.now()}`,
+        date: todayStr,
+        closedAt: new Date().toISOString(),
         openingCash: Number(openingCash),
         actualCashInDrawer: Number(numericActualCash),
+        expectedCashInDrawer: Number(expectedCash),
+        discrepancy: Number(discrepancy),
+        discrepancyStatus: discrepancy === 0 ? 'CUADRADA' : discrepancy > 0 ? 'SOBRANTE' : 'FALTANTE',
         cashDropAmount: Number(suggestedCashDrop),
+        remainingCashInDrawer: Number(openingCash),
+        totalServicesClosed: completedServicesCount,
+        grossRevenue,
         notes,
         closedBy: 'Gerente en Turno'
       };
 
-      const res = await api.executeCashClosure(tenantId, payload);
-      if (res && res.success) {
-        setClosureResult(res.data);
-        // Persistir copia en Firestore Spark Plan
-        await saveFirestoreCashClosure(tenantId, res.data);
-        fetchSummary();
-        await showSuccessAlert(
-          '¡Cierre de Caja Guardado!',
-          `Arqueo auditado con éxito. Se guardó el registro ID: ${res.data.id}`
-        );
+      try {
+        const res = await api.executeCashClosure(tenantId, payload);
+        if (res && res.success && res.data) {
+          payload.id = res.data.id || payload.id;
+        }
+      } catch (apiErr) {
+        console.warn('Backend closure notice (guardando directo en Firestore):', apiErr.message);
       }
+
+      // Persistir siempre en Firestore Spark Plan
+      await saveFirestoreCashClosure(tenantId, payload);
+      setClosureResult(payload);
+      fetchSummary();
+      loadHistory();
+      await showSuccessAlert(
+        '¡Cierre de Caja Guardado!',
+        `Arqueo auditado con éxito. Se guardó el registro ID: ${payload.id}`
+      );
     } catch (err) {
       await showErrorAlert('Error al Cerrar Caja', err.message || 'No se pudo registrar el cierre.');
     }
@@ -354,27 +386,37 @@ export const CashClosure = () => {
 
     try {
       setSavingMovement(true);
-      const payload = {
+      const newMovement = {
+        id: `mov_${Date.now()}`,
+        date: todayStr,
+        time: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
         type: movementType,
         category: movementCategory,
         amount: Number(movementAmount),
         description: movementDescription,
-        registeredBy: movementRegistrar
+        registeredBy: movementRegistrar || 'Caja',
+        createdAt: new Date().toISOString()
       };
 
-      const res = await api.addCashMovement(tenantId, payload);
-      if (res && res.success) {
-        // Persistir en Firestore Spark
-        await saveFirestoreCashMovement(tenantId, res.data);
-        setIsMovementModalOpen(false);
-        setMovementAmount('');
-        setMovementDescription('');
-        fetchSummary();
-        await showSuccessAlert(
-          movementType === 'EXPENSE' ? 'Gasto Registrado' : 'Entrada Registrada',
-          `${movementType === 'EXPENSE' ? 'Salida de' : 'Ingreso de'} ${formatMoney(payload.amount)} contabilizado en el arqueo.`
-        );
+      try {
+        const res = await api.addCashMovement(tenantId, newMovement);
+        if (res && res.success && res.data) {
+          newMovement.id = res.data.id || newMovement.id;
+        }
+      } catch (apiErr) {
+        console.warn('Backend add movement notice (guardando directo en Firestore):', apiErr.message);
       }
+
+      // Persistir siempre en Firestore Spark Plan
+      await saveFirestoreCashMovement(tenantId, newMovement);
+      setIsMovementModalOpen(false);
+      setMovementAmount('');
+      setMovementDescription('');
+      fetchSummary();
+      await showSuccessAlert(
+        movementType === 'EXPENSE' ? 'Gasto Registrado' : 'Entrada Registrada',
+        `${movementType === 'EXPENSE' ? 'Salida de' : 'Ingreso de'} ${formatMoney(newMovement.amount)} contabilizado en el arqueo y guardado en Firestore.`
+      );
     } catch (err) {
       await showErrorAlert('Error al Registrar Movimiento', err.message);
     } finally {
@@ -394,7 +436,11 @@ export const CashClosure = () => {
     if (!confirmRes.isConfirmed) return;
 
     try {
-      await api.deleteCashMovement(tenantId, movId);
+      try {
+        await api.deleteCashMovement(tenantId, movId);
+      } catch (e) {
+        console.warn('Backend delete notice:', e.message);
+      }
       await deleteFirestoreCashMovement(tenantId, movId);
       fetchSummary();
       await showSuccessAlert('Movimiento Eliminado', 'El arqueo fue actualizado correctamente.');

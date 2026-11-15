@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
+import {
+  saveFirestoreClient,
+  fetchFirestoreClients
+} from '../services/firestoreService';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
 import { showErrorAlert, showSuccessAlert } from '../lib/swal';
@@ -63,11 +67,29 @@ export const ClientsCRM = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const res = await api.getClients(tenantId, searchTerm, selectedTier);
-      if (res.success) {
-        setClients(res.data || []);
-        setMetrics(res.metrics || { totalClients: 0, vipClients: 0, dueForReminder: 0 });
+      let clientList = [];
+      try {
+        const res = await api.getClients(tenantId, searchTerm, selectedTier);
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          clientList = res.data;
+          setMetrics(res.metrics || { totalClients: res.data.length, vipClients: 0, dueForReminder: 0 });
+        }
+      } catch (e) {
+        console.info('Cargando clientes directamente desde Firestore...');
       }
+
+      if (clientList.length === 0) {
+        const fsClients = await fetchFirestoreClients(tenantId);
+        clientList = fsClients || [];
+        const vipCount = clientList.filter(c => c.tier === 'VIP' || (c.visitHistory || []).length >= 5).length;
+        setMetrics({
+          totalClients: clientList.length,
+          vipClients: vipCount,
+          dueForReminder: 0
+        });
+      }
+
+      setClients(clientList);
     } catch (err) {
       console.error('Error al cargar clientes CRM:', err);
     } finally {
@@ -103,13 +125,25 @@ export const ClientsCRM = () => {
     if (!selectedClient) return;
 
     try {
-      const res = await api.updateClientStyleProfile(tenantId, selectedClient.id, editingStyle);
-      if (res.success) {
-        setSaveSuccess(true);
-        setSelectedClient(res.data);
-        setClients(prev => prev.map(c => c.id === selectedClient.id ? res.data : c));
-        setTimeout(() => setSaveSuccess(false), 3000);
+      const updatedClient = {
+        ...selectedClient,
+        styleProfile: editingStyle
+      };
+
+      try {
+        await api.updateClientStyleProfile(tenantId, selectedClient.id, editingStyle);
+      } catch (e) {
+        console.warn('Backend style notice:', e.message);
       }
+
+      // Persistir siempre en Firestore Spark
+      await saveFirestoreClient(tenantId, updatedClient);
+
+      setSaveSuccess(true);
+      setSelectedClient(updatedClient);
+      setClients(prev => prev.map(c => c.id === selectedClient.id ? updatedClient : c));
+      setTimeout(() => setSaveSuccess(false), 3000);
+      showSuccessAlert('Ficha Guardada', 'Preferencias de corte actualizadas en la base de datos.');
     } catch (err) {
       showErrorAlert('Error al guardar', err.message || 'Error al guardar la ficha técnica');
     }
@@ -132,21 +166,37 @@ export const ClientsCRM = () => {
 
     try {
       setIsSavingVisit(true);
-      const res = await api.addClientVisit(tenantId, selectedClient.id, {
+      const newVisit = {
+        id: `vis_${Date.now()}`,
         service: visitService.trim(),
         barber: visitBarber || (barbers[0]?.name || 'Carlos FadeMaster'),
         price: Number(visitPrice) || 0,
         date: visitDate,
         notes: visitNotes.trim()
-      });
+      };
 
-      if (res.success && res.data) {
-        setSelectedClient(res.data);
-        setClients(prev => prev.map(c => c.id === selectedClient.id ? res.data : c));
-        setIsAddingVisitOpen(false);
-        setVisitNotes('');
-        showSuccessAlert('¡Visita Registrada!', 'El servicio se ha guardado en el historial del cliente.');
+      const updatedHistory = [newVisit, ...(selectedClient.visitHistory || [])];
+      const updatedClient = {
+        ...selectedClient,
+        lastVisit: visitDate,
+        totalVisits: (selectedClient.totalVisits || 0) + 1,
+        visitHistory: updatedHistory
+      };
+
+      try {
+        await api.addClientVisit(tenantId, selectedClient.id, newVisit);
+      } catch (e) {
+        console.warn('Backend visit notice:', e.message);
       }
+
+      // Persistir siempre en Firestore Spark Plan
+      await saveFirestoreClient(tenantId, updatedClient);
+
+      setSelectedClient(updatedClient);
+      setClients(prev => prev.map(c => c.id === selectedClient.id ? updatedClient : c));
+      setIsAddingVisitOpen(false);
+      setVisitNotes('');
+      showSuccessAlert('¡Visita Registrada!', 'El servicio se ha guardado en el historial de la base de datos.');
     } catch (err) {
       showErrorAlert('Error al registrar visita', err.message);
     } finally {
@@ -158,12 +208,17 @@ export const ClientsCRM = () => {
     e.preventDefault();
     try {
       const assignedBarber = barbers.find(b => b.id === newPreferredBarber);
-      const payload = {
+      const newClient = {
+        id: `cli_${Date.now()}`,
         name: newName,
         phone: normalizeWhatsAppPhone(newPhone),
         email: newEmail,
         preferredBarberId: newPreferredBarber,
         preferredBarberName: assignedBarber ? assignedBarber.name : 'Carlos FadeMaster',
+        tier: 'REGULAR',
+        totalVisits: 0,
+        visitHistory: [],
+        createdAt: new Date().toISOString(),
         styleProfile: {
           haircutType: 'Corte por definir en primera cita',
           guardSides: 'A convenir',
@@ -174,15 +229,24 @@ export const ClientsCRM = () => {
         }
       };
 
-      const res = await api.createClient(tenantId, payload);
-      if (res.success) {
-        setIsNewClientModalOpen(false);
-        setNewName('');
-        setNewPhone('');
-        setNewEmail('');
-        fetchClients();
-        showSuccessAlert('Cliente Registrado', `${newName} fue añadido con éxito al CRM.`);
+      try {
+        const res = await api.createClient(tenantId, newClient);
+        if (res && res.success && res.data) {
+          newClient.id = res.data.id || newClient.id;
+        }
+      } catch (e) {
+        console.warn('Backend client notice:', e.message);
       }
+
+      // Persistir siempre en Firestore Spark
+      await saveFirestoreClient(tenantId, newClient);
+
+      setIsNewClientModalOpen(false);
+      setNewName('');
+      setNewPhone('');
+      setNewEmail('');
+      fetchClients();
+      showSuccessAlert('Cliente Registrado', `${newName} fue añadido con éxito a la base de datos.`);
     } catch (err) {
       showErrorAlert('Error al registrar cliente', err.message);
     }
