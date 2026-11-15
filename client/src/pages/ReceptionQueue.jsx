@@ -1083,24 +1083,25 @@ export const ReceptionQueue = () => {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-slate-100 dark:border-industrial-800 flex items-center justify-between text-xs gap-2">
-                    <span className="text-slate-600 dark:text-industrial-300 font-mono font-medium flex items-center gap-1 bg-slate-100 dark:bg-noir-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-industrial-800 shrink-0">
-                      <Clock className="w-3.5 h-3.5 text-gold-500" /> {apt.time} hrs
+                    <span className="text-slate-600 dark:text-industrial-300 font-mono font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-noir-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-industrial-800 shrink-0">
+                      <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-gold-500" />
+                      <span>{apt.time} hrs</span>
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => handleCancelAppointment(apt)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all text-xs font-semibold cursor-pointer shadow-2xs"
+                        className="p-1.5 sm:p-2 2xl:px-2.5 2xl:py-1.5 rounded-xl border border-slate-200 dark:border-industrial-800 text-slate-400 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
                         title="Cancelar o eliminar este turno"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span>Cancelar</span>
+                        <span className="hidden 2xl:inline text-xs font-semibold">Cancelar</span>
                       </button>
                       <button
                         onClick={() => handleStartService(apt.id)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500/20 dark:text-blue-400 dark:border dark:border-blue-500/30 dark:hover:bg-blue-500 dark:hover:text-white transition-all text-xs font-bold shadow-sm cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500/20 dark:text-blue-400 dark:border dark:border-blue-500/30 dark:hover:bg-blue-500 dark:hover:text-white transition-all text-xs font-bold whitespace-nowrap shadow-sm cursor-pointer"
                       >
-                        <PlayCircle className="w-3.5 h-3.5 text-white dark:text-blue-400" />
+                        <PlayCircle className="w-3.5 h-3.5" />
                         <span>Al Sillón</span>
                       </button>
                     </div>
@@ -1196,26 +1197,27 @@ export const ReceptionQueue = () => {
                     <span className="font-mono text-sm sm:text-base text-slate-900 dark:text-white font-bold block">${Number(apt.price).toLocaleString('es-CO')}</span>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-industrial-800 flex items-center justify-between text-xs gap-2">
-                    <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 shrink-0">
+                  <div className="mt-3.5 pt-3 border-t border-slate-200/80 dark:border-industrial-800 flex items-center justify-between text-xs gap-2">
+                    <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 shrink-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                      En Sillón ({apt.time} hrs)
+                      <span>{apt.time} hrs</span>
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => handleCancelAppointment(apt)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all text-xs font-semibold cursor-pointer shadow-2xs"
+                        className="p-1.5 sm:p-2 2xl:px-2.5 2xl:py-1.5 rounded-xl border border-slate-200 dark:border-industrial-800 text-slate-400 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
                         title="Cancelar o retirar este turno del sillón"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span>Cancelar</span>
+                        <span className="hidden 2xl:inline text-xs font-semibold">Cancelar</span>
                       </button>
                       <button
                         onClick={() => openCheckout(apt)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-noir-950 transition-colors text-xs font-bold shadow-sm cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-colors text-xs font-bold whitespace-nowrap shadow-sm cursor-pointer"
                       >
-                        <CheckCircle className="w-3.5 h-3.5" /> Cobrar Turno
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Cobrar</span>
                       </button>
                     </div>
                   </div>
@@ -1258,11 +1260,11 @@ export const ReceptionQueue = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      ${(Number(apt.price) + Number(apt.tip || 0)).toFixed(2)}
+                      ${Number(Number(apt.price) + Number(apt.tip || 0)).toLocaleString('es-CO')}
                     </div>
                     {Number(apt.tip) > 0 && (
                       <div className="text-[10px] text-slate-400 dark:text-industrial-400 font-mono">
-                        Propina: ${apt.tip}
+                        Propina: ${Number(apt.tip).toLocaleString('es-CO')}
                       </div>
                     )}
                   </div>
