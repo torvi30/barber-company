@@ -55,11 +55,15 @@ export const ReceptionQueue = () => {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  // Form states con servicios tradicionales de barbería
+  const activeServices = (barbershopInfo?.services && barbershopInfo.services.length > 0)
+    ? barbershopInfo.services
+    : TRADITIONAL_SERVICES;
+
+  // Form states con servicios configurados de la barbería
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [serviceName, setServiceName] = useState(TRADITIONAL_SERVICES[0].name);
-  const [price, setPrice] = useState(TRADITIONAL_SERVICES[0].price);
+  const [serviceName, setServiceName] = useState(() => activeServices[0]?.name || 'Corte');
+  const [price, setPrice] = useState(() => activeServices[0]?.price || 25000);
   const [barberId, setBarberId] = useState(barbers[0]?.id || 'barber-01');
 
   // Obtener fecha local YYYY-MM-DD sin desfase horario de UTC
@@ -1328,7 +1332,7 @@ export const ReceptionQueue = () => {
               <span className="text-[10px] text-slate-500 dark:text-gold-400 font-mono">1 Clic o Personaliza</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
-              {TRADITIONAL_SERVICES.map((srv) => {
+              {activeServices.map((srv) => {
                 const isSelected = serviceName === srv.name;
                 return (
                   <button

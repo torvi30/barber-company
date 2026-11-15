@@ -52,6 +52,20 @@ export default {
         'glow-gold': '0 0 20px -3px rgba(229, 171, 39, 0.25)',
         'glow-subtle': '0 4px 25px -2px rgba(0, 0, 0, 0.7)',
         'inner-light': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeInFast: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        }
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        fadeInFast: 'fadeInFast 0.15s ease-out forwards',
       }
     },
   },

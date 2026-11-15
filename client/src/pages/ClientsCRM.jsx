@@ -27,7 +27,11 @@ import {
 import { TRADITIONAL_SERVICES } from '../constants/services';
 
 export const ClientsCRM = () => {
-  const { tenantId, barbers } = useBarbershop();
+  const { tenantId, barbers, barbershopInfo } = useBarbershop();
+  const activeServices = (barbershopInfo?.services && barbershopInfo.services.length > 0)
+    ? barbershopInfo.services
+    : TRADITIONAL_SERVICES;
+
   const [clients, setClients] = useState([]);
   const [metrics, setMetrics] = useState({ totalClients: 0, vipClients: 0, dueForReminder: 0 });
   const [loading, setLoading] = useState(true);
@@ -49,9 +53,9 @@ export const ClientsCRM = () => {
 
   // Registro Manual de Visita / Historial
   const [isAddingVisitOpen, setIsAddingVisitOpen] = useState(false);
-  const [visitService, setVisitService] = useState(TRADITIONAL_SERVICES[0].name);
+  const [visitService, setVisitService] = useState(() => activeServices[0]?.name || 'Corte');
   const [visitBarber, setVisitBarber] = useState(barbers[0]?.name || 'Carlos FadeMaster');
-  const [visitPrice, setVisitPrice] = useState(TRADITIONAL_SERVICES[0].price);
+  const [visitPrice, setVisitPrice] = useState(() => activeServices[0]?.price || 25000);
   const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0]);
   const [visitNotes, setVisitNotes] = useState('');
   const [isSavingVisit, setIsSavingVisit] = useState(false);
@@ -612,9 +616,9 @@ export const ClientsCRM = () => {
                     <span className="text-[10px] text-gold-400 font-mono">1-Clic</span>
                   </div>
 
-                  {/* Chips de Servicios Tradicionales */}
+                  {/* Chips de Servicios de la Barbería */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-40 overflow-y-auto pr-1">
-                    {TRADITIONAL_SERVICES.map((srv) => (
+                    {activeServices.map((srv) => (
                       <button
                         key={srv.id}
                         type="button"

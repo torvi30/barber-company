@@ -141,24 +141,26 @@ const AppContent = () => {
         />
 
         <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto overflow-x-hidden">
-          {activeTab === 'onboarding' && (
-            <OnboardingWizard
-              onComplete={() => setActiveTab('reception')}
-              onCancel={() => setActiveTab('reception')}
-            />
-          )}
-          {activeTab === 'superadmin' && isSuperAdmin && (
-            <SuperAdminLayout
-              onExitSuperAdmin={() => setActiveTab('reception')}
-              embedded={true}
-            />
-          )}
-          {activeTab === 'reception' && <ReceptionQueue />}
-          {activeTab === 'barber-portal' && <BarberPortal />}
-          {activeTab === 'cash' && <CashClosure />}
-          {activeTab === 'clients' && <ClientsCRM />}
-          {activeTab === 'inventory' && <Inventory />}
-          {activeTab === 'subscription' && <SubscriptionSettings />}
+          <div key={activeTab} className="animate-fadeIn page-transition-wrapper min-w-0">
+            {activeTab === 'onboarding' && (
+              <OnboardingWizard
+                onComplete={() => setActiveTab('reception')}
+                onCancel={() => setActiveTab('reception')}
+              />
+            )}
+            {activeTab === 'superadmin' && isSuperAdmin && (
+              <SuperAdminLayout
+                onExitSuperAdmin={() => setActiveTab('reception')}
+                embedded={true}
+              />
+            )}
+            {activeTab === 'reception' && <ReceptionQueue />}
+            {activeTab === 'barber-portal' && <BarberPortal />}
+            {activeTab === 'cash' && <CashClosure />}
+            {activeTab === 'clients' && <ClientsCRM />}
+            {activeTab === 'inventory' && <Inventory />}
+            {activeTab === 'subscription' && <SubscriptionSettings />}
+          </div>
         </main>
       </div>
 

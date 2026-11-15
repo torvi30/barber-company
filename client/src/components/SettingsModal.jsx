@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { showSuccessAlert, showErrorAlert } from '../lib/swal';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { normalizeWhatsAppPhone } from '../lib/phoneUtils';
+import { TRADITIONAL_SERVICES } from '../constants/services';
 import {
   User,
   Upload,
@@ -24,7 +25,13 @@ import {
   KeyRound,
   Shield,
   Mail,
-  Camera
+  Camera,
+  Scissors,
+  Plus,
+  RotateCcw,
+  DollarSign,
+  Clock,
+  Save
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -42,7 +49,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
   const { barbershopInfo, updateCompanySettings, toggleStoreModule } = useBarbershop();
   const { currentUser, isSuperAdmin, updateCurrentUserProfile, resetPassword } = useAuth();
 
-  const sanitizeTab = (t) => (typeof t === 'string' && ['profile', 'identity', 'modules'].includes(t)) ? t : 'identity';
+  const sanitizeTab = (t) => (typeof t === 'string' && ['profile', 'identity', 'services', 'modules'].includes(t)) ? t : 'identity';
   const [activeTab, setActiveTab] = useState(() => sanitizeTab(initialTab));
 
   // --- Estado de Perfil Personal ---
@@ -66,7 +73,20 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const logoFileInputRef = useRef(null);
 
+  // --- Estado de Servicios & Precios de la Empresa ---
+  const [salonServices, setSalonServices] = useState([]);
+  const [isSavingServices, setIsSavingServices] = useState(false);
+
   const isStoreEnabled = barbershopInfo?.storeEnabled !== false;
+
+  const cleanDisplayPhone = (raw) => {
+    if (!raw) return '';
+    let cleaned = String(raw).replace(/\D/g, '');
+    if (cleaned.startsWith('57') && cleaned.length > 10) {
+      cleaned = cleaned.slice(2);
+    }
+    return cleaned;
+  };
 
   // Sincronizar datos al abrir modal
   useEffect(() => {
@@ -87,6 +107,11 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
         setSalonAddress(barbershopInfo.address || '');
         setSalonMunicipality(barbershopInfo.municipality || 'Rionegro');
         setLogoUploadFeedback(null);
+
+        const currentServices = (barbershopInfo.services && Array.isArray(barbershopInfo.services) && barbershopInfo.services.length > 0)
+          ? barbershopInfo.services
+          : TRADITIONAL_SERVICES;
+        setSalonServices(JSON.parse(JSON.stringify(currentServices)));
       }
     }
   }, [isOpen, initialTab, currentUser, barbershopInfo]);
@@ -271,6 +296,83 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
     }
   };
 
+  // Modificar campo de un servicio específico
+  const handleUpdateServiceField = (index, field, value) => {
+    setSalonServices(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Agregar nuevo servicio al catálogo
+  const handleAddService = () => {
+    const newService = {
+      id: `srv-${Date.now()}`,
+      name: 'Nuevo Corte o Combo',
+      shortName: 'Nuevo Servicio',
+      price: 25000,
+      duration: 30,
+      icon: '✂️',
+      description: 'Servicio personalizado'
+    };
+    setSalonServices(prev => [newService, ...prev]);
+  };
+
+  // Eliminar un servicio
+  const handleDeleteService = (index) => {
+    setSalonServices(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  // Restablecer catálogo a los sugeridos tradicionales
+  const handleResetServicesToDefault = () => {
+    setSalonServices(JSON.parse(JSON.stringify(TRADITIONAL_SERVICES)));
+    showSuccessAlert('Catálogo Restablecido', 'Se han restablecido los cortes y precios sugeridos de barbería tradicional.');
+  };
+
+  // Guardar catálogo de servicios en la base de datos y Firestore
+  const handleSaveServices = async (e) => {
+    e?.preventDefault();
+    if (!salonServices || salonServices.length === 0) {
+      showErrorAlert('Catálogo Vacío', 'Debes tener al menos un servicio o corte configurado.');
+      return;
+    }
+
+    for (const s of salonServices) {
+      if (!s.name || !s.name.trim()) {
+        showErrorAlert('Título Requerido', 'Todos los cortes o servicios deben tener un nombre o título.');
+        return;
+      }
+      if (Number(s.price) < 0 || isNaN(Number(s.price))) {
+        showErrorAlert('Precio Inválido', `El precio de "${s.name}" debe ser un valor válido.`);
+        return;
+      }
+    }
+
+    try {
+      setIsSavingServices(true);
+      const cleaned = salonServices.map((s, idx) => ({
+        id: s.id || `srv-${idx}-${Date.now()}`,
+        name: s.name.trim(),
+        shortName: (s.shortName || s.name).trim(),
+        price: Math.max(0, Math.round(Number(s.price))),
+        duration: Math.max(5, Math.round(Number(s.duration || 30))),
+        icon: s.icon || '✂️',
+        description: (s.description || '').trim()
+      }));
+
+      await updateCompanySettings({ services: cleaned });
+      await showSuccessAlert(
+        '¡Cortes & Precios Guardados!',
+        'Las tarifas y títulos fueron sincronizados en la base de datos y Firestore. Ya están activos en tu agenda y la web de reservas.'
+      );
+    } catch (err) {
+      showErrorAlert('Error al guardar servicios', err.message || 'No se pudieron actualizar los cortes.');
+    } finally {
+      setIsSavingServices(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -278,46 +380,63 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
       title="Centro de Configuración & Perfil"
       subtitle={`Administra tu perfil personal y la configuración de ${barbershopInfo?.name || 'tu cuenta'}`}
       maxWidth="max-w-2xl"
+      minHeight="min-h-[520px] sm:min-h-[600px]"
     >
       <div className="space-y-5">
         {/* Selector de Pestañas Ejecutivo Segmentado */}
-        <div className="grid grid-cols-3 p-1 bg-slate-100 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800 gap-1 text-xs">
+        <div className="grid grid-cols-4 p-1 bg-slate-100 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800 gap-1 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`py-2 px-2 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'profile'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <User className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
-            <span className="truncate">Mi Perfil</span>
+            <User className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
+            <span className="truncate hidden sm:inline">Mi Perfil</span>
+            <span className="truncate sm:hidden">Perfil</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('identity')}
-            className={`py-2 px-2 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'identity'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
-            <span className="truncate">Identidad & Logo</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
+            <span className="truncate hidden sm:inline">Identidad & Logo</span>
+            <span className="truncate sm:hidden">Marca</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('services')}
+            className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'services'
+                ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
+                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Scissors className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
+            <span className="truncate hidden sm:inline">Cortes & Precios</span>
+            <span className="truncate sm:hidden">Cortes</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('modules')}
-            className={`py-2 px-2 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'modules'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
                 : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 flex-shrink-0" />
+            <ShoppingBag className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
             <span className="truncate">Módulos</span>
           </button>
         </div>
@@ -738,16 +857,16 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                       🇨🇴 Válido 322... o 57322...
                     </span>
                   </div>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1 select-none pointer-events-none">
+                  <div className="flex items-center rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 focus-within:border-gold-500 overflow-hidden shadow-2xs">
+                    <span className="px-3 py-2 text-xs font-mono font-bold text-slate-600 dark:text-industrial-300 bg-slate-100 dark:bg-noir-950 border-r border-slate-200 dark:border-industrial-800 flex items-center gap-1 select-none shrink-0">
                       🇨🇴 +57
                     </span>
                     <input
                       type="tel"
-                      value={salonWhatsapp}
-                      onChange={(e) => setSalonWhatsapp(e.target.value)}
+                      value={cleanDisplayPhone(salonWhatsapp)}
+                      onChange={(e) => setSalonWhatsapp(e.target.value.replace(/\D/g, ''))}
                       placeholder="322 546 6673"
-                      className="w-full pl-18 pr-3 py-2 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-gold-500 font-mono"
+                      className="w-full px-3 py-2 bg-transparent text-slate-900 dark:text-white text-xs focus:outline-none font-mono"
                     />
                   </div>
                 </div>
@@ -813,7 +932,188 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
           </form>
         )}
 
-        {/* TAB 3: MÓDULOS DEL SISTEMA */}
+        {/* TAB 3: SERVICIOS & PRECIOS DE LA EMPRESA */}
+        {activeTab === 'services' && (
+          <form onSubmit={handleSaveServices} className="space-y-4 animate-fadeIn">
+            {/* Header de Gestión de Cortes */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
+                    <Scissors className="w-4 h-4 text-amber-600 dark:text-gold-400" />
+                    <span>Catálogo de Cortes, Barbas & Tarifas</span>
+                  </h4>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-800 dark:text-gold-300 border border-amber-500/30">
+                    {salonServices.length} Servicios
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-industrial-400 mt-1 leading-relaxed">
+                  Personaliza los nombres de tus cortes y sus precios en pesos colombianos ($COP). Se actualizarán en la agenda y en la web de reservas.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetServicesToDefault}
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-300 hover:bg-slate-100 dark:hover:bg-noir-800 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Restablecer cortes a los tradicionales sugeridos"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline">Restablecer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddService}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Agregar Corte</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Lista Scrollable de Cortes y Servicios */}
+            <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+              {salonServices.map((srv, idx) => {
+                const popularEmojis = ['✂️', '🧔', '💈', '👑', '✨', '🔥', '⭐', '🧼', '🍯', '⚡', '😎', '🦁'];
+
+                return (
+                  <div
+                    key={srv.id || idx}
+                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 hover:border-gold-500/40 transition-colors shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {/* Selector Rápido de Emoji */}
+                      <div className="relative group shrink-0">
+                        <span className="w-9 h-9 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 flex items-center justify-center text-lg shadow-2xs select-none cursor-pointer">
+                          {srv.icon || '✂️'}
+                        </span>
+                        <div className="hidden group-hover:flex absolute left-0 top-full mt-1 p-1 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl shadow-xl z-50 gap-1 flex-wrap w-44">
+                          {popularEmojis.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => handleUpdateServiceField(idx, 'icon', emoji)}
+                              className="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-noir-800 text-sm flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Nombre Principal del Corte */}
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="text"
+                          required
+                          value={srv.name}
+                          onChange={(e) => handleUpdateServiceField(idx, 'name', e.target.value)}
+                          placeholder="Nombre del servicio (ej. Corte Clásico, Skin Fade, Barba)"
+                          className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                        />
+                      </div>
+
+                      {/* Botón Eliminar */}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteService(idx)}
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-colors cursor-pointer shrink-0"
+                        title="Eliminar este servicio"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Precios, Duración y Descripción */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1 border-t border-slate-200/60 dark:border-industrial-800/60">
+                      <div className="sm:col-span-5">
+                        <label className="text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-industrial-400 block mb-1">
+                          Precio ($ COP)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 text-xs font-mono font-bold text-amber-600 dark:text-gold-400">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            required
+                            min="0"
+                            step="500"
+                            value={srv.price}
+                            onChange={(e) => handleUpdateServiceField(idx, 'price', Number(e.target.value))}
+                            className="w-full pl-7 pr-3 py-1.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-3">
+                        <label className="text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-industrial-400 block mb-1">
+                          Duración
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            required
+                            min="5"
+                            step="5"
+                            value={srv.duration || 30}
+                            onChange={(e) => handleUpdateServiceField(idx, 'duration', Number(e.target.value))}
+                            className="w-full pl-3 pr-8 py-1.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-gold-500"
+                          />
+                          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400">
+                            min
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-industrial-400 block mb-1">
+                          Detalle / Resumen
+                        </label>
+                        <input
+                          type="text"
+                          value={srv.description || ''}
+                          onChange={(e) => handleUpdateServiceField(idx, 'description', e.target.value)}
+                          placeholder="Opcional (ej. Incluye lavado)"
+                          className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-[11px] text-slate-700 dark:text-industrial-300 placeholder-slate-400 focus:outline-none focus:border-gold-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer con Botón Guardar Catálogo */}
+            <div className="pt-4 flex items-center justify-between border-t border-slate-200 dark:border-industrial-800 gap-3">
+              <span className="text-xs text-slate-500 dark:text-industrial-400 font-mono hidden sm:inline">
+                💡 Los cambios se sincronizan en tiempo real
+              </span>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:bg-slate-100 dark:hover:bg-noir-800 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingServices}
+                  className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 dark:hover:from-gold-500 dark:hover:to-gold-300 dark:text-noir-950 font-bold text-xs uppercase tracking-wider shadow-sm dark:shadow-glow-gold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 font-mono"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingServices ? 'Guardando...' : 'Guardar Cortes & Precios'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* TAB 4: MÓDULOS DEL SISTEMA */}
         {activeTab === 'modules' && (
           <div className="space-y-4 animate-fadeIn">
             <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 shadow-sm space-y-3">

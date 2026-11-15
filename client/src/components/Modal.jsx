@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
+export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', minHeight = '' }) => {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -40,7 +40,7 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full ${maxWidth} bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-6 text-slate-900 dark:text-slate-100 max-h-[92dvh] sm:max-h-[88vh] flex flex-col transition-colors cursor-default my-auto`}
+        className={`relative w-full ${maxWidth} ${minHeight} bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-6 text-slate-900 dark:text-slate-100 max-h-[92dvh] sm:max-h-[88vh] flex flex-col transition-all duration-200 cursor-default my-auto`}
       >
         {/* Cabecera del Modal con Botón X de alta respuesta */}
         <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 dark:border-industrial-800 flex-shrink-0">

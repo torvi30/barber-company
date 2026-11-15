@@ -250,6 +250,9 @@ export const updateBarbershopSettings = async (req, res) => {
     if (logoUrl !== undefined) barbershop.logoUrl = logoUrl;
     if (slogan !== undefined) barbershop.slogan = slogan;
     if (municipality !== undefined) barbershop.municipality = municipality;
+    if (req.body.services !== undefined && Array.isArray(req.body.services)) {
+      barbershop.services = req.body.services;
+    }
 
     if (isMock) {
       persistStore();

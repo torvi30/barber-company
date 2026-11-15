@@ -94,6 +94,20 @@ export const Sidebar = ({ activeTab, onTabChange, onOpenSettings }) => {
                 </button>
               );
             })}
+
+            <button
+              onClick={() => onOpenSettings && onOpenSettings('services')}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-industrial-400 hover:text-white hover:bg-noir-800/50 transition-all cursor-pointer group mt-1"
+              title="Configurar cortes, títulos y tarifas de tu barbería"
+            >
+              <div className="flex items-center gap-3">
+                <Scissors className="w-4 h-4 text-industrial-500 group-hover:text-gold-400 transition-colors" />
+                <span>Cortes & Precios</span>
+              </div>
+              <span className="text-[10px] font-mono text-gold-400/90 bg-gold-500/10 px-1.5 py-0.5 rounded border border-gold-500/20 font-bold">
+                Admin
+              </span>
+            </button>
           </nav>
         </div>
       </div>
