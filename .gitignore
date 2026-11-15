@@ -24,6 +24,7 @@ serviceAccountKey.json
 firebase-credentials.json
 
 # Cache & Temporary Directories
+.firebase/
 .cache/
 .vite/
 .npm/

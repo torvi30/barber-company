@@ -2,55 +2,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: Validar autenticación
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper: Validar pertenencia al Tenant (claims en Firebase Auth)
-    function isTenantMember(barbershopId) {
-      return isAuthenticated() && request.auth.token.barbershopId == barbershopId;
-    }
-
-    // Helper: Validar rol administrativo o dueño dentro del Tenant
-    function isTenantAdmin(barbershopId) {
-      return isTenantMember(barbershopId) && (request.auth.token.role in ['OWNER', 'MANAGER']);
-    }
-
-    // Regla de aislamiento estricto para cada barbería
     match /barbershops/{barbershopId} {
-      allow read: if true; // Datos públicos (nombre, dirección, teléfono para clientes)
-      allow write: if isTenantAdmin(barbershopId);
+      allow read: if true;
+      allow write: if isAuthenticated();
 
-      // Subcolección de Barberos
       match /barbers/{barberId} {
-        allow read: if true; // Vista pública en Landing y privada en Dashboard
-        allow write: if isTenantAdmin(barbershopId);
+        allow read: if true;
+        allow write: if true;
       }
 
-      // Subcolección de Citas y Turnos
       match /appointments/{appointmentId} {
-        // Clientes pueden crear solicitudes de turno; staff del tenant gestiona estados
-        allow create: if true;
-        allow read, update, delete: if isTenantMember(barbershopId);
+        allow read, write: if true;
       }
 
-      // Subcolección de Inventario
       match /inventory/{itemId} {
-        allow read: if isTenantMember(barbershopId);
-        allow write: if isTenantAdmin(barbershopId);
+        allow read: if true;
+        allow write: if isAuthenticated();
       }
 
-      // Subcolección de Clientes & CRM (Fichas Técnicas de Estilo)
       match /clients/{clientId} {
-        allow read, write: if isTenantMember(barbershopId);
+        allow read, write: if isAuthenticated();
       }
 
-      // Subcolección de Cierres de Caja (Auditoría Financiera Sensible)
       match /cash_closures/{closureId} {
-        allow read, write: if isTenantAdmin(barbershopId);
+        allow read, write: if isAuthenticated();
+      }
+
+      match /cash_movements/{movementId} {
+        allow read, write: if isAuthenticated();
       }
     }
   }
 }
-
