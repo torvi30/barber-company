@@ -34,7 +34,7 @@ export const apiClient = async (endpoint, options = {}, tenantId = null) => {
 export const api = {
   // --- Rutas Públicas (Landing del Cliente & Tienda) ---
   getPublicBarbershop: (slug) => apiClient(`/public/barbershop/${slug}`, { method: 'GET' }, null),
-  getPublicSlots: (slug, barberId, date, allowPast = false) => apiClient(`/public/barbershop/${slug}/slots?barberId=${barberId}&date=${date}${allowPast ? '&allowPast=true' : ''}`, { method: 'GET' }, null),
+  getPublicSlots: (slug, barberId, date, allowPast = false, interval = 30, buffer = 0) => apiClient(`/public/barbershop/${slug}/slots?barberId=${barberId}&date=${date}${allowPast ? '&allowPast=true' : ''}${interval ? `&interval=${interval}` : ''}${buffer ? `&buffer=${buffer}` : ''}`, { method: 'GET' }, null),
   createPublicBooking: (slug, bookingData) => apiClient(`/public/barbershop/${slug}/book`, { method: 'POST', body: bookingData }, null),
   getPublicProducts: (slug) => apiClient(`/public/barbershop/${slug}/products`, { method: 'GET' }, null),
   createPublicOrder: (slug, orderData) => apiClient(`/public/barbershop/${slug}/orders`, { method: 'POST', body: orderData }, null),
@@ -42,7 +42,7 @@ export const api = {
 
   // --- Citas / Turnos (Staff / Operativo) ---
   getAppointments: (tenantId, date) => apiClient(`/appointments${date ? `?date=${date}` : ''}`, { method: 'GET' }, tenantId),
-  getAvailableSlots: (tenantId, barberId, date, allowPast = false) => apiClient(`/appointments/available-slots?barberId=${barberId}&date=${date}${allowPast ? '&allowPast=true' : ''}`, { method: 'GET' }, tenantId),
+  getAvailableSlots: (tenantId, barberId, date, allowPast = false, interval = 30, buffer = 0) => apiClient(`/appointments/available-slots?barberId=${barberId}&date=${date}${allowPast ? '&allowPast=true' : ''}${interval ? `&interval=${interval}` : ''}${buffer ? `&buffer=${buffer}` : ''}`, { method: 'GET' }, tenantId),
   toggleSlot: (tenantId, payload) => apiClient('/appointments/toggle-slot', { method: 'POST', body: payload }, tenantId),
   createAppointment: (tenantId, appointmentData) => apiClient('/appointments', { method: 'POST', body: appointmentData }, tenantId),
   updateAppointmentStatus: (tenantId, id, payload) => apiClient(`/appointments/${id}/status`, { method: 'PATCH', body: payload }, tenantId),

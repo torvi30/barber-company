@@ -17,12 +17,25 @@ export const toMinutes = (timeStr) => {
   return (h || 0) * 60 + (m || 0);
 };
 
-export const checkSlotCollision = (slotTime, apt, slotDuration = 30) => {
+export const generateOperatingSlots = (start = '09:00', end = '20:00', interval = 30) => {
+  const startMin = toMinutes(start);
+  const endMin = toMinutes(end);
+  const step = Math.max(15, Number(interval) || 30);
+  const list = [];
+  for (let m = startMin; m + step <= endMin; m += step) {
+    const hh = String(Math.floor(m / 60)).padStart(2, '0');
+    const mm = String(m % 60).padStart(2, '0');
+    list.push(`${hh}:${mm}`);
+  }
+  return list;
+};
+
+export const checkSlotCollision = (slotTime, apt, slotDuration = 30, bufferTime = 0) => {
   const slotStart = toMinutes(slotTime);
-  const slotEnd = slotStart + slotDuration;
+  const slotEnd = slotStart + Number(slotDuration || 30);
   const aptStart = toMinutes(apt.time);
-  const aptDuration = Number(apt.durationMinutes || 45);
-  const aptEnd = aptStart + aptDuration;
+  const aptDuration = Number(apt.durationMinutes || apt.duration || 45);
+  const aptEnd = aptStart + aptDuration + Number(bufferTime || 0);
   return slotStart < aptEnd && slotEnd > aptStart;
 };
 
@@ -82,7 +95,7 @@ export const getLocalDateString = (d = new Date()) => {
 export const getAvailableSlots = async (req, res) => {
   try {
     const { barbershopId } = req;
-    const { barberId, date = getLocalDateString(new Date()), allowPast } = req.query;
+    const { barberId, date = getLocalDateString(new Date()), allowPast, interval = 30, buffer = 0 } = req.query;
 
     if (!barberId) {
       return res.status(400).json({ success: false, error: 'El parámetro "barberId" es requerido.' });
@@ -125,7 +138,13 @@ export const getAvailableSlots = async (req, res) => {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const isAllowPast = allowPast === 'true' || allowPast === true;
 
-    const slots = OPERATING_SLOTS.map(time => {
+    const slotInterval = Math.max(15, Number(interval) || 30);
+    const bufferTime = Math.max(0, Number(buffer) || 0);
+    const dayStart = daySchedule?.start || '09:00';
+    const dayEnd = daySchedule?.end || '20:00';
+    const slotList = generateOperatingSlots(dayStart, dayEnd, slotInterval);
+
+    const slots = slotList.map(time => {
       const slotMinutes = toMinutes(time);
 
       if (daySchedule && daySchedule.working === false) {
@@ -144,9 +163,16 @@ export const getAvailableSlots = async (req, res) => {
         return { time, available: false, reason: 'BLOCKED_MANUALLY' };
       }
 
-      const collisionApt = appointments.find(apt => checkSlotCollision(time, apt));
+      const collisionApt = appointments.find(apt => checkSlotCollision(time, apt, slotInterval, bufferTime));
       if (collisionApt) {
-        return { time, available: false, reason: 'BOOKED', clientName: collisionApt.clientName };
+        return {
+          time,
+          available: false,
+          reason: 'BOOKED',
+          clientName: collisionApt.clientName,
+          serviceName: collisionApt.serviceName,
+          durationMinutes: collisionApt.durationMinutes || collisionApt.duration || 45
+        };
       }
 
       return { time, available: true, reason: 'OPEN' };

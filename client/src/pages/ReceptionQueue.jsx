@@ -37,6 +37,7 @@ import {
   FileText
 } from 'lucide-react';
 import { TRADITIONAL_SERVICES } from '../constants/services';
+import { generateDynamicSlots, SLOT_INTERVAL_OPTIONS, BUFFER_TIME_OPTIONS } from '../lib/slotEngine';
 
 const DAYS_OF_WEEK = [
   { id: 'monday', label: 'Lunes' },
@@ -49,7 +50,17 @@ const DAYS_OF_WEEK = [
 ];
 
 export const ReceptionQueue = () => {
-  const { tenantId, barbershopInfo, appointments, barbers, createAppointment, updateStatus, cancelAppointment, realtimeAppointment } = useBarbershop();
+  const {
+    tenantId,
+    barbershopInfo,
+    appointments,
+    barbers,
+    createAppointment,
+    updateStatus,
+    cancelAppointment,
+    realtimeAppointment,
+    updateCompanySettings
+  } = useBarbershop();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
@@ -64,6 +75,9 @@ export const ReceptionQueue = () => {
   const [clientPhone, setClientPhone] = useState('');
   const [serviceName, setServiceName] = useState(() => activeServices[0]?.name || 'Corte');
   const [price, setPrice] = useState(() => activeServices[0]?.price || 25000);
+  const [serviceDuration, setServiceDuration] = useState(() => activeServices[0]?.duration || 30);
+  const [updatingCadence, setUpdatingCadence] = useState(false);
+  const [manualBlockedSlots, setManualBlockedSlots] = useState([]);
   const [barberId, setBarberId] = useState(barbers[0]?.id || 'barber-01');
 
   // Obtener fecha local YYYY-MM-DD sin desfase horario de UTC
@@ -360,15 +374,38 @@ export const ReceptionQueue = () => {
     if (!barberId) return;
     try {
       setLoadingSlots(true);
-      const res = await api.getAvailableSlots(tenantId, barberId, selectedDate, allowPast);
-      if (res.success && res.slots) {
-        setAvailableSlots(res.slots);
-        const firstOpen = res.slots.find(s => s.available);
-        if (firstOpen) {
-          setSelectedTime(firstOpen.time);
-        } else {
-          setSelectedTime('');
+      const targetInterval = barbershopInfo?.slotInterval || 30;
+      const targetBuffer = barbershopInfo?.bufferTime || 0;
+
+      let loadedSlots = null;
+      try {
+        const res = await api.getAvailableSlots(tenantId, barberId, selectedDate, allowPast, targetInterval, targetBuffer);
+        if (res.success && Array.isArray(res.slots) && res.slots.length > 0) {
+          loadedSlots = res.slots;
         }
+      } catch (err) {
+        // Fallback a motor dinámico
+      }
+
+      if (!loadedSlots || loadedSlots.length === 0) {
+        const dynamic = generateDynamicSlots({
+          date: selectedDate,
+          barber: selectedBarberObj,
+          appointments,
+          manualBlocked: manualBlockedSlots,
+          slotInterval: targetInterval,
+          bufferTime: targetBuffer,
+          allowPast
+        });
+        loadedSlots = dynamic.slots;
+      }
+
+      setAvailableSlots(loadedSlots);
+      const firstOpen = loadedSlots.find(s => s.available);
+      if (firstOpen) {
+        setSelectedTime(firstOpen.time);
+      } else {
+        setSelectedTime('');
       }
     } catch (err) {
       console.error('Error al obtener slots:', err);
@@ -377,22 +414,64 @@ export const ReceptionQueue = () => {
     }
   };
 
+  const handleUpdateCadence = async (newInterval, newBuffer) => {
+    try {
+      setUpdatingCadence(true);
+      await updateCompanySettings({ slotInterval: newInterval, bufferTime: newBuffer });
+      const dynamic = generateDynamicSlots({
+        date: selectedDate,
+        barber: selectedBarberObj,
+        appointments,
+        manualBlocked: manualBlockedSlots,
+        slotInterval: newInterval,
+        bufferTime: newBuffer,
+        allowPast
+      });
+      setAvailableSlots(dynamic.slots);
+      const firstOpen = dynamic.slots.find(s => s.available);
+      if (firstOpen) setSelectedTime(firstOpen.time);
+      showSuccessAlert(
+        'Cadencia Actualizada',
+        `Ahora la agenda genera turnos cada ${newInterval} min con ${newBuffer} min de colchón.`
+      );
+    } catch (err) {
+      showErrorAlert('Error al actualizar cadencia', err.message);
+    } finally {
+      setUpdatingCadence(false);
+    }
+  };
+
   // Cargar disponibilidad en tiempo real según el barbero y fecha elegidos
   useEffect(() => {
     if (isAddModalOpen || isManageSlotsOpen) {
       fetchSlots();
     }
-  }, [tenantId, barberId, selectedDate, allowPast, isAddModalOpen, isManageSlotsOpen]);
+  }, [tenantId, barberId, selectedDate, allowPast, isAddModalOpen, isManageSlotsOpen, barbershopInfo?.slotInterval, barbershopInfo?.bufferTime]);
 
   const handleToggleSlot = async (slotTime, isCurrentlyBlocked) => {
     try {
-      await api.toggleSlot(tenantId, {
+      const updatedManual = isCurrentlyBlocked
+        ? manualBlockedSlots.filter(t => t !== slotTime)
+        : [...manualBlockedSlots, slotTime];
+      setManualBlockedSlots(updatedManual);
+
+      api.toggleSlot(tenantId, {
         barberId,
         date: selectedDate,
         time: slotTime,
         blocked: !isCurrentlyBlocked
+      }).catch(() => {});
+
+      const dynamic = generateDynamicSlots({
+        date: selectedDate,
+        barber: selectedBarberObj,
+        appointments,
+        manualBlocked: updatedManual,
+        slotInterval: barbershopInfo?.slotInterval || 30,
+        bufferTime: barbershopInfo?.bufferTime || 0,
+        allowPast
       });
-      fetchSlots();
+      setAvailableSlots(dynamic.slots);
     } catch (err) {
       showErrorAlert('Error al modificar turno', err.message);
     }
@@ -403,13 +482,33 @@ export const ReceptionQueue = () => {
     if (!timesToToggle || timesToToggle.length === 0) return;
     try {
       setLoadingSlots(true);
-      await api.toggleSlot(tenantId, {
+      let updatedManual = [...manualBlockedSlots];
+      if (blocked) {
+        timesToToggle.forEach(t => {
+          if (!updatedManual.includes(t)) updatedManual.push(t);
+        });
+      } else {
+        updatedManual = updatedManual.filter(t => !timesToToggle.includes(t));
+      }
+      setManualBlockedSlots(updatedManual);
+
+      api.toggleSlot(tenantId, {
         barberId,
         date: selectedDate,
         times: timesToToggle,
         blocked
+      }).catch(() => {});
+
+      const dynamic = generateDynamicSlots({
+        date: selectedDate,
+        barber: selectedBarberObj,
+        appointments,
+        manualBlocked: updatedManual,
+        slotInterval: barbershopInfo?.slotInterval || 30,
+        bufferTime: barbershopInfo?.bufferTime || 0,
+        allowPast
       });
-      fetchSlots();
+      setAvailableSlots(dynamic.slots);
     } catch (err) {
       showErrorAlert('Error al modificar turnos en lote', err.message);
     } finally {
@@ -475,6 +574,7 @@ export const ReceptionQueue = () => {
         clientName,
         clientPhone: clientPhone ? normalizeWhatsAppPhone(clientPhone) : '',
         serviceName,
+        durationMinutes: Number(serviceDuration || 30),
         price: Number(price),
         tip: 0,
         paymentMethod: 'CASH',
@@ -1341,6 +1441,7 @@ export const ReceptionQueue = () => {
                     onClick={() => {
                       setServiceName(srv.name);
                       setPrice(srv.price);
+                      setServiceDuration(srv.duration || 30);
                     }}
                     className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                       isSelected
@@ -1351,15 +1452,20 @@ export const ReceptionQueue = () => {
                     <span className="text-sm flex-shrink-0">{srv.icon}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-bold truncate">{srv.shortName}</div>
-                      <div className={`text-[9px] font-mono ${isSelected ? 'text-amber-800 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-gold-400'}`}>${srv.price.toLocaleString('es-CO')}</div>
+                      <div className="flex items-center gap-1.5 text-[9px] font-mono">
+                        <span className={isSelected ? 'text-amber-800 dark:text-gold-400 font-bold' : 'text-slate-500 dark:text-gold-400'}>
+                          ${srv.price.toLocaleString('es-CO')}
+                        </span>
+                        <span className="text-slate-400">· {srv.duration || 30}m</span>
+                      </div>
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1">
+              <div className="sm:col-span-6">
                 <label className="block text-[11px] font-bold text-slate-600 dark:text-industrial-300 uppercase mb-1">
                   Servicio
                 </label>
@@ -1372,7 +1478,7 @@ export const ReceptionQueue = () => {
                   className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-900 dark:focus:border-gold-500 font-medium"
                 />
               </div>
-              <div>
+              <div className="sm:col-span-3">
                 <label className="block text-[11px] font-bold text-slate-600 dark:text-industrial-300 uppercase mb-1">
                   Precio ($ COP)
                 </label>
@@ -1383,6 +1489,25 @@ export const ReceptionQueue = () => {
                   onChange={(e) => setPrice(Number(e.target.value))}
                   className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-gold-400 font-mono font-bold focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
                 />
+              </div>
+              <div className="sm:col-span-3">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-industrial-300 uppercase mb-1">
+                  Duración
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="5"
+                    step="5"
+                    required
+                    value={serviceDuration}
+                    onChange={(e) => setServiceDuration(Number(e.target.value))}
+                    className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-slate-900 dark:focus:border-gold-500"
+                  />
+                  <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400">
+                    min
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1827,6 +1952,71 @@ export const ReceptionQueue = () => {
           {/* VISTA 1: Franjas Horarias por Fecha (1 Clic) */}
           {manageTab === 'slots' && (
             <div className="space-y-3.5 animate-fadeIn">
+              {/* Selector Rápido de Cadencia (30m, 40m, 45m, 60m) & Colchón entre Turnos */}
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-xs space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="font-bold text-slate-700 dark:text-industrial-300 uppercase font-mono tracking-wider flex items-center gap-1.5 text-[11px]">
+                    <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                    Cadencia / Intervalo de Agenda:
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-industrial-400">
+                    Define cada cuántos minutos inician las citas
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {SLOT_INTERVAL_OPTIONS.map((opt) => {
+                    const isSelected = (barbershopInfo?.slotInterval || 30) === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={updatingCadence}
+                        onClick={() => handleUpdateCadence(opt.value, barbershopInfo?.bufferTime || 0)}
+                        className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 text-slate-950 dark:text-noir-950 font-bold border-amber-500 dark:border-gold-400 shadow-sm dark:shadow-glow-gold'
+                            : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:border-gold-500/40 hover:text-white'
+                        }`}
+                      >
+                        <div className="text-xs font-bold flex items-center justify-center gap-1">
+                          <span>{opt.icon}</span>
+                          <span>{opt.label}</span>
+                        </div>
+                        <div className={`text-[9px] mt-0.5 truncate ${isSelected ? 'text-slate-950 dark:text-noir-950 font-semibold' : 'text-slate-400 dark:text-industrial-400'}`}>
+                          {opt.subtitle}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-industrial-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <span className="text-[11px] text-slate-600 dark:text-industrial-400 font-medium">
+                    Colchón / Limpieza entre citas:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {BUFFER_TIME_OPTIONS.map((buf) => {
+                      const isSelected = (barbershopInfo?.bufferTime || 0) === buf.value;
+                      return (
+                        <button
+                          key={buf.value}
+                          type="button"
+                          disabled={updatingCadence}
+                          onClick={() => handleUpdateCadence(barbershopInfo?.slotInterval || 30, buf.value)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-amber-500/20 text-amber-900 dark:bg-gold-500/20 dark:text-gold-300 border border-amber-500/40 dark:border-gold-500/40 font-bold'
+                              : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                          }`}
+                        >
+                          {buf.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
               {/* Selector de Fecha con botones rápidos (Hoy / Mañana) */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800">
                 <div className="flex items-center gap-2">

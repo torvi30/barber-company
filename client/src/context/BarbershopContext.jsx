@@ -29,7 +29,9 @@ export const DEFAULT_BLANK_TENANT = {
   subscriptionStatus: 'active',
   storeEnabled: false,
   logoUrl: '',
-  slogan: ''
+  slogan: '',
+  slotInterval: 30,
+  bufferTime: 0
 };
 
 export const BarbershopProvider = ({ children }) => {

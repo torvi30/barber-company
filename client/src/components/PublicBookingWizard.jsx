@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
+import { generateDynamicSlots } from '../lib/slotEngine';
 import {
   Scissors,
   Calendar,
@@ -213,10 +214,33 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
         setLoadingSlots(true);
         setSelectedTime(null);
         setCollisionError('');
-        const res = await api.getPublicSlots(effectiveSlug, selectedBarber.id, selectedDate, enableTestSlots);
-        if (res.success) {
-          setSlots(res.slots || []);
+        const targetInterval = barbershop?.slotInterval || 30;
+        const targetBuffer = barbershop?.bufferTime || 0;
+
+        let loadedSlots = null;
+        try {
+          const res = await api.getPublicSlots(effectiveSlug, selectedBarber.id, selectedDate, enableTestSlots, targetInterval, targetBuffer);
+          if (res.success && Array.isArray(res.slots) && res.slots.length > 0) {
+            loadedSlots = res.slots;
+          }
+        } catch (err) {
+          // Fallback a generación dinámica
         }
+
+        if (!loadedSlots || loadedSlots.length === 0) {
+          const dynamic = generateDynamicSlots({
+            date: selectedDate,
+            barber: selectedBarber,
+            appointments: barbershop?.appointments || [],
+            manualBlocked: [],
+            slotInterval: targetInterval,
+            bufferTime: targetBuffer,
+            allowPast: enableTestSlots
+          });
+          loadedSlots = dynamic.slots;
+        }
+
+        setSlots(loadedSlots || []);
       } catch (err) {
         console.error('Error al cargar slots:', err);
       } finally {
@@ -225,7 +249,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
     };
 
     fetchSlots();
-  }, [effectiveSlug, selectedBarber, selectedDate, enableTestSlots]);
+  }, [effectiveSlug, selectedBarber, selectedDate, enableTestSlots, barbershop?.slotInterval, barbershop?.bufferTime]);
 
   const handleConfirmBooking = async (e) => {
     e.preventDefault();
@@ -237,12 +261,14 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
       setSubmitting(true);
       setCollisionError('');
 
+      const serviceDuration = Number(selectedService.durationMinutes || selectedService.duration || 30);
+
       const payload = {
         barberId: selectedBarber.id,
         barberName: selectedBarber.name,
         serviceName: selectedService.name,
-        durationMinutes: selectedService.durationMinutes,
-        price: selectedService.price,
+        durationMinutes: serviceDuration,
+        price: Number(selectedService.price || 0),
         date: selectedDate,
         time: selectedTime,
         clientName,
@@ -653,6 +679,25 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               <span>Barbero: {selectedBarber?.name}</span>
             </div>
           </div>
+
+          {/* Resumen del Servicio & Duración de Bloque */}
+          {selectedService && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/25 dark:border-gold-500/25 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-800 dark:text-gold-300 font-semibold">
+                <Scissors className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
+                <span>{selectedService.name}</span>
+              </div>
+              <div className="flex items-center gap-2 font-mono text-[11px] text-slate-600 dark:text-industrial-300">
+                <span className="px-2 py-0.5 rounded-md bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 font-bold">
+                  ⏱️ Duración: {selectedService.durationMinutes || selectedService.duration || 30} min
+                </span>
+                <span className="hidden sm:inline text-slate-400">·</span>
+                <span className="hidden sm:inline">
+                  Intervalo: {barbershop?.slotInterval || 30} min
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Selector Rápido de Días (Hoy, Mañana, Pasado Mañana + Calendario) */}
           <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-noir-950 rounded-2xl border border-slate-200 dark:border-industrial-800">

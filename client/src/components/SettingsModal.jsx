@@ -6,6 +6,7 @@ import { showSuccessAlert, showErrorAlert } from '../lib/swal';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import { TRADITIONAL_SERVICES } from '../constants/services';
+import { SLOT_INTERVAL_OPTIONS, BUFFER_TIME_OPTIONS } from '../lib/slotEngine';
 import {
   User,
   Upload,
@@ -75,6 +76,8 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
 
   // --- Estado de Servicios & Precios de la Empresa ---
   const [salonServices, setSalonServices] = useState([]);
+  const [salonSlotInterval, setSalonSlotInterval] = useState(30);
+  const [salonBufferTime, setSalonBufferTime] = useState(0);
   const [isSavingServices, setIsSavingServices] = useState(false);
 
   const isStoreEnabled = barbershopInfo?.storeEnabled !== false;
@@ -112,6 +115,8 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
           ? barbershopInfo.services
           : TRADITIONAL_SERVICES;
         setSalonServices(JSON.parse(JSON.stringify(currentServices)));
+        setSalonSlotInterval(Number(barbershopInfo.slotInterval || 30));
+        setSalonBufferTime(Number(barbershopInfo.bufferTime || 0));
       }
     }
   }, [isOpen, initialTab, currentUser, barbershopInfo]);
@@ -361,7 +366,11 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
         description: (s.description || '').trim()
       }));
 
-      await updateCompanySettings({ services: cleaned });
+      await updateCompanySettings({
+        services: cleaned,
+        slotInterval: Number(salonSlotInterval || 30),
+        bufferTime: Number(salonBufferTime || 0)
+      });
       await showSuccessAlert(
         '¡Cortes & Precios Guardados!',
         'Las tarifas y títulos fueron sincronizados en la base de datos y Firestore. Ya están activos en tu agenda y la web de reservas.'
@@ -948,7 +957,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-industrial-400 mt-1 leading-relaxed">
-                  Personaliza los nombres de tus cortes y sus precios en pesos colombianos ($COP). Se actualizarán en la agenda y en la web de reservas.
+                  Personaliza los nombres de tus cortes, duraciones y precios en pesos ($COP). Se actualizarán en la agenda y en la web de reservas.
                 </p>
               </div>
 
@@ -970,6 +979,74 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
                   <Plus className="w-4 h-4" />
                   <span>+ Agregar Corte</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Configuración de Cadencia de Agenda e Intervalo */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span className="font-bold text-slate-800 dark:text-white uppercase font-mono tracking-wider flex items-center gap-1.5 text-xs">
+                  <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                  Cadencia Base de Agenda (Intervalo de Turnos)
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-industrial-400 font-medium">
+                  Define el ritmo entre citas del salón
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {SLOT_INTERVAL_OPTIONS.map((opt) => {
+                  const isSelected = salonSlotInterval === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setSalonSlotInterval(opt.value)}
+                      className={`p-2 sm:p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-500 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 text-slate-950 dark:text-noir-950 font-bold border-amber-500 dark:border-gold-400 shadow-sm dark:shadow-glow-gold'
+                          : 'bg-white dark:bg-noir-900 border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:border-gold-500/40 hover:text-white'
+                      }`}
+                    >
+                      <div className="text-xs font-bold flex items-center justify-center gap-1">
+                        <span>{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </div>
+                      <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-slate-950 dark:text-noir-900 font-semibold' : 'text-slate-400 dark:text-industrial-400'}`}>
+                        {opt.subtitle}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Colchón / Preparación entre Clientes */}
+              <div className="pt-2.5 border-t border-slate-200 dark:border-industrial-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Colchón entre citas: </span>
+                  <span className="text-slate-500 dark:text-industrial-400 text-[11px] block sm:inline">
+                    (Desinfección de navaja y descanso de máquinas)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {BUFFER_TIME_OPTIONS.map((buf) => {
+                    const isSelected = salonBufferTime === buf.value;
+                    return (
+                      <button
+                        key={buf.value}
+                        type="button"
+                        onClick={() => setSalonBufferTime(buf.value)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500/20 text-amber-900 dark:bg-gold-500/20 dark:text-gold-300 border border-amber-500/40 dark:border-gold-500/40 font-bold'
+                            : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                        }`}
+                      >
+                        {buf.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

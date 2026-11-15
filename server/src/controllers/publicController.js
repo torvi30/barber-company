@@ -1,6 +1,6 @@
 import { getTenantCollection, isMock, mockStore, persistStore, db } from '../config/firebase.js';
 import { validateAppointment, AppointmentStatus } from '../models/schemas.js';
-import { OPERATING_SLOTS, toMinutes, checkSlotCollision, getLocalDateString } from './appointmentController.js';
+import { OPERATING_SLOTS, generateOperatingSlots, toMinutes, checkSlotCollision, getLocalDateString } from './appointmentController.js';
 import { dispatchNotification } from '../services/notificationService.js';
 import { recordClientAppointment } from './clientController.js';
 import { DEFAULT_BARBERSHOP_PRODUCTS } from './inventoryController.js';
@@ -165,7 +165,7 @@ export const getBarbershopBySlug = async (req, res) => {
 export const getPublicSlots = async (req, res) => {
   try {
     const { slug } = req.params;
-    const { barberId, date = getLocalDateString(new Date()), allowPast } = req.query;
+    const { barberId, date = getLocalDateString(new Date()), allowPast, interval = 30, buffer = 0 } = req.query;
 
     if (!barberId) {
       return res.status(400).json({ success: false, error: 'Parámetro barberId requerido.' });
@@ -224,8 +224,13 @@ export const getPublicSlots = async (req, res) => {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     const isAllowPast = allowPast === 'true' || allowPast === true;
+    const slotInterval = Math.max(15, Number(interval) || 30);
+    const bufferTime = Math.max(0, Number(buffer) || 0);
+    const dayStart = daySchedule?.start || '09:00';
+    const dayEnd = daySchedule?.end || '20:00';
+    const slotList = generateOperatingSlots(dayStart, dayEnd, slotInterval);
 
-    const slots = OPERATING_SLOTS.map(time => {
+    const slots = slotList.map(time => {
       const slotMinutes = toMinutes(time);
 
       if (daySchedule && daySchedule.working === false) {
@@ -244,7 +249,7 @@ export const getPublicSlots = async (req, res) => {
         return { time, available: false, reason: 'BLOCKED' };
       }
 
-      const collisionApt = appointments.find(apt => checkSlotCollision(time, apt));
+      const collisionApt = appointments.find(apt => checkSlotCollision(time, apt, slotInterval, bufferTime));
       if (collisionApt) {
         return { time, available: false, reason: 'OCCUPIED' };
       }

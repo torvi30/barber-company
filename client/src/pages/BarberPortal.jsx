@@ -10,6 +10,7 @@ import {
   showConfirmDialog
 } from '../lib/swal';
 import { buildWhatsAppLink, normalizeWhatsAppPhone, formatDisplayPhone } from '../lib/phoneUtils';
+import { generateDynamicSlots } from '../lib/slotEngine';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import {
   Scissors,
@@ -144,10 +145,33 @@ export const BarberPortal = ({
     try {
       setLoadingBarberSlots(true);
       const today = getLocalDate(new Date());
-      const res = await api.getAvailableSlots(tenantId, selectedBarberId, today, allowPastBarber);
-      if (res.success && res.slots) {
-        setBarberSlots(res.slots);
+      const targetInterval = barbershopInfo?.slotInterval || 30;
+      const targetBuffer = barbershopInfo?.bufferTime || 0;
+
+      let loadedSlots = null;
+      try {
+        const res = await api.getAvailableSlots(tenantId, selectedBarberId, today, allowPastBarber, targetInterval, targetBuffer);
+        if (res.success && Array.isArray(res.slots) && res.slots.length > 0) {
+          loadedSlots = res.slots;
+        }
+      } catch (e) {
+        // Fallback dinámico
       }
+
+      if (!loadedSlots || loadedSlots.length === 0) {
+        const dynamic = generateDynamicSlots({
+          date: today,
+          barber: selectedBarber,
+          appointments,
+          manualBlocked: [],
+          slotInterval: targetInterval,
+          bufferTime: targetBuffer,
+          allowPast: allowPastBarber
+        });
+        loadedSlots = dynamic.slots;
+      }
+
+      setBarberSlots(loadedSlots || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -159,7 +183,7 @@ export const BarberPortal = ({
     if (selectedBarberId) {
       loadBarberSlots();
     }
-  }, [selectedBarberId, tenantId, allowPastBarber]);
+  }, [selectedBarberId, tenantId, allowPastBarber, barbershopInfo?.slotInterval, barbershopInfo?.bufferTime]);
 
   const handleToggleBarberSlot = async (slotTime, isBlocked) => {
     try {
