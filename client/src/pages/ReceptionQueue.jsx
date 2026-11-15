@@ -1744,75 +1744,83 @@ export const ReceptionQueue = () => {
         maxWidth="max-w-2xl"
       >
         <div className="space-y-4">
-          {/* Selector de Barbero y Selector de Pestaña */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-industrial-800">
-            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <img
-                  src={selectedBarberObj?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80'}
-                  alt={selectedBarberObj?.name}
-                  className="w-8 h-8 rounded-xl object-cover border border-amber-500/40 flex-shrink-0"
-                />
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Barbero Activo
-                  </span>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                    {selectedBarberObj?.name || 'Selecciona Barbero'}
-                  </span>
-                </div>
-              </div>
+          {/* Selector de Modo: Franjas por Fecha vs Horario Semanal Habitual */}
+          <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setManageTab('slots')}
+              className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                manageTab === 'slots'
+                  ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold shadow-glow-gold'
+                  : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Franjas por Fecha</span>
+            </button>
 
-              {/* Selector Rápido de Barberos sin Desfase */}
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
-                {barbers.map((b) => {
-                  const isSelected = barberId === b.id;
-                  return (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setBarberId(b.id)}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-amber-500 text-noir-950 font-bold shadow-sm'
-                          : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                      <span>{b.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <button
+              type="button"
+              onClick={() => setManageTab('schedule')}
+              className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                manageTab === 'schedule'
+                  ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold shadow-glow-gold'
+                  : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span>Horario Semanal Base</span>
+            </button>
+          </div>
+
+          {/* Selector Visual de Especialista */}
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-500 dark:text-industrial-400 uppercase font-mono tracking-wider flex items-center gap-1.5 text-[11px]">
+                <Users className="w-3.5 h-3.5 text-gold-400" />
+                Especialista en Configuración:
+              </span>
+              <span className="text-[11px] font-mono text-emerald-500 font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {selectedBarberObj?.name || 'Selecciona Especialista'}
+              </span>
             </div>
 
-            {/* Pestañas: Franjas del Día vs Horario Semanal Habitual */}
-            <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 self-stretch sm:self-auto text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setManageTab('slots')}
-                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  manageTab === 'slots'
-                    ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5" />
-                <span>Franjas por Fecha</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setManageTab('schedule')}
-                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  manageTab === 'schedule'
-                    ? 'bg-gold-500 text-noir-950 font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <CalendarDays className="w-3.5 h-3.5" />
-                <span>Horario Semanal Base</span>
-              </button>
+            {/* Barberos en botones con flex-wrap sin scroll lateral molesto */}
+            <div className="flex flex-wrap gap-2">
+              {barbers.map((b) => {
+                const isSelected = barberId === b.id;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setBarberId(b.id)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold shadow-glow-gold ring-1 ring-gold-400'
+                        : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:border-gold-500/40 hover:text-white'
+                    }`}
+                  >
+                    {b.avatar ? (
+                      <img
+                        src={b.avatar}
+                        alt={b.name}
+                        className="w-5 h-5 rounded-full object-cover border border-white/20 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        isSelected ? 'bg-noir-950 text-gold-400' : 'bg-industrial-800 text-gold-400'
+                      }`}>
+                        {b.name?.charAt(0) || 'B'}
+                      </div>
+                    )}
+                    <span className="font-medium">{b.name}</span>
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      isSelected ? 'bg-noir-950' : 'bg-emerald-500'
+                    }`} />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
