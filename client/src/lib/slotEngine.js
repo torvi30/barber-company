@@ -16,7 +16,8 @@ export const SLOT_INTERVAL_OPTIONS = [
 export const BUFFER_TIME_OPTIONS = [
   { value: 0, label: '0 min', subtitle: 'Sin colchón' },
   { value: 5, label: '+5 min', subtitle: 'Limpieza de cuchillas' },
-  { value: 10, label: '+10 min', subtitle: 'Colchón de seguridad' }
+  { value: 10, label: '+10 min', subtitle: 'Colchón de seguridad' },
+  { value: 15, label: '+15 min', subtitle: 'Desinfección / Descanso' }
 ];
 
 export const timeToMinutes = (timeStr) => {

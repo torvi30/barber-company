@@ -34,7 +34,9 @@ import {
   Users,
   MessageSquare,
   Phone,
-  FileText
+  FileText,
+  Edit3,
+  Check
 } from 'lucide-react';
 import { TRADITIONAL_SERVICES } from '../constants/services';
 import { generateDynamicSlots, SLOT_INTERVAL_OPTIONS, BUFFER_TIME_OPTIONS } from '../lib/slotEngine';
@@ -77,6 +79,8 @@ export const ReceptionQueue = () => {
   const [price, setPrice] = useState(() => activeServices[0]?.price || 25000);
   const [serviceDuration, setServiceDuration] = useState(() => activeServices[0]?.duration || 30);
   const [updatingCadence, setUpdatingCadence] = useState(false);
+  const [showEditCadence, setShowEditCadence] = useState(false);
+  const [customCadenceMinutes, setCustomCadenceMinutes] = useState(() => barbershopInfo?.slotInterval || 45);
   const [manualBlockedSlots, setManualBlockedSlots] = useState([]);
   const [barberId, setBarberId] = useState(barbers[0]?.id || 'barber-01');
 
@@ -417,14 +421,16 @@ export const ReceptionQueue = () => {
   const handleUpdateCadence = async (newInterval, newBuffer) => {
     try {
       setUpdatingCadence(true);
-      await updateCompanySettings({ slotInterval: newInterval, bufferTime: newBuffer });
+      const intervalNum = Math.max(10, Math.min(240, Number(newInterval) || 30));
+      const bufferNum = Math.max(0, Number(newBuffer) || 0);
+      await updateCompanySettings({ slotInterval: intervalNum, bufferTime: bufferNum });
       const dynamic = generateDynamicSlots({
         date: selectedDate,
         barber: selectedBarberObj,
         appointments,
         manualBlocked: manualBlockedSlots,
-        slotInterval: newInterval,
-        bufferTime: newBuffer,
+        slotInterval: intervalNum,
+        bufferTime: bufferNum,
         allowPast
       });
       setAvailableSlots(dynamic.slots);
@@ -432,13 +438,29 @@ export const ReceptionQueue = () => {
       if (firstOpen) setSelectedTime(firstOpen.time);
       showSuccessAlert(
         'Cadencia Actualizada',
-        `Ahora la agenda genera turnos cada ${newInterval} min con ${newBuffer} min de colchón.`
+        `Ahora la agenda genera turnos cada ${intervalNum} min con ${bufferNum} min de colchón.`
       );
     } catch (err) {
       showErrorAlert('Error al actualizar cadencia', err.message);
     } finally {
       setUpdatingCadence(false);
     }
+  };
+
+  useEffect(() => {
+    if (barbershopInfo?.slotInterval) {
+      setCustomCadenceMinutes(barbershopInfo.slotInterval);
+    }
+  }, [barbershopInfo?.slotInterval]);
+
+  const handleApplyCustomCadence = (e) => {
+    if (e) e.preventDefault();
+    const val = parseInt(customCadenceMinutes, 10);
+    if (!val || isNaN(val) || val < 10) {
+      showErrorAlert('Duración Inválida', 'El intervalo debe ser de al menos 10 minutos.');
+      return;
+    }
+    handleUpdateCadence(val, barbershopInfo?.bufferTime || 0);
   };
 
   // Cargar disponibilidad en tiempo real según el barbero y fecha elegidos
@@ -1952,70 +1974,157 @@ export const ReceptionQueue = () => {
           {/* VISTA 1: Franjas Horarias por Fecha (1 Clic) */}
           {manageTab === 'slots' && (
             <div className="space-y-3.5 animate-fadeIn">
-              {/* Selector Rápido de Cadencia (30m, 40m, 45m, 60m) & Colchón entre Turnos */}
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-xs space-y-2.5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <span className="font-bold text-slate-700 dark:text-industrial-300 uppercase font-mono tracking-wider flex items-center gap-1.5 text-[11px]">
-                    <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
-                    Cadencia / Intervalo de Agenda:
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-industrial-400">
-                    Define cada cuántos minutos inician las citas
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {SLOT_INTERVAL_OPTIONS.map((opt) => {
-                    const isSelected = (barbershopInfo?.slotInterval || 30) === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        disabled={updatingCadence}
-                        onClick={() => handleUpdateCadence(opt.value, barbershopInfo?.bufferTime || 0)}
-                        className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-500 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 text-slate-950 dark:text-noir-950 font-bold border-amber-500 dark:border-gold-400 shadow-sm dark:shadow-glow-gold'
-                            : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:border-gold-500/40 hover:text-white'
-                        }`}
-                      >
-                        <div className="text-xs font-bold flex items-center justify-center gap-1">
-                          <span>{opt.icon}</span>
-                          <span>{opt.label}</span>
-                        </div>
-                        <div className={`text-[9px] mt-0.5 truncate ${isSelected ? 'text-slate-950 dark:text-noir-950 font-semibold' : 'text-slate-400 dark:text-industrial-400'}`}>
-                          {opt.subtitle}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-industrial-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <span className="text-[11px] text-slate-600 dark:text-industrial-400 font-medium">
-                    Colchón / Limpieza entre citas:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {BUFFER_TIME_OPTIONS.map((buf) => {
-                      const isSelected = (barbershopInfo?.bufferTime || 0) === buf.value;
-                      return (
-                        <button
-                          key={buf.value}
-                          type="button"
-                          disabled={updatingCadence}
-                          onClick={() => handleUpdateCadence(barbershopInfo?.slotInterval || 30, buf.value)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-amber-500/20 text-amber-900 dark:bg-gold-500/20 dark:text-gold-300 border border-amber-500/40 dark:border-gold-500/40 font-bold'
-                              : 'bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
-                          }`}
-                        >
-                          {buf.label}
-                        </button>
-                      );
-                    })}
+              {/* Selector Rápido y Limpio de Cadencia (Colapsable con Botón de Editar) */}
+              <div className="rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-xs overflow-hidden transition-all">
+                {/* Barra Resumen Compacta (Siempre visible, limpia y ejecutiva) */}
+                <div className="p-3 sm:p-3.5 flex items-center justify-between gap-2.5 bg-gradient-to-r from-slate-50 via-amber-500/5 to-transparent dark:from-noir-900 dark:via-gold-500/5 dark:to-transparent">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/20 dark:border-gold-500/20 flex items-center justify-center flex-shrink-0 text-amber-500 dark:text-gold-400">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-industrial-200 uppercase tracking-wider flex items-center gap-1.5 font-mono flex-wrap">
+                        <span>Tiempo entre citas:</span>
+                        <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 dark:bg-gold-500/20 text-amber-950 dark:text-gold-300 font-black text-xs border border-amber-500/30 dark:border-gold-500/30">
+                          {barbershopInfo?.slotInterval || 45} min
+                        </span>
+                        {(barbershopInfo?.bufferTime || 0) > 0 && (
+                          <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-medium">
+                            (+{barbershopInfo.bufferTime}m colchón)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-industrial-400 truncate">
+                        Frecuencia con la que inician las citas en la agenda
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Botón de Editar Tiempo */}
+                  <button
+                    type="button"
+                    onClick={() => setShowEditCadence(!showEditCadence)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-xs ${
+                      showEditCadence
+                        ? 'bg-slate-200 dark:bg-industrial-800 text-slate-800 dark:text-white hover:bg-slate-300'
+                        : 'bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 shadow-glow-gold hover:opacity-95'
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>{showEditCadence ? 'Ocultar' : 'Editar Tiempo'}</span>
+                  </button>
                 </div>
+
+                {/* Cajón Desplegable para Configurar el Tiempo (Solo al presionar Editar) */}
+                {showEditCadence && (
+                  <div className="p-3 sm:p-4 border-t border-slate-200 dark:border-industrial-800 bg-slate-50/60 dark:bg-noir-950/70 space-y-3.5 animate-fadeIn">
+                    {/* 1. Botones Rápidos Frecuentes */}
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 dark:text-industrial-400 uppercase tracking-wider mb-2 font-mono">
+                        1. Presets Rápidos:
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {SLOT_INTERVAL_OPTIONS.map((opt) => {
+                          const isSelected = (barbershopInfo?.slotInterval || 30) === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              disabled={updatingCadence}
+                              onClick={() => {
+                                setCustomCadenceMinutes(opt.value);
+                                handleUpdateCadence(opt.value, barbershopInfo?.bufferTime || 0);
+                              }}
+                              className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-amber-500 dark:bg-gradient-to-r dark:from-gold-600 dark:to-gold-400 text-slate-950 dark:text-noir-950 font-bold border-amber-500 dark:border-gold-400 shadow-sm dark:shadow-glow-gold'
+                                  : 'bg-white dark:bg-noir-900 border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:border-gold-500/40 hover:text-white'
+                              }`}
+                            >
+                              <div className="text-xs font-bold flex items-center justify-center gap-1">
+                                <span>{opt.icon}</span>
+                                <span>{opt.label}</span>
+                              </div>
+                              <div className={`text-[9px] mt-0.5 truncate ${isSelected ? 'text-slate-950 dark:text-noir-950 font-semibold' : 'text-slate-400 dark:text-industrial-400'}`}>
+                                {opt.subtitle}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 2. Minutos Exactos a Medida */}
+                    <div className="p-3 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800">
+                      <div className="text-[10px] font-bold text-slate-500 dark:text-industrial-400 uppercase tracking-wider mb-1.5 font-mono">
+                        2. O escribe los minutos exactos (ej: 25, 35, 50 min):
+                      </div>
+                      <form onSubmit={handleApplyCustomCadence} className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="number"
+                            min="10"
+                            max="180"
+                            step="5"
+                            value={customCadenceMinutes}
+                            onChange={(e) => setCustomCadenceMinutes(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-amber-500 dark:focus:border-gold-400"
+                            placeholder="Minutos de duración..."
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 dark:text-industrial-400 pointer-events-none">
+                            min
+                          </span>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={updatingCadence}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold text-xs hover:opacity-95 shadow-glow-gold transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Aplicar</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* 3. Colchón / Limpieza entre citas */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-industrial-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className="text-[11px] text-slate-600 dark:text-industrial-400 font-medium">
+                        Colchón / Limpieza entre citas:
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {BUFFER_TIME_OPTIONS.map((buf) => {
+                          const isSelected = (barbershopInfo?.bufferTime || 0) === buf.value;
+                          return (
+                            <button
+                              key={buf.value}
+                              type="button"
+                              disabled={updatingCadence}
+                              onClick={() => handleUpdateCadence(barbershopInfo?.slotInterval || 30, buf.value)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-amber-500/20 text-amber-900 dark:bg-gold-500/20 dark:text-gold-300 border border-amber-500/40 dark:border-gold-500/40 font-bold'
+                                  : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-white'
+                              }`}
+                            >
+                              {buf.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Botón para cerrar / ocultar */}
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setShowEditCadence(false)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-industrial-300 hover:bg-slate-200 dark:hover:bg-industrial-800 transition-all cursor-pointer"
+                      >
+                        ✓ Listo, Ocultar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Selector de Fecha con botones rápidos (Hoy / Mañana) */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800">
