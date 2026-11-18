@@ -307,7 +307,8 @@ export const BarberPortal = ({
 
   const getBarberAccessUrl = (b) => {
     const shopSlug = barbershopInfo?.slug || barbershopInfo?.id || tenantId || '';
-    return `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}`;
+    const tid = tenantId || barbershopInfo?.id || '';
+    return `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}${tid ? `&tid=${tid}` : ''}`;
   };
 
   const handleCopyBarberLink = async (b) => {
