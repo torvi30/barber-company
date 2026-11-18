@@ -396,7 +396,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
           <div className="pt-2.5 border-t border-slate-200 dark:border-industrial-800/80 flex items-center justify-between text-xs">
             <span className="text-slate-500 dark:text-industrial-400">Total a abonar en tienda:</span>
-            <span className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white">${Number(confirmedBooking.price).toFixed(2)}</span>
+            <span className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white">${Number(confirmedBooking.price).toLocaleString('es-CO')}</span>
           </div>
         </div>
 
@@ -496,8 +496,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => setServiceCategory('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 serviceCategory === 'ALL'
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
-                  : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950 font-bold'
+                  : 'bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <span>✨ Todos ({servicesList.length})</span>
@@ -507,8 +507,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => setServiceCategory('INDIVIDUAL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 serviceCategory === 'INDIVIDUAL'
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
-                  : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950 font-bold'
+                  : 'bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <span>✂️ Individuales</span>
@@ -518,8 +518,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => setServiceCategory('COMBOS')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 serviceCategory === 'COMBOS'
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
-                  : 'bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950 font-bold'
+                  : 'bg-white dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <span>👑 Combos Populares</span>
@@ -536,36 +536,53 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   onClick={() => setSelectedService(srv)}
                   className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-2.5 ${
                     isSelected
-                      ? 'bg-amber-500/10 dark:bg-gold-500/15 border-amber-500 dark:border-gold-500 shadow-sm dark:shadow-glow-gold ring-1 ring-amber-500/30 dark:ring-gold-500/50'
-                      : 'bg-slate-50 dark:bg-noir-950 border-slate-200 dark:border-industrial-800/80 hover:border-slate-400 dark:hover:border-industrial-700'
+                      ? 'bg-slate-900 text-white border-slate-950 shadow-lg ring-2 ring-amber-400/60 dark:bg-gold-500/15 dark:border-gold-500 dark:shadow-glow-gold dark:ring-gold-500/50 scale-[1.01]'
+                      : 'bg-white dark:bg-noir-950 border-slate-200 dark:border-industrial-800/80 hover:border-slate-400 dark:hover:border-industrial-700 shadow-2xs hover:shadow-xs'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 ${
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-gold-500 text-noir-950 shadow-sm'
-                        : 'bg-slate-200/80 dark:bg-noir-900 text-slate-700 dark:text-slate-300'
+                        ? 'bg-amber-400 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-sm font-bold'
+                        : 'bg-slate-100 dark:bg-noir-900 text-slate-700 dark:text-slate-300'
                     }`}>
                       {getServiceEmoji(srv.name)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
+                        <h4 className={`font-bold text-xs sm:text-sm truncate transition-colors ${
+                          isSelected ? 'text-white' : 'text-slate-900 dark:text-white'
+                        }`}>
                           {srv.name}
                         </h4>
+                        {isSelected && (
+                          <span className="hidden xs:inline-flex px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 dark:bg-gold-500/20 dark:text-gold-300 text-[9px] font-bold border border-amber-400/30 font-mono">
+                            ✓ Elegido
+                          </span>
+                        )}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-industrial-400 truncate mt-0.5">
+                      <p className={`text-[11px] truncate mt-0.5 transition-colors ${
+                        isSelected ? 'text-slate-300 dark:text-industrial-300' : 'text-slate-500 dark:text-industrial-400'
+                      }`}>
                         {srv.description || 'Servicio profesional de barbería'}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right flex-shrink-0">
-                    <span className="text-xs sm:text-sm font-bold font-mono text-gold-600 dark:text-gold-400 block">
+                    <span className={`text-xs sm:text-sm font-bold font-mono block transition-colors ${
+                      isSelected
+                        ? 'text-amber-400 dark:text-gold-300'
+                        : 'text-slate-900 dark:text-gold-400'
+                    }`}>
                       ${Number(srv.price).toLocaleString('es-CO')}
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-industrial-500 flex items-center gap-0.5 justify-end mt-0.5 font-mono">
-                      <Clock className="w-2.5 h-2.5 text-gold-500" /> {srv.durationMinutes} min
+                    <span className={`text-[10px] flex items-center gap-0.5 justify-end mt-0.5 font-mono transition-colors ${
+                      isSelected
+                        ? 'text-slate-300 dark:text-industrial-300'
+                        : 'text-slate-400 dark:text-industrial-500'
+                    }`}>
+                      <Clock className={`w-2.5 h-2.5 ${isSelected ? 'text-amber-400' : 'text-amber-500 dark:text-gold-500'}`} /> {srv.durationMinutes} min
                     </span>
                   </div>
                 </div>
@@ -576,7 +593,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
           {/* Barra Inferior Fija (Sticky): El botón de continuar SIEMPRE está al alcance sin scroll */}
           <div className="sticky bottom-0 bg-white/95 dark:bg-noir-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200 dark:border-industrial-800 shadow-xl flex items-center justify-between gap-3 mt-3 z-20">
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-500 dark:text-industrial-400 uppercase tracking-wider block">
+              <span className="text-[10px] text-slate-500 dark:text-industrial-400 uppercase tracking-wider block font-semibold">
                 Servicio Elegido
               </span>
               <div className="flex items-center gap-2 truncate">
@@ -584,7 +601,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   {selectedService ? selectedService.name : 'Ninguno seleccionado'}
                 </span>
                 {selectedService && (
-                  <span className="text-xs sm:text-sm font-mono font-bold text-gold-600 dark:text-gold-400 flex-shrink-0">
+                  <span className="text-xs sm:text-sm font-mono font-bold text-amber-600 dark:text-gold-400 flex-shrink-0">
                     ${Number(selectedService.price).toLocaleString('es-CO')}
                   </span>
                 )}
@@ -595,7 +612,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               type="button"
               onClick={() => setStep(2)}
               disabled={!selectedService}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-md dark:shadow-glow-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
             >
               <span>Continuar a Barbero</span>
               <ChevronRight className="w-4 h-4" />
@@ -620,29 +637,50 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                   onClick={() => setSelectedBarber(barber)}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
                     isSelected
-                      ? 'bg-amber-500/10 dark:bg-gold-500/15 border-amber-500 dark:border-gold-500 shadow-sm dark:shadow-glow-gold'
-                      : 'bg-white dark:bg-noir-950 border-slate-200 dark:border-industrial-800 hover:border-slate-400 dark:hover:border-industrial-700'
+                      ? 'bg-slate-900 text-white border-slate-950 shadow-lg ring-2 ring-amber-400/60 dark:bg-gold-500/15 dark:border-gold-500 dark:shadow-glow-gold scale-[1.01]'
+                      : 'bg-white dark:bg-noir-950 border-slate-200 dark:border-industrial-800 hover:border-slate-400 dark:hover:border-industrial-700 shadow-2xs hover:shadow-xs'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <img
                       src={barber.avatar}
                       alt={barber.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-industrial-700"
+                      className={`w-12 h-12 rounded-xl object-cover border transition-colors ${
+                        isSelected
+                          ? 'border-amber-400 shadow-sm'
+                          : 'border-slate-200 dark:border-industrial-700'
+                      }`}
                     />
                     <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{barber.name}</h4>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className={`font-bold text-sm transition-colors ${
+                          isSelected ? 'text-white' : 'text-slate-900 dark:text-white'
+                        }`}>
+                          {barber.name}
+                        </h4>
+                        {isSelected && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 dark:bg-gold-500/20 dark:text-gold-300 text-[9px] font-bold border border-amber-400/30 font-mono">
+                            ✓ Activo
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`w-2 h-2 rounded-full ${barber.status === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span>
-                        <span className="text-[11px] text-slate-500 dark:text-industrial-400">
-                          {barber.status === 'AVAILABLE' ? 'Disponible' : 'En sillón'}
+                        <span className={`text-[11px] transition-colors ${
+                          isSelected ? 'text-slate-300 dark:text-industrial-300' : 'text-slate-500 dark:text-industrial-400'
+                        }`}>
+                          {barber.status === 'AVAILABLE' ? 'Disponible para hoy' : 'En sillón'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-amber-500 bg-amber-500 text-slate-950 dark:border-gold-500 dark:bg-gold-500 dark:text-noir-950' : 'border-slate-300 dark:border-industrial-700'}`}>
-                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                  <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                    isSelected
+                      ? 'border-amber-400 bg-amber-400 text-slate-950 dark:border-gold-500 dark:bg-gold-500 dark:text-noir-950 shadow-sm'
+                      : 'border-slate-300 dark:border-industrial-700 text-transparent'
+                  }`}>
+                    {isSelected && <CheckCircle2 className="w-4 h-4 fill-current" />}
                   </div>
                 </div>
               );
@@ -659,7 +697,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             <button
               onClick={() => setStep(3)}
               disabled={!selectedBarber}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all cursor-pointer disabled:opacity-40"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-md dark:shadow-glow-gold transition-all cursor-pointer disabled:opacity-40"
             >
               Elegir Horario
               <ChevronRight className="w-4 h-4" />
@@ -706,7 +744,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => { setSelectedDate(todayStr); setEnableTestSlots(false); }}
               className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedDate === todayStr
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950 font-bold'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -717,7 +755,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => { setSelectedDate(tomorrowStr); setEnableTestSlots(false); }}
               className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedDate === tomorrowStr
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950 font-bold'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -728,7 +766,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
               onClick={() => { setSelectedDate(dayAfterStr); setEnableTestSlots(false); }}
               className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 selectedDate === dayAfterStr
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold shadow-sm'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-noir-950 font-bold'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -840,8 +878,8 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                         onClick={() => setSelectedTime(slot.time)}
                         className={`py-3 px-2 rounded-xl text-xs font-mono font-bold transition-all relative cursor-pointer ${
                           isSelected
-                            ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 border border-amber-400 dark:border-gold-400 shadow-sm dark:shadow-glow-gold scale-105'
-                            : 'bg-white dark:bg-noir-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-industrial-800 hover:border-amber-400 hover:text-amber-800 dark:hover:text-gold-300'
+                            ? 'bg-slate-900 text-amber-300 border-2 border-amber-400 shadow-lg scale-105 dark:bg-gold-500 dark:text-noir-950 dark:border-gold-400'
+                            : 'bg-white dark:bg-noir-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-industrial-800 hover:border-slate-800 hover:text-slate-950 dark:hover:text-gold-300 shadow-2xs'
                         }`}
                       >
                         {slot.time}
@@ -855,7 +893,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
                     ✓ {freeSlots.length} horarios 100% libres disponibles
                   </span>
                   {selectedTime && (
-                    <span className="text-amber-800 dark:text-gold-400 font-bold">
+                    <span className="text-slate-900 dark:text-gold-400 font-bold bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-400/30">
                       Seleccionado: {selectedTime} hrs
                     </span>
                   )}
@@ -874,7 +912,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
             <button
               onClick={() => setStep(4)}
               disabled={!selectedTime}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-sm dark:shadow-glow-gold transition-all disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-950 dark:bg-gold-500 dark:hover:bg-gold-400 dark:text-noir-950 font-bold text-xs shadow-md dark:shadow-glow-gold transition-all disabled:opacity-50 cursor-pointer"
             >
               Completar Datos
               <ChevronRight className="w-4 h-4" />

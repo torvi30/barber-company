@@ -158,7 +158,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
             <ShoppingBag className="w-4 h-4" />
             <span>Ver Bolsa ({cart.reduce((s, i) => s + i.qty, 0)})</span>
             <span className="bg-black/20 px-2 py-0.5 rounded-lg font-mono text-[11px]">
-              ${totalCartPrice.toFixed(2)}
+              ${Math.round(totalCartPrice).toLocaleString('es-CO')}
             </span>
           </button>
         )}
@@ -177,7 +177,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 isSelected
-                  ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-black shadow-sm dark:shadow-glow-gold font-bold'
+                  ? 'bg-slate-900 text-amber-300 border border-slate-950 shadow-sm dark:bg-gold-500 dark:text-black font-bold'
                   : 'bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -243,7 +243,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
                     <div>
                       <span className="text-[9px] sm:text-[10px] text-industrial-500 uppercase tracking-wider block">PVP</span>
                       <span className="text-xs sm:text-xl font-bold font-mono text-white truncate block">
-                        ${Number(product.unitPrice).toFixed(2)}
+                        ${Math.round(product.unitPrice).toLocaleString('es-CO')}
                       </span>
                     </div>
 
@@ -292,7 +292,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
               <span>Ver Bolsa ({cart.reduce((s, i) => s + i.qty, 0)} productos)</span>
             </div>
             <span className="bg-black/20 px-2.5 py-1 rounded-lg font-mono">
-              ${totalCartPrice.toFixed(2)} →
+              ${Math.round(totalCartPrice).toLocaleString('es-CO')} →
             </span>
           </button>
         </aside>
@@ -455,7 +455,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
                           {item.name}
                         </h4>
                         <span className="text-xs font-mono text-gold-400 font-bold block mt-0.5">
-                          ${(Number(item.unitPrice) * item.qty).toFixed(2)}
+                          ${Math.round(Number(item.unitPrice) * item.qty).toLocaleString('es-CO')}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 bg-noir-950 border border-industrial-800 rounded-lg p-1 flex-shrink-0">
@@ -487,7 +487,7 @@ export const PublicStore = ({ slug, onGoToBooking }) => {
                   <div className="flex justify-between items-center bg-noir-950 p-3 rounded-xl border border-industrial-800">
                     <span className="text-xs text-industrial-400">Total a pagar en mostrador:</span>
                     <span className="text-lg font-bold font-mono text-gold-400">
-                      ${totalCartPrice.toFixed(2)}
+                      ${Math.round(totalCartPrice).toLocaleString('es-CO')}
                     </span>
                   </div>
 
