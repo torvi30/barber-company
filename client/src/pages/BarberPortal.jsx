@@ -43,7 +43,9 @@ import {
   Lock,
   KeyRound,
   LogOut,
-  Target
+  Target,
+  X,
+  Plus
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -239,8 +241,17 @@ export const BarberPortal = ({
     avatar: AVATAR_PRESETS[0].url
   });
   const [formSaving, setFormSaving] = useState(false);
+  const [newSpecialtyInput, setNewSpecialtyInput] = useState('');
   const barberFileInputRef = React.useRef(null);
   const [barberPhotoFeedback, setBarberPhotoFeedback] = useState(null);
+
+  const normalizePercent = (val) => {
+    let num = Number(val);
+    if (isNaN(num)) return 50;
+    while (num > 100) num /= 100;
+    if (num <= 1 && num > 0) num *= 100;
+    return Math.max(0, Math.min(100, Math.round(num)));
+  };
 
   const handleBarberPhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -262,6 +273,7 @@ export const BarberPortal = ({
   const openNewBarberModal = () => {
     setEditingBarber(null);
     setBarberPhotoFeedback(null);
+    setNewSpecialtyInput('');
     setBarberFormData({
       name: '',
       phone: '',
@@ -278,12 +290,13 @@ export const BarberPortal = ({
   const openEditBarberModal = (b) => {
     setEditingBarber(b);
     setBarberPhotoFeedback(null);
+    setNewSpecialtyInput('');
     setBarberFormData({
       name: b.name || '',
       phone: b.phone || '',
       email: b.email || '',
       pin: b.pin || '1234',
-      commissionRate: Math.round((Number(b.commissionRate) || 0.5) * 100),
+      commissionRate: normalizePercent(b.commissionRate != null ? b.commissionRate : b.commissionPercent),
       dailyTarget: b.dailyTarget || b.dailyGoal || 150000,
       specialties: Array.isArray(b.specialties) ? b.specialties.join(', ') : (b.specialties || ''),
       avatar: b.avatar || AVATAR_PRESETS[0].url
@@ -349,14 +362,19 @@ export const BarberPortal = ({
 
     try {
       setFormSaving(true);
+      const cleanPercent = normalizePercent(barberFormData.commissionRate);
       const payload = {
         name: barberFormData.name.trim(),
         phone: barberFormData.phone.trim(),
         email: barberFormData.email.trim(),
         pin: barberFormData.pin ? String(barberFormData.pin).trim() : '1234',
-        commissionRate: Number(barberFormData.commissionRate) / 100,
-        dailyTarget: Number(barberFormData.dailyTarget),
-        specialties: barberFormData.specialties.split(',').map(s => s.trim()).filter(Boolean),
+        commissionRate: cleanPercent / 100,
+        commissionPercent: cleanPercent,
+        dailyTarget: Number(barberFormData.dailyTarget) || 150000,
+        specialties: (typeof barberFormData.specialties === 'string'
+          ? barberFormData.specialties.split(',')
+          : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
+        ).map(s => s.trim()).filter(Boolean),
         avatar: barberFormData.avatar
       };
 
@@ -1946,51 +1964,151 @@ export const BarberPortal = ({
             ))}
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
-                Servicios y Especialidades
+          {/* SERVICIOS Y ESPECIALIDADES (100% Editable, Alto Contraste y Fácil de Usar) */}
+          <div className="space-y-2.5 p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-800 dark:text-white uppercase font-mono tracking-wider flex items-center gap-1.5">
+                <Scissors className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                <span>Servicios y Especialidades Asignadas</span>
               </label>
-              <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-mono">1 Clic o Escribe</span>
+              <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-mono">
+                {(() => {
+                  const specs = (typeof barberFormData.specialties === 'string'
+                    ? barberFormData.specialties.split(',')
+                    : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
+                  ).map(s => s.trim()).filter(Boolean);
+                  return `${specs.length} activas`;
+                })()}
+              </span>
             </div>
-            {/* Chips rápidos de servicios básicos */}
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {['Corte', 'Barba', 'Cejas', 'Cera', 'Corte y Barba', 'Corte y Cejas', 'Barba y Cejas', 'Barba con Cera', 'Combo Completo'].map((spec) => {
-                const currentSpecs = barberFormData.specialties
-                  ? barberFormData.specialties.split(',').map(s => s.trim())
-                  : [];
-                const isActive = currentSpecs.includes(spec);
-                return (
-                  <button
-                    key={spec}
-                    type="button"
-                    onClick={() => {
-                      let next;
-                      if (isActive) {
-                        next = currentSpecs.filter(s => s !== spec);
-                      } else {
-                        next = [...currentSpecs, spec];
-                      }
-                      setBarberFormData({ ...barberFormData, specialties: next.join(', ') });
-                    }}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${
-                      isActive
-                        ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                        : 'bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    {isActive ? `✓ ${spec}` : `+ ${spec}`}
-                  </button>
-                );
-              })}
-            </div>
-            <input
-              type="text"
-              placeholder="Corte, Barba, Cejas, Cera..."
-              value={barberFormData.specialties}
-              onChange={(e) => setBarberFormData({ ...barberFormData, specialties: e.target.value })}
-              className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
-            />
+
+            {/* 1. Especialidades Activas del Barbero (Tags con botón de eliminar ✕) */}
+            {(() => {
+              const currentSpecs = (typeof barberFormData.specialties === 'string'
+                ? barberFormData.specialties.split(',')
+                : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
+              ).map(s => s.trim()).filter(Boolean);
+
+              const handleRemoveSpec = (specToRemove) => {
+                const next = currentSpecs.filter(s => s.toLowerCase() !== specToRemove.toLowerCase());
+                setBarberFormData({ ...barberFormData, specialties: next.join(', ') });
+              };
+
+              const handleAddSpec = (specToAdd) => {
+                const trimmed = specToAdd.trim();
+                if (!trimmed) return;
+                if (!currentSpecs.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
+                  setBarberFormData({ ...barberFormData, specialties: [...currentSpecs, trimmed].join(', ') });
+                }
+              };
+
+              // Obtener catálogo de servicios disponibles (de la barbería + sugeridos)
+              const shopServices = (barbershopInfo?.services || []).map(s => s.name);
+              const defaultServices = [
+                'Corte Clásico',
+                'Skin Fade',
+                'Barba Tradicional',
+                'Ritual Toalla Caliente',
+                'Perfilado de Cejas',
+                'Depilación con Cera',
+                'Corte y Barba',
+                'Combo Completo'
+              ];
+              const availableCatalog = Array.from(new Set([...shopServices, ...defaultServices]));
+
+              return (
+                <div className="space-y-2.5">
+                  {/* Chips Activos */}
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 min-h-[44px] flex flex-wrap gap-1.5 items-center">
+                    {currentSpecs.length === 0 ? (
+                      <span className="text-xs text-slate-400 dark:text-industrial-500 italic">
+                        No hay especialidades asignadas. Toca una de la lista o escribe una nueva abajo.
+                      </span>
+                    ) : (
+                      currentSpecs.map((spec) => (
+                        <span
+                          key={spec}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-gold-400 text-noir-950 font-bold text-xs shadow-xs animate-fadeIn"
+                        >
+                          <span>✂️ {spec}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSpec(spec)}
+                            className="hover:bg-black/20 rounded-full p-0.5 transition-colors cursor-pointer"
+                            title={`Quitar ${spec}`}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+
+                  {/* 2. Catálogo para agregar en 1 clic (Alto contraste, sin verse "suaves") */}
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300 block mb-1.5">
+                      Catálogo Sugerido (Toca para agregar):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                      {availableCatalog.map((spec) => {
+                        const isAlreadyActive = currentSpecs.some(s => s.toLowerCase() === spec.toLowerCase());
+                        if (isAlreadyActive) return null;
+
+                        return (
+                          <button
+                            key={spec}
+                            type="button"
+                            onClick={() => handleAddSpec(spec)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-700 text-slate-800 dark:text-industrial-100 hover:border-amber-500 dark:hover:border-gold-400 hover:text-amber-600 dark:hover:text-gold-300 shadow-2xs flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3 text-amber-500 dark:text-gold-400" />
+                            <span>{spec}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3. Campo para escribir cualquier especialidad personalizada */}
+                  <div className="pt-1">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300 block mb-1">
+                      O escribe un servicio personalizado:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newSpecialtyInput}
+                        onChange={(e) => setNewSpecialtyInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newSpecialtyInput.trim()) {
+                              handleAddSpec(newSpecialtyInput.trim());
+                              setNewSpecialtyInput('');
+                            }
+                          }
+                        }}
+                        placeholder="Ej. Tinte, Black Mask, Dibujo tribal, Mascarilla..."
+                        className="flex-1 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-amber-500 dark:focus:border-gold-400 font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newSpecialtyInput.trim()) {
+                            handleAddSpec(newSpecialtyInput.trim());
+                            setNewSpecialtyInput('');
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold text-xs flex items-center gap-1 shadow-glow-gold hover:opacity-95 transition-all cursor-pointer flex-shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Selector y Vista Previa de Foto de Perfil */}
