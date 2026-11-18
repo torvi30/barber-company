@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
+import { fetchFirestoreBarbers, saveFirestoreAppointment } from '../services/firestoreService';
 import { buildWhatsAppLink, normalizeWhatsAppPhone } from '../lib/phoneUtils';
 import { generateDynamicSlots } from '../lib/slotEngine';
 import {
@@ -62,21 +63,47 @@ const getDefaultBookingDate = () => {
   return getLocalDate(now);
 };
 
-export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingComplete }) => {
+export const PublicBookingWizard = ({
+  slug,
+  tenantId: propTenantId = null,
+  initialBarbershop = null,
+  initialBarbers = null,
+  onBookingComplete
+}) => {
   const effectiveSlug = (slug && String(slug).trim()) ? String(slug).trim() : (initialBarbershop?.slug || initialBarbershop?.id || 'black-gold');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [barbershop, setBarbershop] = useState(() => {
+    const passedBarbers = (Array.isArray(initialBarbers) && initialBarbers.length > 0)
+      ? initialBarbers
+      : ((initialBarbershop?.barbers && initialBarbershop.barbers.length > 0) ? initialBarbershop.barbers : null);
+
     if (initialBarbershop) {
       return {
         ...initialBarbershop,
         services: (initialBarbershop.services && initialBarbershop.services.length > 0) ? initialBarbershop.services : FALLBACK_SERVICES,
-        barbers: (initialBarbershop.barbers && initialBarbershop.barbers.length > 0) ? initialBarbershop.barbers : FALLBACK_BARBERS
+        barbers: passedBarbers || FALLBACK_BARBERS
       };
     }
     return null;
   });
+
+  // Mantener sincronizados los barberos cuando lleguen desde el contexto de la barbería
+  useEffect(() => {
+    if (Array.isArray(initialBarbers) && initialBarbers.length > 0) {
+      setBarbershop(prev => ({
+        ...(prev || {}),
+        barbers: initialBarbers
+      }));
+      setSelectedBarber(prev => {
+        if (!prev || !initialBarbers.some(b => b.id === prev.id)) {
+          return initialBarbers[0];
+        }
+        return prev;
+      });
+    }
+  }, [initialBarbers]);
 
   const servicesList = (barbershop?.services && barbershop.services.length > 0) ? barbershop.services : FALLBACK_SERVICES;
   const barbersList = (barbershop?.barbers && barbershop.barbers.length > 0) ? barbershop.barbers : FALLBACK_BARBERS;
@@ -161,41 +188,73 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
     }
   };
 
-  // Cargar datos de la barbería por slug
+  // Cargar datos de la barbería por slug y sincronizar con Firestore
   useEffect(() => {
     let isMounted = true;
     const loadBarbershop = async () => {
       try {
         if (!barbershop?.name) setLoading(true);
         setError('');
-        const res = await api.getPublicBarbershop(effectiveSlug);
-        if (!isMounted) return;
-        if (res.success && res.data) {
-          const loadedData = {
-            ...res.data,
-            services: (res.data.services && res.data.services.length > 0) ? res.data.services : FALLBACK_SERVICES,
-            barbers: (res.data.barbers && res.data.barbers.length > 0) ? res.data.barbers : FALLBACK_BARBERS
-          };
-          setBarbershop(loadedData);
-          if (loadedData.services?.length > 0) {
-            setSelectedService(prev => prev || loadedData.services[0]);
+
+        let loadedData = null;
+        let loadedBarbers = (Array.isArray(initialBarbers) && initialBarbers.length > 0) ? initialBarbers : null;
+
+        try {
+          const res = await api.getPublicBarbershop(effectiveSlug);
+          if (res.success && res.data) {
+            loadedData = res.data;
+            if (Array.isArray(res.data.barbers) && res.data.barbers.length > 0) {
+              loadedBarbers = res.data.barbers;
+            }
           }
-          if (loadedData.barbers?.length > 0) {
-            setSelectedBarber(prev => prev || loadedData.barbers[0]);
+        } catch (err) {
+          console.warn('API getPublicBarbershop notice:', err.message);
+        }
+
+        // Si aún no tenemos barberos, consultar directamente en Firestore Cloud
+        const targetTid = propTenantId || initialBarbershop?.id || effectiveSlug;
+        if (!loadedBarbers || loadedBarbers.length === 0) {
+          try {
+            const fsBarbers = await fetchFirestoreBarbers(targetTid);
+            if (Array.isArray(fsBarbers) && fsBarbers.length > 0) {
+              loadedBarbers = fsBarbers;
+            }
+          } catch (fsErr) {
+            console.warn('Firestore fetchBarbers notice:', fsErr.message);
           }
         }
-      } catch (err) {
-        console.warn('Aviso al cargar barbería pública (usando datos de resguardo):', err.message);
+
         if (!isMounted) return;
-        setBarbershop(prev => prev || {
-          id: effectiveSlug,
-          name: initialBarbershop?.name || 'BarberPulse Studio',
-          slug: effectiveSlug,
-          address: initialBarbershop?.address || 'Marinilla, Antioquia',
-          phone: initialBarbershop?.phone || '+57 300 123 4567',
-          services: FALLBACK_SERVICES,
-          barbers: FALLBACK_BARBERS
-        });
+
+        const finalBarbers = (loadedBarbers && loadedBarbers.length > 0)
+          ? loadedBarbers
+          : ((barbershop?.barbers && barbershop.barbers.length > 0) ? barbershop.barbers : FALLBACK_BARBERS);
+
+        const finalServices = (loadedData?.services && loadedData.services.length > 0)
+          ? loadedData.services
+          : (initialBarbershop?.services && initialBarbershop.services.length > 0 ? initialBarbershop.services : FALLBACK_SERVICES);
+
+        setBarbershop(prev => ({
+          ...(initialBarbershop || {}),
+          ...(prev || {}),
+          ...(loadedData || {}),
+          services: finalServices,
+          barbers: finalBarbers
+        }));
+
+        if (finalServices.length > 0) {
+          setSelectedService(prev => prev || finalServices[0]);
+        }
+        if (finalBarbers.length > 0) {
+          setSelectedBarber(prev => {
+            if (!prev || !finalBarbers.some(b => b.id === prev.id)) {
+              return finalBarbers[0];
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.warn('Aviso al sincronizar agenda pública:', err.message);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -203,7 +262,7 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
 
     loadBarbershop();
     return () => { isMounted = false; };
-  }, [effectiveSlug]);
+  }, [effectiveSlug, propTenantId, initialBarbershop?.id]);
 
   // Cargar slots cuando cambie el barbero o la fecha
   useEffect(() => {
@@ -277,11 +336,36 @@ export const PublicBookingWizard = ({ slug, initialBarbershop = null, onBookingC
         notes
       };
 
-      const res = await api.createPublicBooking(effectiveSlug, payload);
-      if (res.success) {
-        setConfirmedBooking(res.data);
-        if (onBookingComplete) onBookingComplete(res.data);
+      let confirmedData = null;
+
+      // 1. Intentar registrar en API del backend
+      try {
+        const res = await api.createPublicBooking(effectiveSlug, payload);
+        if (res.success && res.data) {
+          confirmedData = res.data;
+        }
+      } catch (apiErr) {
+        if (apiErr.status === 409 || apiErr.message?.includes('Collision') || apiErr.message?.includes('disponible')) {
+          throw apiErr;
+        }
+        console.warn('API createPublicBooking notice, guardando directo en Firestore Cloud:', apiErr.message);
       }
+
+      // 2. Si la API no respondió o falló la conexión de red, persistir directo en Firestore
+      if (!confirmedData) {
+        const targetTid = propTenantId || barbershop?.id || effectiveSlug;
+        const newApt = {
+          ...payload,
+          id: `apt_pub_${Date.now()}`,
+          status: 'WAITING',
+          createdAt: new Date().toISOString()
+        };
+        await saveFirestoreAppointment(targetTid, newApt);
+        confirmedData = newApt;
+      }
+
+      setConfirmedBooking(confirmedData);
+      if (onBookingComplete) onBookingComplete(confirmedData);
     } catch (err) {
       if (err.status === 409 || err.message?.includes('Collision') || err.message?.includes('disponible')) {
         setCollisionError(err.message || 'El horario seleccionado acaba de ser tomado por otro cliente. Por favor elige otro horario.');

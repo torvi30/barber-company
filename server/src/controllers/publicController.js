@@ -119,8 +119,8 @@ export const getBarbershopBySlug = async (req, res) => {
       }
 
       if (barbershop) {
-        const barbersSnap = await db.collection('barbershops').doc(barbershop.id).collection('barbers').where('active', '==', true).get();
-        barbers = barbersSnap.docs.map(b => ({ id: b.id, ...b.data() }));
+        const barbersSnap = await db.collection('barbershops').doc(barbershop.id).collection('barbers').get();
+        barbers = barbersSnap.docs.map(b => ({ id: b.id, ...b.data() })).filter(b => b.active !== false);
       }
     }
 

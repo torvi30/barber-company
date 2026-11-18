@@ -487,7 +487,9 @@ export const BarberPortal = ({
           ? barberFormData.specialties.split(',')
           : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
         ).map(s => s.trim()).filter(Boolean),
-        avatar: barberFormData.avatar
+        avatar: barberFormData.avatar,
+        active: true,
+        status: barberFormData.status || 'AVAILABLE'
       };
 
       const wasNew = !editingBarber;

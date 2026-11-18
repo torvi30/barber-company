@@ -445,7 +445,13 @@ export async function saveFirestoreBarber(tenantId, barber) {
   try {
     const id = barber.id || `barb_${Date.now()}`;
     const docRef = doc(db, 'barbershops', tenantId, 'barbers', id);
-    const data = { ...barber, id, updatedAt: serverTimestamp() };
+    const data = {
+      active: true,
+      status: 'AVAILABLE',
+      ...barber,
+      id,
+      updatedAt: serverTimestamp()
+    };
     await setDoc(docRef, data, { merge: true });
     return data;
   } catch (err) {

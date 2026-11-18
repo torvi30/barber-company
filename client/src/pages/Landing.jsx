@@ -201,7 +201,7 @@ export const Landing = ({ onEnterAdmin, onBarberLogin }) => {
                   <div className="text-[9px] text-slate-500 dark:text-industrial-400 uppercase mt-0.5">Navaja & Vapor</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm">
-                  <div className="text-lg md:text-xl font-bold font-display text-slate-900 dark:text-white">3</div>
+                  <div className="text-lg md:text-xl font-bold font-display text-slate-900 dark:text-white">{barbers?.length || 3}</div>
                   <div className="text-[9px] text-slate-500 dark:text-industrial-400 uppercase mt-0.5">Master Barberos</div>
                 </div>
               </div>
@@ -209,7 +209,12 @@ export const Landing = ({ onEnterAdmin, onBarberLogin }) => {
 
             {/* Right Column: Public Booking Wizard (En móvil ocupa todo el ancho y se ve al instante) */}
             <div className="col-span-1 lg:col-span-7 w-full max-w-2xl mx-auto lg:max-w-none">
-              <PublicBookingWizard slug={effectiveSlug} initialBarbershop={barbershopInfo} />
+              <PublicBookingWizard
+                slug={effectiveSlug}
+                tenantId={tenantId}
+                initialBarbershop={barbershopInfo}
+                initialBarbers={barbers}
+              />
             </div>
           </div>
         )}
