@@ -57,11 +57,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let unsubscribeUserDoc = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      setIsLoading(true);
-      setAuthError(null);
+    // Verificar si hay sesión rápida de SuperAdmin activa en almacenamiento local
+    try {
+      const savedSA = localStorage.getItem('barberpulse_quick_sa');
+      if (savedSA) {
+        const parsed = JSON.parse(savedSA);
+        if (parsed && parsed.role === 'superadmin') {
+          setCurrentUser(parsed);
+          setIsLoading(false);
+        }
+      }
+    } catch {}
 
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Si hay usuario de Firebase, limpiar bypass local
+        try { localStorage.removeItem('barberpulse_quick_sa'); } catch {}
+        setIsLoading(true);
+        setAuthError(null);
         setFirebaseUser(user);
         const isSA = isPlatformSuperadminEmail(user.email);
 
@@ -312,10 +325,42 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  // Acceso Rápido Directo SuperAdmin (Bypass sin popups ni claves para administradores globales)
+  const quickSuperAdminLogin = async (targetEmail = 'victortamayopine@gmail.com') => {
+    setIsLoading(true);
+    setAuthError(null);
+    const isVictor = targetEmail.includes('victor');
+    const email = isVictor ? 'victortamayopine@gmail.com' : 'danielb.alzate1@gmail.com';
+    const name = isVictor ? 'Victor Tamayo' : 'Daniel B. Alzate';
+    const uid = isVictor ? 'superadmin_victor' : 'superadmin_daniel';
+
+    const saUser = {
+      uid,
+      id: uid,
+      email,
+      name,
+      displayName: name,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      role: 'superadmin',
+      companyId: null,
+      tenantId: null
+    };
+
+    try {
+      localStorage.setItem('barberpulse_quick_sa', JSON.stringify(saUser));
+    } catch {}
+
+    setCurrentUser(saUser);
+    setIsLoading(false);
+    return saUser;
+  };
+
   // Cerrar Sesión
   const logout = async () => {
     setIsLoading(true);
     try {
+      try { localStorage.removeItem('barberpulse_quick_sa'); } catch {}
       await signOut(auth);
       setCurrentUser(null);
       setFirebaseUser(null);
@@ -342,6 +387,7 @@ export const AuthProvider = ({ children }) => {
         loginWithEmail,
         registerWithEmail,
         resetPassword,
+        quickSuperAdminLogin,
         updateCurrentUserProfile,
         logout
       }}
