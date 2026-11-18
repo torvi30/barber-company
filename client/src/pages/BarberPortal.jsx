@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
+import { saveFirestoreBarber } from '../services/firestoreService';
 import { StatCard } from '../components/StatCard';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
@@ -54,6 +56,16 @@ const AVATAR_PRESETS = [
   { label: 'Pompadour / Largo', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=300&q=80' },
   { label: 'Afro / Rizado', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=300&q=80' }
 ];
+
+const DEFAULT_WEEKLY_SCHEDULE = {
+  monday: { working: true, start: '09:00', end: '19:00' },
+  tuesday: { working: true, start: '09:00', end: '19:00' },
+  wednesday: { working: true, start: '09:00', end: '19:00' },
+  thursday: { working: true, start: '09:00', end: '19:00' },
+  friday: { working: true, start: '09:00', end: '20:00' },
+  saturday: { working: true, start: '09:00', end: '18:00' },
+  sunday: { working: false, start: '10:00', end: '14:00' }
+};
 
 export const BarberPortal = ({
   standaloneBarberMode = false,
@@ -124,9 +136,15 @@ export const BarberPortal = ({
 
   // Modal / Drawer de Horarios (Rostering)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState(null);
-  const [dailyTargetInput, setDailyTargetInput] = useState(150);
-  const [commissionRateInput, setCommissionRateInput] = useState(50);
+  const [scheduleForm, setScheduleForm] = useState(() => {
+    return barberSession?.schedule || DEFAULT_WEEKLY_SCHEDULE;
+  });
+  const [dailyTargetInput, setDailyTargetInput] = useState(() => {
+    return barberSession?.dailyTarget || barberSession?.dailyGoal || 150000;
+  });
+  const [commissionRateInput, setCommissionRateInput] = useState(() => {
+    return barberSession?.commissionPercent || 50;
+  });
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Modal de Ajuste Rápido de Comisión del Barbero
@@ -578,6 +596,9 @@ export const BarberPortal = ({
             history: completed
           }
         });
+        setScheduleForm(currentB.schedule || DEFAULT_WEEKLY_SCHEDULE);
+        setDailyTargetInput(currentB.dailyTarget || currentB.dailyGoal || 150000);
+        setCommissionRateInput(normalizePercent(currentB.commissionPercent ?? currentB.commissionRate));
       }
     } catch (err) {
       console.warn('Error al cargar dashboard del barbero, usando datos locales:', err.message);
@@ -611,6 +632,9 @@ export const BarberPortal = ({
           history: completed
         }
       });
+      setScheduleForm(currentB.schedule || DEFAULT_WEEKLY_SCHEDULE);
+      setDailyTargetInput(currentB.dailyTarget || currentB.dailyGoal || 150000);
+      setCommissionRateInput(normalizePercent(currentB.commissionPercent ?? currentB.commissionRate));
     } finally {
       setLoading(false);
     }
@@ -654,29 +678,47 @@ export const BarberPortal = ({
   const handleSaveSchedule = async (e) => {
     e.preventDefault();
     try {
+      const cleanTarget = Number(dailyTargetInput) || 150000;
+      const cleanRate = normalizePercent(commissionRateInput);
       const payload = {
         schedule: scheduleForm,
-        dailyTarget: Number(dailyTargetInput),
-        commissionRate: Number(commissionRateInput) / 100
+        dailyTarget: cleanTarget,
+        commissionRate: cleanRate / 100,
+        commissionPercent: cleanRate
       };
 
       // 1. Notificar API REST si está en línea
-      await api.updateBarberSchedule(tenantId, selectedBarberId, payload).catch(err => {
+      api.updateBarberSchedule(tenantId, selectedBarberId, payload).catch(err => {
         console.warn('API updateBarberSchedule notice (usando Firestore):', err.message);
       });
 
       // 2. Persistir en Firestore y sincronizar barberos
-      const currentBarber = barbers.find(b => b.id === selectedBarberId) || dashboardData?.barber || { id: selectedBarberId };
-      await editBarber(selectedBarberId, {
+      const currentBarber = (barbers || []).find(b => b.id === selectedBarberId)
+        || dashboardData?.barber
+        || (standaloneBarberMode && barberSession ? barberSession : { id: selectedBarberId });
+
+      const updated = {
         ...currentBarber,
         ...payload
-      });
+      };
+
+      await saveFirestoreBarber(tenantId, updated);
+      await editBarber(selectedBarberId, updated);
+
+      // Si está en sesión propia de barbero (PIN), actualizar también su localStorage
+      if (standaloneBarberMode && barberSession) {
+        const newSession = {
+          ...barberSession,
+          ...payload
+        };
+        localStorage.setItem('barberpulse_barber_session', JSON.stringify(newSession));
+      }
 
       setSaveSuccess(true);
       fetchBarberData();
       await showSuccessAlert(
         '¡Horarios y Metas Guardados!',
-        `Se actualizaron los turnos semanales de "${dashboardData?.barber?.name || 'barbero'}" exitosamente.`
+        `Se actualizaron los turnos semanales de "${updated?.name || 'tu sillón'}" exitosamente.`
       );
     } catch (err) {
       console.error('Error al guardar horario:', err);
@@ -1650,25 +1692,83 @@ export const BarberPortal = ({
                 <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                   Meta Diaria Facturación ($)
                 </label>
-                <input
-                  type="number"
-                  value={dailyTargetInput}
-                  onChange={(e) => setDailyTargetInput(e.target.value)}
-                  className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-gold-500"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="10000"
+                    value={dailyTargetInput}
+                    onChange={(e) => setDailyTargetInput(e.target.value)}
+                    className="flex-1 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-gold-500"
+                  />
+                  <span className="text-xs font-mono font-bold text-slate-500 dark:text-industrial-400">COP</span>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                   % Comisión Pactada
                 </label>
-                <input
-                  type="number"
-                  value={commissionRateInput}
-                  onChange={(e) => setCommissionRateInput(e.target.value)}
-                  className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3.5 py-2.5 text-xs text-amber-600 dark:text-gold-400 font-mono font-bold focus:outline-none focus:border-gold-500"
-                />
+                {standaloneBarberMode ? (
+                  <div className="w-full bg-slate-100 dark:bg-noir-900/60 border border-slate-200 dark:border-industrial-800 rounded-xl px-3.5 py-2.5 text-xs text-amber-700 dark:text-gold-300 font-mono font-bold flex items-center justify-between">
+                    <span>{commissionRateInput}% Comisión</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Pactada con administración</span>
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={commissionRateInput}
+                    onChange={(e) => setCommissionRateInput(e.target.value)}
+                    className="w-full bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700 rounded-xl px-3.5 py-2.5 text-xs text-amber-600 dark:text-gold-400 font-mono font-bold focus:outline-none focus:border-gold-500"
+                  />
+                )}
               </div>
+            </div>
+
+            {/* Ajustes Rápidos de Jornada */}
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl">
+              <span className="text-xs font-mono text-amber-900 dark:text-gold-300 font-bold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Horarios Rápidos:</span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const mon = scheduleForm?.monday || { start: '09:00', end: '19:00' };
+                  setScheduleForm({
+                    monday: { working: true, start: mon.start || '09:00', end: mon.end || '19:00' },
+                    tuesday: { working: true, start: mon.start || '09:00', end: mon.end || '19:00' },
+                    wednesday: { working: true, start: mon.start || '09:00', end: mon.end || '19:00' },
+                    thursday: { working: true, start: mon.start || '09:00', end: mon.end || '19:00' },
+                    friday: { working: true, start: mon.start || '09:00', end: mon.end || '20:00' },
+                    saturday: { working: true, start: mon.start || '09:00', end: '18:00' },
+                    sunday: { working: false, start: '10:00', end: '14:00' }
+                  });
+                }}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-noir-900 border border-amber-500/30 text-slate-800 dark:text-industrial-200 hover:border-amber-500 cursor-pointer shadow-2xs"
+              >
+                Copiar Lunes a Toda la Semana
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setScheduleForm({
+                    monday: { working: true, start: '09:00', end: '19:00' },
+                    tuesday: { working: true, start: '09:00', end: '19:00' },
+                    wednesday: { working: true, start: '09:00', end: '19:00' },
+                    thursday: { working: true, start: '09:00', end: '19:00' },
+                    friday: { working: true, start: '09:00', end: '20:00' },
+                    saturday: { working: true, start: '09:00', end: '18:00' },
+                    sunday: { working: false, start: '10:00', end: '14:00' }
+                  });
+                }}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-noir-900 border border-amber-500/30 text-slate-800 dark:text-industrial-200 hover:border-amber-500 cursor-pointer shadow-2xs"
+              >
+                Jornada Estándar (9am - 7pm)
+              </button>
             </div>
 
             {/* Matriz Semanal de Turnos */}
@@ -2593,10 +2693,10 @@ export const BarberPortal = ({
       </Modal>
 
       {/* Menú Inferior Fijo Exclusivo para el Barbero en Sillón (Móvil & Desktop) */}
-      {standaloneBarberMode && (
+      {standaloneBarberMode && typeof document !== 'undefined' && createPortal(
         <nav
           aria-label="Navegación del Sillón"
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-noir-950/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 shadow-[0_-4px_25px_rgba(0,0,0,0.12)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.7)] px-2 py-1.5 sm:py-2"
+          className="fixed bottom-0 left-0 right-0 z-[9999] bg-white/95 dark:bg-noir-950/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 shadow-[0_-4px_25px_rgba(0,0,0,0.15)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.7)] px-2 py-1.5 sm:py-2 select-none"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}
         >
           <div className="max-w-lg mx-auto flex items-center justify-around gap-1">
@@ -2715,7 +2815,8 @@ export const BarberPortal = ({
               <span className="text-[10px] tracking-tight font-medium">Salir</span>
             </button>
           </div>
-        </nav>
+        </nav>,
+        document.body
       )}
     </div>
   );
