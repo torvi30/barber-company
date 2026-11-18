@@ -342,8 +342,25 @@ export const BarberPortal = ({
     const shopName = barbershopInfo?.name || 'Imperio Barbershop';
     const inviteUrl = getNewBarberInviteUrl();
     const text = `💈 *${shopName}*\n\n¡Hola! Bienvenido al equipo de especialistas de *${shopName}*.\n\n👉 *Toca este enlace en tu celular para activar tu sillón de trabajo, ingresar tu nombre y crear tu PIN de 4 dígitos:*\n${inviteUrl}\n\n💡 _Solo te tomará 30 segundos y tu sillón quedará configurado de inmediato para recibir clientes y comisiones._`;
-    const link = buildWhatsAppLink('', text);
-    window.open(link, '_blank');
+
+    // 1. En celulares y tablets, usar Web Share API nativo si está disponible (abre WhatsApp, Telegram, etc. con 1 toque)
+    if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      navigator.share({
+        title: `Invitación de Barbero - ${shopName}`,
+        text: text,
+        url: inviteUrl
+      }).catch((err) => {
+        if (err.name !== 'AbortError') {
+          const directLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+          window.open(directLink, '_blank', 'noopener,noreferrer');
+        }
+      });
+      return;
+    }
+
+    // 2. En Desktop / navegadores estándar, abrir WhatsApp Web / App directamente
+    const link = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(link, '_blank', 'noopener,noreferrer');
   };
 
   const handleCopyNewBarberLink = async () => {

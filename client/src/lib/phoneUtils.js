@@ -60,12 +60,18 @@ export const formatDisplayPhone = (phone) => {
 };
 
 /**
- * Construye el enlace universal a WhatsApp oficial (wa.me)
+ * Construye el enlace universal a WhatsApp oficial (api.whatsapp.com / wa.me)
+ * Si se pasa teléfono, abre el chat directo con esa persona.
+ * Si no se pasa teléfono, abre WhatsApp para seleccionar cualquier contacto o grupo.
  */
 export const buildWhatsAppLink = (phone, message = '') => {
   const cleanPhone = normalizeWhatsAppPhone(phone);
-  if (!cleanPhone) return '#';
-  const query = message ? `?text=${encodeURIComponent(message)}` : '';
-  return `https://wa.me/${cleanPhone}${query}`;
+  const query = message ? `text=${encodeURIComponent(message)}` : '';
+
+  if (!cleanPhone) {
+    return query ? `https://api.whatsapp.com/send?${query}` : 'https://api.whatsapp.com/send';
+  }
+
+  return `https://api.whatsapp.com/send?phone=${cleanPhone}${query ? `&${query}` : ''}`;
 };
 
