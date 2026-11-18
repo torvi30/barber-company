@@ -58,7 +58,8 @@ const AVATAR_PRESETS = [
 export const BarberPortal = ({
   standaloneBarberMode = false,
   barberSession = null,
-  onLogoutBarber = null
+  onLogoutBarber = null,
+  initialSection = null
 }) => {
   const { tenantId, barbers = [], appointments: contextAppointments = [], updateStatus, cancelAppointment, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
   const [selectedBarberId, setSelectedBarberId] = useState(
@@ -86,7 +87,10 @@ export const BarberPortal = ({
     return null;
   });
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState('jornada'); // 'jornada' | 'schedule' | 'team'
+  const [activeSection, setActiveSection] = useState(() => {
+    if (initialSection) return initialSection;
+    return standaloneBarberMode ? 'jornada' : 'team';
+  });
   const [activeBottomTab, setActiveBottomTab] = useState('sillon'); // 'sillon' | 'turnos' | 'ganancias' | 'horario'
   const [isBarberDropdownOpen, setIsBarberDropdownOpen] = useState(false);
   const [visiblePins, setVisiblePins] = useState({});
