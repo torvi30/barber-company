@@ -42,20 +42,33 @@ export const showErrorAlert = (title, text) => {
   });
 };
 
-export const showConfirmDialog = async ({
-  title,
-  text,
-  confirmText = 'Sí, continuar',
-  cancelText = 'Cancelar',
-  icon = 'warning'
-}) => {
+export const showConfirmDialog = async (options = {}, textParam, confirmTextParam, cancelTextParam) => {
+  let title = '';
+  let text = '';
+  let confirmText = 'Sí, continuar';
+  let cancelText = 'Cancelar';
+  let icon = 'warning';
+
+  if (typeof options === 'string') {
+    title = options;
+    text = textParam || '';
+    if (confirmTextParam) confirmText = confirmTextParam;
+    if (cancelTextParam) cancelText = cancelTextParam;
+  } else if (options && typeof options === 'object') {
+    title = options.title || '';
+    text = options.text || options.html || '';
+    confirmText = options.confirmText || options.confirmButtonText || 'Sí, continuar';
+    cancelText = options.cancelText || options.cancelButtonText || 'Cancelar';
+    icon = options.icon || 'warning';
+  }
+
   return swalCustom.fire({
     title,
     text,
     icon,
     showCancelButton: true,
-    confirmButtonText,
-    cancelButtonText,
+    confirmButtonText: confirmText,
+    cancelButtonText: cancelText,
     reverseButtons: true
   });
 };
