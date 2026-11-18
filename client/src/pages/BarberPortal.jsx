@@ -128,6 +128,11 @@ export const BarberPortal = ({
   const [commissionRateInput, setCommissionRateInput] = useState(50);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Modal de Ajuste Rápido de Comisión del Barbero
+  const [isEditCommissionOpen, setIsEditCommissionOpen] = useState(false);
+  const [commissionEditInput, setCommissionEditInput] = useState(50);
+  const [savingCommission, setSavingCommission] = useState(false);
+
   // Control rápido de turnos y disponibilidad activa
   const [barberSlots, setBarberSlots] = useState([]);
   const [loadingBarberSlots, setLoadingBarberSlots] = useState(false);
@@ -660,9 +665,79 @@ export const BarberPortal = ({
       ? rawAppointments.history
       : []
   };
-  const commissionDisplay = barber.commissionPercent > 100
-    ? Math.round(barber.commissionPercent / 100)
-    : Math.round(barber.commissionPercent || 50);
+  const getBarberCommissionPct = (b) => {
+    if (!b) return 50;
+    if (b.commissionPercent != null) {
+      return Number(b.commissionPercent) > 100
+        ? Math.round(Number(b.commissionPercent) / 100)
+        : Math.round(Number(b.commissionPercent));
+    }
+    if (b.commissionRate != null) {
+      const cr = Number(b.commissionRate);
+      return cr > 1 ? Math.round(cr) : Math.round(cr * 100);
+    }
+    return 50;
+  };
+
+  const commissionDisplay = getBarberCommissionPct(barber);
+
+  const handleOpenEditCommission = () => {
+    setCommissionEditInput(commissionDisplay);
+    setIsEditCommissionOpen(true);
+  };
+
+  const handleSaveCommissionRate = async (newPct) => {
+    const rawVal = newPct !== undefined ? newPct : commissionEditInput;
+    const pct = Math.max(0, Math.min(100, Number(rawVal) || 0));
+    try {
+      setSavingCommission(true);
+      const rateDecimal = pct / 100;
+
+      // 1. Sincronizar en Firestore a través de editBarber
+      const currentBarber = barbers.find(b => b.id === selectedBarberId) || barber || { id: selectedBarberId };
+      const updatedBarber = {
+        ...currentBarber,
+        commissionRate: rateDecimal,
+        commissionPercent: pct
+      };
+      await editBarber(selectedBarberId, updatedBarber);
+
+      // 2. Intentar API en background
+      api.updateBarber(tenantId, selectedBarberId, { commissionRate: rateDecimal }).catch(() => {});
+
+      // 3. Actualizar inmediatamente dashboardData y métricas de comisiones
+      setDashboardData(prev => {
+        if (!prev) return prev;
+        const gross = prev.metrics?.grossServices || 0;
+        const tips = prev.metrics?.tipsEarned || 0;
+        const newComm = gross * rateDecimal;
+        return {
+          ...prev,
+          barber: {
+            ...prev.barber,
+            commissionRate: rateDecimal,
+            commissionPercent: pct
+          },
+          metrics: {
+            ...prev.metrics,
+            commissionEarned: newComm,
+            totalPersonalEarnings: newComm + tips
+          }
+        };
+      });
+
+      setIsEditCommissionOpen(false);
+      await showSuccessAlert(
+        '¡Comisión Actualizada!',
+        `La comisión de ${barber.name || 'este especialista'} ahora es del ${pct}%.`
+      );
+    } catch (err) {
+      console.error('Error al actualizar comisión:', err);
+      showErrorAlert('Comisión', err.message || 'Error al actualizar comisión');
+    } finally {
+      setSavingCommission(false);
+    }
+  };
   const dailyTargetDisplay = (barber.dailyTarget && barber.dailyTarget > 1000)
     ? barber.dailyTarget
     : (barber.dailyGoal || 150000);
@@ -688,9 +763,15 @@ export const BarberPortal = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-gold-300 border border-amber-500/30">
-                  Sillón Activo • {commissionDisplay}% Com.
-                </span>
+                <button
+                  type="button"
+                  onClick={handleOpenEditCommission}
+                  className="text-[10px] uppercase font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-gold-300 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer transition-all"
+                  title="Haz clic para modificar el % de comisión"
+                >
+                  <span>Sillón Activo • {commissionDisplay}% Com.</span>
+                  <Edit3 className="w-2.5 h-2.5 opacity-80" />
+                </button>
                 <span className="text-xs text-slate-400">|</span>
                 <span className="text-xs font-semibold text-slate-500 dark:text-industrial-400">
                   {barbershopInfo?.name || barberSession?.barbershopName || 'Imperio Barbershop'}
@@ -932,9 +1013,15 @@ export const BarberPortal = ({
                     >
                       Cambiar
                     </button>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gold-500/15 text-slate-700 dark:text-gold-400 border border-slate-200 dark:border-gold-500/30 flex-shrink-0">
-                      {commissionDisplay}% com.
-                    </span>
+                    <button
+                      type="button"
+                      onClick={handleOpenEditCommission}
+                      className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 dark:bg-gold-500/15 dark:hover:bg-gold-500/25 text-amber-900 dark:text-gold-300 border border-amber-500/30 dark:border-gold-500/40 flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-2xs"
+                      title="Haz clic para modificar la comisión pactada de este barbero"
+                    >
+                      <span>{commissionDisplay}% com.</span>
+                      <Edit3 className="w-2.5 h-2.5 text-amber-600 dark:text-gold-400 opacity-80" />
+                    </button>
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-industrial-400 flex items-center gap-2 truncate mt-0.5">
                     <span>Meta: <strong className="font-mono text-slate-700 dark:text-slate-200">${Math.round(dailyTargetDisplay).toLocaleString('es-CO')}</strong></span>
@@ -1815,8 +1902,8 @@ export const BarberPortal = ({
               <div className="relative">
                 <input
                   type="number"
-                  min="10"
-                  max="90"
+                  min="0"
+                  max="100"
                   required
                   value={barberFormData.commissionRate}
                   onChange={(e) => setBarberFormData({ ...barberFormData, commissionRate: e.target.value })}
@@ -2015,6 +2102,115 @@ export const BarberPortal = ({
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Rápido: Modificar Porcentaje de Comisión */}
+      <Modal
+        isOpen={isEditCommissionOpen}
+        onClose={() => setIsEditCommissionOpen(false)}
+        title={`Ajustar Comisión: ${barber?.name || 'Especialista'}`}
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 flex items-center gap-3">
+            <img
+              src={barber?.avatar || AVATAR_PRESETS[0].url}
+              alt={barber?.name}
+              className="w-12 h-12 rounded-xl object-cover border-2 border-amber-500 shadow-xs flex-shrink-0"
+            />
+            <div className="min-w-0">
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                {barber?.name}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-industrial-300">
+                Comisión actual:{' '}
+                <strong className="font-mono text-amber-600 dark:text-gold-400 font-bold">
+                  {commissionDisplay}%
+                </strong>
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-industrial-200 font-mono mb-2">
+              Presets de Comisión Frecuentes:
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {[30, 40, 45, 50, 60].map((pct) => (
+                <button
+                  key={pct}
+                  type="button"
+                  onClick={() => setCommissionEditInput(pct)}
+                  className={`py-2 rounded-xl text-xs font-mono font-bold transition-all border cursor-pointer ${
+                    Number(commissionEditInput) === pct
+                      ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 border-amber-500 dark:border-gold-400 shadow-glow-gold'
+                      : 'bg-white dark:bg-noir-900 border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-300 hover:border-gold-500/40'
+                  }`}
+                >
+                  {pct}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 space-y-1.5">
+            <label className="block text-xs font-bold text-slate-800 dark:text-industrial-200 uppercase font-mono">
+              O ingresa el porcentaje exacto (0% a 100%):
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={commissionEditInput}
+                onChange={(e) => setCommissionEditInput(e.target.value)}
+                className="w-full pl-3.5 pr-8 py-2 rounded-xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-base font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-gold-400"
+                placeholder="Ej: 45, 55, 70..."
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-mono font-bold text-amber-600 dark:text-gold-400 pointer-events-none">
+                %
+              </span>
+            </div>
+          </div>
+
+          {/* Simulador de Liquidación en tiempo real */}
+          <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/20 dark:border-gold-500/20 text-xs">
+            <span className="font-semibold text-slate-900 dark:text-white block mb-1">
+              💡 Simulación para un servicio de $30.000 COP:
+            </span>
+            <div className="flex items-center justify-between font-mono text-[11px] text-slate-700 dark:text-industrial-200">
+              <span>Para {barber?.name?.split(' ')[0] || 'el barbero'} ({commissionEditInput || 0}%):</span>
+              <strong className="text-emerald-600 dark:text-emerald-400">
+                ${Math.round(30000 * ((Number(commissionEditInput) || 0) / 100)).toLocaleString('es-CO')} COP
+              </strong>
+            </div>
+            <div className="flex items-center justify-between font-mono text-[11px] text-slate-700 dark:text-industrial-200 mt-0.5">
+              <span>Para la barbería ({100 - (Number(commissionEditInput) || 0)}%):</span>
+              <strong className="text-amber-700 dark:text-gold-300">
+                ${Math.round(30000 * ((100 - (Number(commissionEditInput) || 0)) / 100)).toLocaleString('es-CO')} COP
+              </strong>
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-industrial-800">
+            <button
+              type="button"
+              onClick={() => setIsEditCommissionOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-industrial-400 hover:bg-slate-100 dark:hover:bg-noir-800 transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={savingCommission}
+              onClick={() => handleSaveCommissionRate(commissionEditInput)}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold text-xs uppercase tracking-wider shadow-glow-gold hover:opacity-95 transition-all cursor-pointer font-mono"
+            >
+              {savingCommission ? 'Guardando...' : 'Guardar Comisión'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
