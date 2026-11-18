@@ -86,7 +86,7 @@ const AppContent = () => {
   if (barberSession) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-x-hidden">
-        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto pb-28 sm:pb-32">
           <BarberPortal
             standaloneBarberMode={true}
             barberSession={barberSession}

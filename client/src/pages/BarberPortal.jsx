@@ -66,9 +66,28 @@ export const BarberPortal = ({
       ? (barberSession.id || barberSession.barberId)
       : ''
   );
-  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(() => {
+    if (standaloneBarberMode && barberSession) {
+      return {
+        barber: barberSession,
+        metrics: {
+          servicesCount: 0,
+          inChairCount: 0,
+          upcomingCount: 0,
+          grossServices: 0,
+          commissionEarned: 0,
+          tipsEarned: 0,
+          totalPersonalEarnings: 0,
+          targetProgressPercent: 0
+        },
+        appointments: { current: null, upcoming: [], history: [] }
+      };
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('jornada'); // 'jornada' | 'schedule' | 'team'
+  const [activeBottomTab, setActiveBottomTab] = useState('sillon'); // 'sillon' | 'turnos' | 'ganancias' | 'horario'
   const [isBarberDropdownOpen, setIsBarberDropdownOpen] = useState(false);
   const [visiblePins, setVisiblePins] = useState({});
 
@@ -90,39 +109,14 @@ export const BarberPortal = ({
     }
   }, [barbers, tenantId, standaloneBarberMode, barberSession]);
 
-  // Validar si la administración cambió el PIN de seguridad o revocó al barbero
+  // En modo sillón aislado (PIN), garantizar persistencia sin expulsión accidental
   useEffect(() => {
     if (!standaloneBarberMode || !barberSession) return;
     const sessionBarberId = barberSession.id || barberSession.barberId;
-    if (!sessionBarberId || !barbers || barbers.length === 0) return;
-
-    const currentBarber = barbers.find(b => b.id === sessionBarberId);
-
-    // Si el barbero fue eliminado por la administración
-    if (!currentBarber) {
-      showErrorAlert(
-        'Acceso Suspendido',
-        'Tu cuenta de barbero ya no se encuentra activa en esta barbería. Consulta con administración.'
-      ).then(() => {
-        if (onLogoutBarber) onLogoutBarber();
-      });
-      return;
+    if (sessionBarberId && selectedBarberId !== sessionBarberId) {
+      setSelectedBarberId(sessionBarberId);
     }
-
-    // Si el administrador cambió el PIN de seguridad
-    if (currentBarber.pin && barberSession.pin) {
-      const currentPin = String(currentBarber.pin).trim();
-      const savedPin = String(barberSession.pin).trim();
-      if (currentPin !== savedPin) {
-        showErrorAlert(
-          'Clave Actualizada',
-          'La administración ha actualizado tu PIN de seguridad. Por favor ingresa tu nueva clave para continuar.'
-        ).then(() => {
-          if (onLogoutBarber) onLogoutBarber();
-        });
-      }
-    }
-  }, [standaloneBarberMode, barberSession, barbers, onLogoutBarber]);
+  }, [standaloneBarberMode, barberSession, selectedBarberId]);
 
   // Modal / Drawer de Horarios (Rostering)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -506,7 +500,9 @@ export const BarberPortal = ({
           sunday: { working: false }
         });
       } else {
-        const currentB = (barbers || []).find(b => b.id === selectedBarberId) || { id: selectedBarberId, name: 'Especialista', commissionRate: 0.5 };
+        const currentB = (barbers || []).find(b => b.id === selectedBarberId)
+          || (standaloneBarberMode && barberSession ? barberSession : null)
+          || { id: selectedBarberId, name: 'Especialista', commissionRate: 0.5 };
         const myApts = (contextAppointments || []).filter(a => a.barberId === selectedBarberId);
         const inChair = myApts.find(a => a.status === 'IN_CHAIR') || null;
         const upcoming = myApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
@@ -537,7 +533,9 @@ export const BarberPortal = ({
       }
     } catch (err) {
       console.warn('Error al cargar dashboard del barbero, usando datos locales:', err.message);
-      const currentB = (barbers || []).find(b => b.id === selectedBarberId) || { id: selectedBarberId, name: 'Especialista', commissionRate: 0.5 };
+      const currentB = (barbers || []).find(b => b.id === selectedBarberId)
+        || (standaloneBarberMode && barberSession ? barberSession : null)
+        || { id: selectedBarberId, name: 'Especialista', commissionRate: 0.5 };
       const myApts = (contextAppointments || []).filter(a => a.barberId === selectedBarberId);
       const inChair = myApts.find(a => a.status === 'IN_CHAIR') || null;
       const upcoming = myApts.filter(a => a.status === 'WAITING' || a.status === 'SCHEDULED');
@@ -691,7 +689,7 @@ export const BarberPortal = ({
     );
   }
 
-  if (!dashboardData) {
+  if (!dashboardData && !standaloneBarberMode) {
     return (
       <div className="py-20 text-center font-mono text-xs text-industrial-400">
         No se pudieron cargar los datos del especialista seleccionado.
@@ -699,7 +697,11 @@ export const BarberPortal = ({
     );
   }
 
-  const barber = dashboardData?.barber || {};
+  const barber = dashboardData?.barber || (
+    standaloneBarberMode && barberSession
+      ? { ...barberSession, ...(barbers.find(b => b.id === (barberSession.id || barberSession.barberId)) || {}) }
+      : (barbers.find(b => b.id === selectedBarberId) || {})
+  );
   const metrics = dashboardData?.metrics || {
     servicesCount: 0,
     inChairCount: 0,
@@ -1167,7 +1169,7 @@ export const BarberPortal = ({
           )}
 
           {/* Métricas Financieras del Barbero: Limpias, Elegantes y en Porcelana Blanca en Modo Claro */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          <div id="barber-kpis-section" className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {/* Total Ganado Hoy */}
             <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-500 dark:text-industrial-400">
@@ -1237,7 +1239,7 @@ export const BarberPortal = ({
           </div>
 
       {/* Control Rápido de Turnos de Hoy (1 Click para Activar/Pausar) */}
-      <div className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3.5">
+      <div id="turnos-de-hoy-section" className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-industrial-800">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-slate-700 dark:text-gold-500" />
@@ -1352,7 +1354,7 @@ export const BarberPortal = ({
       {/* Agenda Personal del Día (100% Responsivo en Móvil y Desktop) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* En Sillón Ahora */}
-        <div className="lg:col-span-5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs">
+        <div id="seccion-sillon" className="lg:col-span-5 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-industrial-800 mb-3.5">
               <div className="flex items-center gap-2">
@@ -1433,7 +1435,7 @@ export const BarberPortal = ({
         </div>
 
         {/* Mis Próximos Turnos (100% Responsivo, sin desbordes) */}
-        <div className="lg:col-span-7 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div id="seccion-proximos-turnos" className="lg:col-span-7 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-industrial-800 mb-3.5">
               <div className="flex items-center gap-2">
@@ -2423,6 +2425,132 @@ export const BarberPortal = ({
           </div>
         </div>
       </Modal>
+
+      {/* Menú Inferior Fijo Exclusivo para el Barbero en Sillón (Móvil & Desktop) */}
+      {standaloneBarberMode && (
+        <nav
+          aria-label="Navegación del Sillón"
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-noir-950/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 shadow-[0_-4px_25px_rgba(0,0,0,0.12)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.7)] px-2 py-1.5 sm:py-2"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}
+        >
+          <div className="max-w-lg mx-auto flex items-center justify-around gap-1">
+            {/* 1. Sillón */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveBottomTab('sillon');
+                if (activeSection !== 'jornada') setActiveSection('jornada');
+                setTimeout(() => {
+                  const el = document.getElementById('seccion-sillon');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  else window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 50);
+              }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer relative ${
+                activeBottomTab === 'sillon' && activeSection === 'jornada'
+                  ? 'text-amber-600 dark:text-gold-400 font-bold scale-105'
+                  : 'text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="relative">
+                <Scissors className="w-5 h-5 mb-0.5" />
+                {appointments?.current && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping" />
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">Sillón</span>
+            </button>
+
+            {/* 2. Turnos */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveBottomTab('turnos');
+                if (activeSection !== 'jornada') setActiveSection('jornada');
+                setTimeout(() => {
+                  const el = document.getElementById('seccion-proximos-turnos') || document.getElementById('turnos-de-hoy-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer relative ${
+                activeBottomTab === 'turnos' && activeSection === 'jornada'
+                  ? 'text-amber-600 dark:text-gold-400 font-bold scale-105'
+                  : 'text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="relative">
+                <Calendar className="w-5 h-5 mb-0.5" />
+                {(appointments?.upcoming?.length || 0) > 0 && (
+                  <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-mono font-bold text-[9px] rounded-full">
+                    {appointments.upcoming.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">Turnos</span>
+            </button>
+
+            {/* 3. Ganancias */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveBottomTab('ganancias');
+                if (activeSection !== 'jornada') setActiveSection('jornada');
+                setTimeout(() => {
+                  const el = document.getElementById('barber-kpis-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 50);
+              }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer relative ${
+                activeBottomTab === 'ganancias' && activeSection === 'jornada'
+                  ? 'text-amber-600 dark:text-gold-400 font-bold scale-105'
+                  : 'text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-5 h-5 mb-0.5" />
+              <span className="text-[10px] tracking-tight">Ganancias</span>
+            </button>
+
+            {/* 4. Horarios */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveBottomTab('horario');
+                setActiveSection('schedule');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer relative ${
+                activeSection === 'schedule'
+                  ? 'text-amber-600 dark:text-gold-400 font-bold scale-105'
+                  : 'text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Clock className="w-5 h-5 mb-0.5" />
+              <span className="text-[10px] tracking-tight">Horario</span>
+            </button>
+
+            {/* 5. Salir */}
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await showConfirmDialog({
+                  title: '¿Cerrar Sesión del Sillón?',
+                  text: 'Para volver a ingresar deberás digitar nuevamente tu PIN de 4 dígitos.',
+                  confirmText: 'Sí, cerrar turno',
+                  cancelText: 'Seguir atendiendo',
+                  icon: 'info'
+                });
+                if (res.isConfirmed && onLogoutBarber) {
+                  onLogoutBarber();
+                }
+              }}
+              className="flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-rose-500 hover:text-rose-600 transition-all cursor-pointer"
+            >
+              <LogOut className="w-5 h-5 mb-0.5" />
+              <span className="text-[10px] tracking-tight font-medium">Salir</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 };

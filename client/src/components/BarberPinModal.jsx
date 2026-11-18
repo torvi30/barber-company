@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { api } from '../services/api';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
@@ -20,6 +20,16 @@ export const BarberPinModal = ({
   const [isLockedToBarber, setIsLockedToBarber] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Referencias para evitar re-montar event listeners y eliminar todo lag
+  const pinRef = useRef(pin);
+  pinRef.current = pin;
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+  const isSuccessRef = useRef(isSuccess);
+  isSuccessRef.current = isSuccess;
+  const barberRef = useRef(selectedBarber);
+  barberRef.current = selectedBarber;
 
   // Limpiar estado y detectar preselección de barbero por URL (?b=... o ?barberId=...)
   useEffect(() => {
@@ -120,7 +130,7 @@ export const BarberPinModal = ({
     }
   }, [isOpen, barbers, tenantId]);
 
-  // Manejo de teclado físico
+  // Manejo de teclado físico ultra-rápido (listener atado una sola vez)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -136,115 +146,118 @@ export const BarberPinModal = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedBarber, pin, loading]);
+  }, [isOpen]);
 
   const handleDigit = (digit) => {
-    if (loading || isSuccess || !selectedBarber) return;
-    if (pin.length < 4) {
-      const nextPin = pin + digit;
+    if (loadingRef.current || isSuccessRef.current || !barberRef.current) return;
+    const current = pinRef.current;
+    if (current.length < 4) {
+      const nextPin = current + digit;
       setPin(nextPin);
       setErrorMsg(null);
       if (nextPin.length === 4) {
-        submitPin(nextPin);
+        submitPin(nextPin, barberRef.current);
       }
     }
   };
 
   const handleBackspace = () => {
-    if (loading || isSuccess) return;
+    if (loadingRef.current || isSuccessRef.current) return;
     setPin((prev) => prev.slice(0, -1));
     setErrorMsg(null);
   };
 
   const handleClear = () => {
-    if (loading || isSuccess) return;
+    if (loadingRef.current || isSuccessRef.current) return;
     setPin('');
     setErrorMsg(null);
   };
 
-  const submitPin = async (fullPin) => {
-    if (!selectedBarber) return;
+  const submitPin = async (fullPin, barberObj) => {
+    const targetBarber = barberObj || barberRef.current;
+    if (!targetBarber) return;
     setLoading(true);
     setErrorMsg(null);
 
     const cleanInputPin = String(fullPin).trim();
-    const expectedPin = String(selectedBarber.pin || '1234').trim();
+    const expectedPin = String(targetBarber.pin || '1234').trim();
 
+    // Verificación ultra-rápida instantánea sin lag:
+    const isDirectMatch = cleanInputPin === expectedPin;
+
+    if (isDirectMatch) {
+      setIsSuccess(true);
+      const sessionData = {
+        id: targetBarber.id,
+        name: targetBarber.name,
+        avatar: targetBarber.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80',
+        phone: targetBarber.phone || targetBarber.whatsapp || '',
+        commissionRate: targetBarber.commissionRate || 0.5,
+        dailyTarget: targetBarber.dailyTarget || targetBarber.dailyGoal || 150000,
+        role: 'barber',
+        barbershopId: targetBarber.barbershopId || tenantId || 'imperio-barbershop',
+        barbershopName: targetBarber.barbershopName || 'Imperio Barbershop',
+        pin: cleanInputPin,
+        loginTimestamp: Date.now()
+      };
+
+      // Guardar de inmediato en localStorage para que NUNCA se pierda
+      localStorage.setItem('barberpulse_barber_session', JSON.stringify(sessionData));
+
+      // Limpiar parámetros de la URL sin recargar la página entera
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (e) {}
+
+      // Notificar al padre de inmediato (cambio instantáneo de vista sin lag)
+      setTimeout(() => {
+        if (onLoginSuccess) {
+          onLoginSuccess(sessionData);
+        }
+        onClose();
+      }, 200);
+      return;
+    }
+
+    // Si no coincide directamente con la clave local, intentar con la API como fallback
     try {
       const p = new URLSearchParams(window.location.search);
-      const targetTenantId = p.get('tid') || p.get('tenantId') || tenantId || selectedBarber.barbershopId;
+      const targetTenantId = p.get('tid') || p.get('tenantId') || tenantId || targetBarber.barbershopId;
       const targetSlug = p.get('slug') || slug;
 
       let res = null;
       if (targetTenantId) {
-        res = await api.verifyBarberPin(targetTenantId, selectedBarber.id, cleanInputPin).catch(() => null);
+        res = await api.verifyBarberPin(targetTenantId, targetBarber.id, cleanInputPin).catch(() => null);
       }
       if (!res || !res.success) {
-        res = await api.barberPinLogin(targetSlug, selectedBarber.id, cleanInputPin).catch(() => null);
+        res = await api.barberPinLogin(targetSlug, targetBarber.id, cleanInputPin).catch(() => null);
       }
 
-      // Verificación de alta disponibilidad: éxito por backend O coincidencia directa con el PIN de Firestore
-      const isPinValid = (res && res.success) || (cleanInputPin === expectedPin);
-
-      if (isPinValid) {
+      if (res && res.success) {
         setIsSuccess(true);
         const sessionData = {
-          id: selectedBarber.id,
-          name: selectedBarber.name,
-          avatar: selectedBarber.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=200&q=80',
-          phone: selectedBarber.phone || selectedBarber.whatsapp || '',
-          commissionRate: selectedBarber.commissionRate || 0.5,
-          dailyTarget: selectedBarber.dailyTarget || selectedBarber.dailyGoal || 150000,
-          role: 'barber',
-          barbershopId: targetTenantId || 'imperio-barbershop',
-          barbershopName: selectedBarber.barbershopName || 'Imperio Barbershop',
+          ...res.data,
+          id: targetBarber.id,
+          name: targetBarber.name,
+          avatar: targetBarber.avatar || res.data?.avatar,
           pin: cleanInputPin,
           loginTimestamp: Date.now()
         };
-
-        // Persistencia TOTAL en localStorage
         localStorage.setItem('barberpulse_barber_session', JSON.stringify(sessionData));
-
-        // Limpiar parámetros de la URL para que no vuelva a abrir el modal
         try {
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
+          window.history.replaceState({}, document.title, window.location.pathname);
         } catch (e) {}
-
         setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess(sessionData);
-          }
-          window.location.reload();
-        }, 500);
+          if (onLoginSuccess) onLoginSuccess(sessionData);
+          onClose();
+        }, 200);
       } else {
-        setErrorMsg('PIN incorrecto. Consulta con administración tu clave de 4 dígitos.');
+        setErrorMsg('PIN incorrecto. Revisa los 4 dígitos asignados.');
         setPin('');
       }
     } catch (err) {
-      if (cleanInputPin === expectedPin) {
-        setIsSuccess(true);
-        const sessionData = {
-          id: selectedBarber.id,
-          name: selectedBarber.name,
-          avatar: selectedBarber.avatar,
-          phone: selectedBarber.phone || '',
-          commissionRate: selectedBarber.commissionRate || 0.5,
-          dailyTarget: selectedBarber.dailyTarget || 150000,
-          role: 'barber',
-          barbershopId: tenantId || 'imperio-barbershop',
-          pin: cleanInputPin,
-          loginTimestamp: Date.now()
-        };
-        localStorage.setItem('barberpulse_barber_session', JSON.stringify(sessionData));
-        setTimeout(() => {
-          if (onLoginSuccess) onLoginSuccess(sessionData);
-          window.location.reload();
-        }, 500);
-      } else {
-        setErrorMsg(err?.message || 'PIN incorrecto. Intenta nuevamente.');
-        setPin('');
-      }
+      setErrorMsg('PIN incorrecto. Intenta nuevamente.');
+      setPin('');
     } finally {
       setLoading(false);
     }
@@ -364,7 +377,7 @@ export const BarberPinModal = ({
                   return (
                     <div
                       key={idx}
-                      className={`w-4 h-4 rounded-full transition-all duration-200 ${
+                      className={`w-4 h-4 rounded-full transition-all duration-150 ${
                         isSuccess
                           ? 'bg-emerald-500 scale-110 shadow-glow-emerald'
                           : filled
@@ -404,15 +417,16 @@ export const BarberPinModal = ({
               </div>
             </div>
 
-            {/* Teclado Numérico Táctil Responsivo */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-2.5 max-w-[280px] mx-auto">
+            {/* Teclado Numérico Táctil Responsivo Ultrarrápido (touchAction: manipulation sin 300ms delay) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5 max-w-[280px] mx-auto select-none" style={{ touchAction: 'manipulation' }}>
               {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
                 <button
                   key={digit}
                   type="button"
                   disabled={loading || isSuccess}
                   onClick={() => handleDigit(digit)}
-                  className="h-13 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white font-mono font-bold text-xl hover:bg-amber-500 hover:text-slate-950 dark:hover:bg-amber-500 dark:hover:text-slate-950 active:scale-95 transition-all shadow-sm flex items-center justify-center cursor-pointer select-none"
+                  style={{ touchAction: 'manipulation' }}
+                  className="h-13 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white font-mono font-bold text-xl active:bg-amber-500 active:text-slate-950 shadow-sm flex items-center justify-center cursor-pointer select-none"
                 >
                   {digit}
                 </button>
@@ -422,7 +436,8 @@ export const BarberPinModal = ({
                 type="button"
                 disabled={loading || isSuccess || pin.length === 0}
                 onClick={handleClear}
-                className="h-13 rounded-2xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 font-mono font-bold text-xs hover:bg-slate-200 dark:hover:bg-industrial-800 active:scale-95 transition-all flex items-center justify-center cursor-pointer select-none disabled:opacity-30"
+                style={{ touchAction: 'manipulation' }}
+                className="h-13 rounded-2xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 font-mono font-bold text-xs active:bg-slate-200 dark:active:bg-industrial-800 flex items-center justify-center cursor-pointer select-none disabled:opacity-30"
               >
                 BORRAR
               </button>
@@ -431,7 +446,8 @@ export const BarberPinModal = ({
                 type="button"
                 disabled={loading || isSuccess}
                 onClick={() => handleDigit('0')}
-                className="h-13 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white font-mono font-bold text-xl hover:bg-amber-500 hover:text-slate-950 dark:hover:bg-amber-500 dark:hover:text-slate-950 active:scale-95 transition-all shadow-sm flex items-center justify-center cursor-pointer select-none"
+                style={{ touchAction: 'manipulation' }}
+                className="h-13 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-900 dark:text-white font-mono font-bold text-xl active:bg-amber-500 active:text-slate-950 shadow-sm flex items-center justify-center cursor-pointer select-none"
               >
                 0
               </button>
@@ -440,7 +456,8 @@ export const BarberPinModal = ({
                 type="button"
                 disabled={loading || isSuccess || pin.length === 0}
                 onClick={handleBackspace}
-                className="h-13 rounded-2xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 font-mono font-bold text-sm hover:bg-slate-200 dark:hover:bg-industrial-800 active:scale-95 transition-all flex items-center justify-center cursor-pointer select-none disabled:opacity-30"
+                style={{ touchAction: 'manipulation' }}
+                className="h-13 rounded-2xl bg-slate-100 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 text-slate-600 dark:text-industrial-400 font-mono font-bold text-sm active:bg-slate-200 dark:active:bg-industrial-800 flex items-center justify-center cursor-pointer select-none disabled:opacity-30"
                 title="Retroceso"
               >
                 <Delete className="w-5 h-5" />
