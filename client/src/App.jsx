@@ -22,8 +22,8 @@ import { UnassignedUserScreen } from './pages/UnassignedUserScreen';
 import { SettingsModal } from './components/SettingsModal';
 
 const AppContent = () => {
-  const { isAuthenticated, isSuperAdmin, isUnassigned, isLoading } = useAuth();
-  const { availableTenants, switchTenant } = useBarbershop();
+  const { isAuthenticated, isSuperAdmin, isAdmin, isBarber, isUnassigned, isLoading, currentUser, logout } = useAuth();
+  const { availableTenants, switchTenant, barbershopInfo } = useBarbershop();
   const [activeTab, setActiveTab] = useState('reception');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState('profile');
@@ -116,6 +116,35 @@ const AppContent = () => {
   // Si el usuario no es SuperAdmin y no tiene empresa asignada -> Cuarentena (ADR 003)
   if (isUnassigned) {
     return <UnassignedUserScreen />;
+  }
+
+  // 4. ROL OPERATIVO: BARBERO / EMPLEADO (Autenticado con Firebase Auth / Google)
+  // Redirección inmediata, estricta y blindada a su panel de Sillón operacional
+  // Bloquea por completo el acceso a caja, inventarios, suscripciones y configuración del salón
+  if (isBarber) {
+    const sessionData = {
+      id: currentUser?.barberId || currentUser?.uid,
+      barberId: currentUser?.barberId || currentUser?.uid,
+      name: currentUser?.name || currentUser?.displayName,
+      avatar: currentUser?.avatar || currentUser?.avatarUrl,
+      email: currentUser?.email,
+      phone: currentUser?.phone,
+      role: 'barber',
+      barbershopId: currentUser?.companyId,
+      barbershopName: barbershopInfo?.name || 'Mi Sillón de Trabajo'
+    };
+
+    return (
+      <div className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 relative">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 pb-32 sm:pb-36">
+          <BarberPortal
+            standaloneBarberMode={true}
+            barberSession={sessionData}
+            onLogoutBarber={logout}
+          />
+        </main>
+      </div>
+    );
   }
 
   return (

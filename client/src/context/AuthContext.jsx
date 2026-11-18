@@ -23,16 +23,33 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
 
-  // Determinar si el usuario actual es SuperAdmin
+  // Determinar roles jerárquicos:
+  const role = currentUser?.role || (isPlatformSuperadminEmail(firebaseUser?.email || currentUser?.email) ? 'superadmin' : 'user');
+
+  // Rol 1: SuperAdmin (Acceso total a todas las compañías y configuraciones globales)
   const isSuperAdmin = Boolean(
-    currentUser?.role === 'superadmin' ||
+    role === 'superadmin' ||
     isPlatformSuperadminEmail(firebaseUser?.email || currentUser?.email)
   );
 
-  // Si no es superadmin y no tiene empresa asignada -> Cuarentena (ADR 003)
+  // Rol 3: Barbero / Empleado (Acceso exclusivo a su sillón operacional de su empresa)
+  const isBarber = Boolean(
+    role === 'barbero' ||
+    role === 'empleado'
+  );
+
+  // Rol 2: Admin de Empresa (Dueño de la barbería/empresa con companyId)
+  const isAdmin = Boolean(
+    !isSuperAdmin &&
+    !isBarber &&
+    (role === 'admin' || Boolean(currentUser?.companyId))
+  );
+
+  // Si no es superadmin ni barbero y no tiene empresa asignada -> Cuarentena (ADR 003)
   const isUnassigned = Boolean(
     currentUser &&
     !isSuperAdmin &&
+    !isBarber &&
     !currentUser.companyId
   );
 
@@ -76,7 +93,8 @@ export const AuthProvider = ({ children }) => {
             bio: profile?.bio || '',
             role: isSA ? 'superadmin' : (profile?.role || 'user'),
             companyId: isSA ? null : (profile?.companyId || null),
-            tenantId: isSA ? null : (profile?.companyId || null)
+            tenantId: isSA ? null : (profile?.companyId || null),
+            barberId: isSA ? null : (profile?.barberId || null)
           };
 
           setCurrentUser(userState);
@@ -98,7 +116,8 @@ export const AuthProvider = ({ children }) => {
                   bio: liveData.bio !== undefined ? liveData.bio : prev.bio,
                   role: isSA ? 'superadmin' : (liveData.role || prev.role),
                   companyId: isSA ? null : (liveData.companyId || null),
-                  tenantId: isSA ? null : (liveData.companyId || null)
+                  tenantId: isSA ? null : (liveData.companyId || null),
+                  barberId: isSA ? null : (liveData.barberId || prev.barberId || null)
                 };
               });
             }
@@ -311,7 +330,10 @@ export const AuthProvider = ({ children }) => {
         currentUser,
         firebaseUser,
         isAuthenticated: Boolean(currentUser),
+        role,
         isSuperAdmin,
+        isAdmin,
+        isBarber,
         isUnassigned,
         isLoading,
         authError,

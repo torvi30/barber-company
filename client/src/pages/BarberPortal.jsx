@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useBarbershop } from '../context/BarbershopContext';
 import { api } from '../services/api';
 import { saveFirestoreBarber } from '../services/firestoreService';
+import { createOrUpdateBarberUser } from '../services/userService';
 import { StatCard } from '../components/StatCard';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
@@ -488,6 +489,9 @@ export const BarberPortal = ({
           : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
         ).map(s => s.trim()).filter(Boolean),
         avatar: barberFormData.avatar,
+        companyId: tenantId,
+        barbershopId: tenantId,
+        role: 'barbero',
         active: true,
         status: barberFormData.status || 'AVAILABLE'
       };
@@ -503,6 +507,11 @@ export const BarberPortal = ({
           newId = res.data.id;
           setSelectedBarberId(res.data.id);
         }
+      }
+
+      // Si el barbero tiene correo, vincular su perfil de usuario multi-tenant con role 'barbero'
+      if (payload.email) {
+        createOrUpdateBarberUser(tenantId, { id: newId || editingBarber?.id, ...payload }).catch(() => {});
       }
 
       setIsBarberFormOpen(false);

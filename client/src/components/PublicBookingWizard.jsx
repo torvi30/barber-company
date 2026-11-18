@@ -203,7 +203,8 @@ export const PublicBookingWizard = ({
           const res = await api.getPublicBarbershop(effectiveSlug);
           if (res.success && res.data) {
             loadedData = res.data;
-            if (Array.isArray(res.data.barbers) && res.data.barbers.length > 0) {
+            // Solo usar barberos del endpoint si no disponemos de barberos vivos del contexto
+            if (!loadedBarbers && Array.isArray(res.data.barbers) && res.data.barbers.length > 0) {
               loadedBarbers = res.data.barbers;
             }
           }
@@ -228,7 +229,9 @@ export const PublicBookingWizard = ({
 
         const finalBarbers = (loadedBarbers && loadedBarbers.length > 0)
           ? loadedBarbers
-          : ((barbershop?.barbers && barbershop.barbers.length > 0) ? barbershop.barbers : FALLBACK_BARBERS);
+          : ((Array.isArray(initialBarbers) && initialBarbers.length > 0)
+              ? initialBarbers
+              : ((barbershop?.barbers && barbershop.barbers.length > 0) ? barbershop.barbers : FALLBACK_BARBERS));
 
         const finalServices = (loadedData?.services && loadedData.services.length > 0)
           ? loadedData.services

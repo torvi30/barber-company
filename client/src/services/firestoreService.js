@@ -421,22 +421,39 @@ export function generateWhatsAppAlertTemplate(tenant, alertType = 'expiring_soon
 export async function fetchFirestoreBarbers(tenantId) {
   if (!tenantId) return [];
   try {
-    const colRef = collection(db, 'barbershops', tenantId, 'barbers');
-    const snapshot = await getDocs(colRef);
+    let targetId = tenantId;
+    let colRef = collection(db, 'barbershops', targetId, 'barbers');
+    let snapshot = await getDocs(colRef);
+
+    // Si la subcolección está vacía, verificar si tenantId es un slug (ej: 'imperio-barber')
+    if (snapshot.empty) {
+      try {
+        const q = query(collection(db, 'barbershops'), where('slug', '==', tenantId));
+        const slugSnap = await getDocs(q);
+        if (!slugSnap.empty) {
+          targetId = slugSnap.docs[0].id;
+          colRef = collection(db, 'barbershops', targetId, 'barbers');
+          snapshot = await getDocs(colRef);
+        }
+      } catch (slugErr) {
+        console.warn('Slug lookup notice:', slugErr.message);
+      }
+    }
+
     const barbers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     if (barbers.length > 0) return barbers;
 
-    const seed = INITIAL_SEED_TENANTS.find(t => t.id === tenantId);
+    const seed = INITIAL_SEED_TENANTS.find(t => t.id === tenantId || t.slug === tenantId || t.id === targetId);
     if (seed && seed.barbers) {
       for (const b of seed.barbers) {
-        saveFirestoreBarber(tenantId, b).catch(() => {});
+        saveFirestoreBarber(targetId, b).catch(() => {});
       }
       return seed.barbers;
     }
     return [];
   } catch (err) {
     console.warn('Firestore notice (fetchBarbers):', err.message);
-    const seed = INITIAL_SEED_TENANTS.find(t => t.id === tenantId);
+    const seed = INITIAL_SEED_TENANTS.find(t => t.id === tenantId || t.slug === tenantId);
     return seed?.barbers || [];
   }
 }
