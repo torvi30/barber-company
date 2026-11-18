@@ -400,7 +400,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
             className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'profile'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
-                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-700 dark:text-industrial-300 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             <User className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
@@ -414,7 +414,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
             className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'identity'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
-                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-700 dark:text-industrial-300 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
@@ -428,7 +428,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
             className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'services'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
-                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-700 dark:text-industrial-300 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             <Scissors className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
@@ -442,7 +442,7 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
             className={`py-2 px-1 sm:px-3 rounded-xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
               activeTab === 'modules'
                 ? 'bg-white dark:bg-noir-850 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-industrial-700'
-                : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-700 dark:text-industrial-300 hover:text-slate-950 dark:hover:text-white'
             }`}
           >
             <ShoppingBag className="w-3.5 h-3.5 text-amber-600 dark:text-gold-400 shrink-0" />
@@ -1193,34 +1193,34 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
         {/* TAB 4: MÓDULOS DEL SISTEMA */}
         {activeTab === 'modules' && (
           <div className="space-y-4 animate-fadeIn">
-            <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 shadow-sm space-y-3">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 shadow-sm space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <div
                     className={`p-2.5 rounded-2xl flex-shrink-0 transition-colors ${
                       isStoreEnabled
                         ? 'bg-amber-500/15 dark:bg-gold-500/15 text-amber-600 dark:text-gold-400 border border-amber-500/30 dark:border-gold-500/30'
-                        : 'bg-slate-100 dark:bg-noir-800 text-slate-400 dark:text-industrial-500 border border-slate-200 dark:border-industrial-700'
+                        : 'bg-slate-100 dark:bg-noir-800 text-slate-500 dark:text-industrial-400 border border-slate-200 dark:border-industrial-700'
                     }`}
                   >
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
                         Módulo: Tienda Boutique & Catálogo Minorista
                       </h4>
                       <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
+                        className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                           isStoreEnabled
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                            : 'bg-slate-200 dark:bg-industrial-800 text-slate-600 dark:text-industrial-400'
+                            ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
+                            : 'bg-slate-200 dark:bg-industrial-800 text-slate-700 dark:text-industrial-300'
                         }`}
                       >
                         {isStoreEnabled ? 'Activo' : 'Pausado'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-industrial-400 mt-1 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-700 dark:text-industrial-200 mt-1.5 leading-relaxed font-normal">
                       Permite a tus clientes explorar y pedir ceras, aceites, champús y merchandising minorista directamente desde su móvil o la web pública.
                     </p>
                   </div>
@@ -1246,23 +1246,35 @@ export const SettingsModal = ({ isOpen, onClose, initialTab = 'identity' }) => {
               </div>
 
               <div
-                className={`p-3 rounded-xl text-xs border ${
+                className={`p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm border transition-all ${
                   isStoreEnabled
-                    ? 'bg-amber-500/5 dark:bg-gold-500/5 border-amber-500/20 dark:border-gold-500/20 text-slate-700 dark:text-industrial-300'
-                    : 'bg-slate-100 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 text-slate-500 dark:text-industrial-400'
+                    ? 'bg-amber-500/10 dark:bg-gold-500/10 border-amber-500/30 dark:border-gold-500/30 text-slate-800 dark:text-industrial-100'
+                    : 'bg-slate-100 dark:bg-noir-950 border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-industrial-200'
                 }`}
               >
-                <div className="font-semibold text-slate-900 dark:text-white mb-0.5 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                <div className="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2 text-xs sm:text-sm">
+                  <Sparkles className="w-4 h-4 text-amber-600 dark:text-gold-400 flex-shrink-0" />
                   <span>Impacto en la experiencia del cliente:</span>
                 </div>
                 {isStoreEnabled ? (
-                  <p>
-                    En tu página pública se mostrará la pestaña <strong className="text-amber-700 dark:text-gold-300">[Tienda Boutique]</strong> junto a <strong className="text-amber-700 dark:text-gold-300">[Reservar Turno]</strong>, permitiendo venta cruzada de productos con pedidos vía WhatsApp o pasarela.
+                  <p className="leading-relaxed text-slate-800 dark:text-industrial-100 font-normal">
+                    En tu página pública se mostrará la pestaña{' '}
+                    <strong className="text-amber-800 dark:text-gold-300 font-bold bg-amber-500/15 dark:bg-gold-500/20 px-1.5 py-0.5 rounded border border-amber-500/30 dark:border-gold-500/40">
+                      [Tienda Boutique]
+                    </strong>{' '}
+                    junto a{' '}
+                    <strong className="text-amber-800 dark:text-gold-300 font-bold bg-amber-500/15 dark:bg-gold-500/20 px-1.5 py-0.5 rounded border border-amber-500/30 dark:border-gold-500/40">
+                      [Reservar Turno]
+                    </strong>
+                    , permitiendo venta cruzada de productos con pedidos vía WhatsApp o pasarela.
                   </p>
                 ) : (
-                  <p>
-                    Tu página pública se simplifica al 100%: <strong>se ocultan todos los botones y pestañas de tienda</strong>, ofreciendo una experiencia minimalista orientada únicamente al agendamiento rápido de citas.
+                  <p className="leading-relaxed text-slate-700 dark:text-industrial-200 font-normal">
+                    Tu página pública se simplifica al 100%:{' '}
+                    <strong className="text-slate-900 dark:text-white font-bold bg-slate-200 dark:bg-industrial-800 px-1.5 py-0.5 rounded">
+                      se ocultan todos los botones y pestañas de tienda
+                    </strong>
+                    , ofreciendo una experiencia minimalista orientada únicamente al agendamiento rápido de citas.
                   </p>
                 )}
               </div>

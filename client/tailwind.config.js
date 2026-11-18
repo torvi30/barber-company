@@ -19,12 +19,18 @@ export default {
         },
         // Tonos industriales de metal y piedra
         industrial: {
+          950: '#111317',
           900: '#1b1d22',
+          850: '#20232a',
           800: '#262930',
           700: '#353a44',
           600: '#484f5c',
           500: '#646d7e',
           400: '#949dae',
+          300: '#cbd5e1',
+          200: '#e2e8f0',
+          100: '#f1f5f9',
+          50: '#f8fafc',
         },
         // Acentos de oro vintage, cobre y ámbar de barbería tradicional
         gold: {
