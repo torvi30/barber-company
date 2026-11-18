@@ -10,7 +10,9 @@ import {
   fetchFirestoreAppointments,
   saveFirestoreAppointment,
   updateFirestoreAppointmentStatus,
-  deleteFirestoreAppointment
+  deleteFirestoreAppointment,
+  listenFirestoreBarbers,
+  listenFirestoreAppointments
 } from '../services/firestoreService';
 import { useAuth } from './AuthContext';
 
@@ -289,6 +291,52 @@ export const BarbershopProvider = ({ children }) => {
       socket.off('barbershop:settings_updated', onSettingsUpdated);
     };
   }, [tenantId, loadTenantData, playBarberChime]);
+
+  // Sincronización en Tiempo Real NATIVA con Google Cloud Firestore
+  useEffect(() => {
+    if (!tenantId) return;
+
+    // 1. Escuchar en vivo cambios de barberos (creación, edición, pausas/disponibilidad)
+    const unsubBarbers = listenFirestoreBarbers(tenantId, (cloudBarbers) => {
+      if (Array.isArray(cloudBarbers) && cloudBarbers.length > 0) {
+        setBarbers(cloudBarbers);
+      }
+    });
+
+    // 2. Escuchar en vivo cambios de citas y nuevas reservas
+    let initialAptLoad = true;
+    const unsubAppointments = listenFirestoreAppointments(tenantId, (cloudApts) => {
+      if (Array.isArray(cloudApts)) {
+        setAppointments(cloudApts);
+
+        // Si llega una cita nueva creada recientemente (después de la carga inicial), alertar al salón
+        if (!initialAptLoad && cloudApts.length > 0) {
+          const sorted = [...cloudApts].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          const newest = sorted[0];
+          const isRecent = newest && (Date.now() - new Date(newest.createdAt || 0).getTime()) < 15000;
+          if (isRecent) {
+            playBarberChime();
+            setRealtimeAppointment(newest);
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+            setToastNotification({
+              title: '🔔 ¡NUEVA RESERVA EN TIEMPO REAL!',
+              message: `${newest.clientName} reservó ${newest.serviceName || 'Servicio'} con ${newest.barberName} (${newest.time} hrs).`,
+              appointment: newest
+            });
+            toastTimerRef.current = setTimeout(() => {
+              setToastNotification(null);
+            }, 8000);
+          }
+        }
+        initialAptLoad = false;
+      }
+    });
+
+    return () => {
+      unsubBarbers();
+      unsubAppointments();
+    };
+  }, [tenantId, playBarberChime]);
 
   const createAppointment = async (appointmentData) => {
     const res = await api.createAppointment(tenantId, appointmentData).catch(() => ({ success: false }));

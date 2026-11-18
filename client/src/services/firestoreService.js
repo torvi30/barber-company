@@ -10,7 +10,8 @@ import {
   deleteDoc,
   updateDoc,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -470,6 +471,22 @@ export async function deleteFirestoreBarber(tenantId, barberId) {
   }
 }
 
+export function listenFirestoreBarbers(tenantId, onUpdate) {
+  if (!tenantId) return () => {};
+  try {
+    const colRef = collection(db, 'barbershops', tenantId, 'barbers');
+    return onSnapshot(colRef, (snapshot) => {
+      const barbers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      onUpdate(barbers);
+    }, (err) => {
+      console.warn('Firestore onSnapshot barbers notice:', err.message);
+    });
+  } catch (err) {
+    console.warn('Firestore listenBarbers init error:', err.message);
+    return () => {};
+  }
+}
+
 // --- 3. CITAS & AGENDAMIENTO ---
 export async function fetchFirestoreAppointments(tenantId, date) {
   if (!tenantId) return [];
@@ -523,6 +540,22 @@ export async function deleteFirestoreAppointment(tenantId, appointmentId) {
     await deleteDoc(docRef);
   } catch (err) {
     console.warn('Firestore notice (deleteAppointment):', err.message);
+  }
+}
+
+export function listenFirestoreAppointments(tenantId, onUpdate) {
+  if (!tenantId) return () => {};
+  try {
+    const colRef = collection(db, 'barbershops', tenantId, 'appointments');
+    return onSnapshot(colRef, (snapshot) => {
+      const appointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      onUpdate(appointments);
+    }, (err) => {
+      console.warn('Firestore onSnapshot appointments notice:', err.message);
+    });
+  } catch (err) {
+    console.warn('Firestore listenAppointments init error:', err.message);
+    return () => {};
   }
 }
 
