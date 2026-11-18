@@ -45,7 +45,8 @@ import {
   LogOut,
   Target,
   X,
-  Plus
+  Plus,
+  Copy
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -304,13 +305,30 @@ export const BarberPortal = ({
     setIsBarberFormOpen(true);
   };
 
+  const getBarberAccessUrl = (b) => {
+    const shopSlug = barbershopInfo?.slug || barbershopInfo?.id || tenantId || '';
+    return `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}`;
+  };
+
+  const handleCopyBarberLink = async (b) => {
+    const url = getBarberAccessUrl(b);
+    try {
+      await navigator.clipboard.writeText(url);
+      await showSuccessAlert(
+        '¡Enlace Copiado!',
+        `Enlace copiado para ${b.name}.\n\nPIN Personal: ${b.pin || '1234'}\n\nEnvíaselo a ${b.name} por WhatsApp o mensaje. Al abrirlo en su celular, solo ingresa su PIN y entra directo a su sillón.`
+      );
+    } catch {
+      prompt(`Enlace de acceso para ${b.name} (PIN: ${b.pin || '1234'}):`, url);
+    }
+  };
+
   const handleSendWhatsAppPin = (b) => {
     const pin = b.pin || '1234';
     const phone = b.phone || b.whatsapp || '';
     const shopName = barbershopInfo?.name || 'Imperio Barbershop';
-    const shopSlug = barbershopInfo?.slug || barbershopInfo?.id || tenantId || '';
-    const accessUrl = `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}`;
-    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Tu PIN personal de 4 dígitos para acceder a tu sillón es: *${pin}*.\n\n👉 *Ingresa a tu sillón aquí para digitar tu PIN:*\n${accessUrl}\n\n💡 _Tu sesión quedará guardada en tu celular y seguirá funcionando todos los días hasta que la administración cambie tu clave._`;
+    const accessUrl = getBarberAccessUrl(b);
+    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Bienvenido a tu panel de barbero.\n\n🔑 *Tu PIN personal de acceso es:* *${pin}*\n\n👉 *Toca este enlace para abrir tu sillón:* \n${accessUrl}\n\n💡 _Solo debes ingresar tu PIN de 4 dígitos. Tu sesión quedará guardada en tu celular para que veas tus citas del día, comisiones y manejes tus clientes en tiempo real._`;
     const link = buildWhatsAppLink(phone, text);
     window.open(link, '_blank');
   };
@@ -378,21 +396,39 @@ export const BarberPortal = ({
         avatar: barberFormData.avatar
       };
 
+      const wasNew = !editingBarber;
+      let newId = editingBarber ? editingBarber.id : null;
+
       if (editingBarber) {
         await editBarber(editingBarber.id, payload);
       } else {
         const res = await addBarber(payload);
         if (res.success && res.data) {
+          newId = res.data.id;
           setSelectedBarberId(res.data.id);
         }
       }
 
       setIsBarberFormOpen(false);
       fetchBarberData();
-      await showSuccessAlert(
-        editingBarber ? '¡Barbero Actualizado!' : '¡Barbero Registrado!',
-        `El perfil de "${barberFormData.name}" ha sido guardado exitosamente.`
-      );
+
+      if (wasNew && payload.phone) {
+        const inviteConfirm = await showConfirmDialog({
+          title: '¡Barbero Registrado!',
+          text: `¿Deseas enviar ahora mismo la invitación por WhatsApp a "${payload.name}" con su PIN (${payload.pin}) y su enlace directo de sillón?`,
+          confirmText: '📲 Sí, Enviar por WhatsApp',
+          cancelText: 'Hacerlo más tarde',
+          icon: 'success'
+        });
+        if (inviteConfirm.isConfirmed) {
+          handleSendWhatsAppPin({ id: newId || 'barber', ...payload });
+        }
+      } else {
+        await showSuccessAlert(
+          editingBarber ? '¡Barbero Actualizado!' : '¡Barbero Registrado!',
+          `El perfil de "${barberFormData.name}" ha sido guardado exitosamente.`
+        );
+      }
     } catch (err) {
       await showErrorAlert('Error al Guardar Especialista', err.message);
     } finally {
@@ -1687,7 +1723,7 @@ export const BarberPortal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {barbers.map((b) => {
               const isCurrent = b.id === selectedBarberId;
-              const commissionPct = Math.round((Number(b.commissionRate) || 0.5) * 100);
+              const commissionPct = normalizePercent(b.commissionRate ?? b.commissionPercent);
 
               return (
                 <div
@@ -1726,48 +1762,61 @@ export const BarberPortal = ({
                       </div>
                     </div>
 
-                    {/* Badge PIN de Acceso Rápido del Barbero */}
-                    <div className="mt-2.5 p-2 rounded-xl bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 flex items-center justify-between text-xs font-mono">
-                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-industrial-400 flex items-center gap-1">
-                        <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-                        PIN Sillón:
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-amber-600 dark:text-gold-400 tracking-widest text-sm">
-                          {visiblePins[b.id] ? (b.pin || '1234') : '••••'}
+                    {/* Tarjeta de Acceso al Sillón con PIN & Invitación Directa */}
+                    <div className="mt-3 p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 dark:border-gold-500/30 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-[10px] uppercase font-bold text-slate-600 dark:text-industrial-300 flex items-center gap-1">
+                          <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                          PIN de Acceso:
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setVisiblePins(prev => ({ ...prev, [b.id]: !prev[b.id] }))}
-                          className="text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-white px-1 cursor-pointer"
-                          title={visiblePins[b.id] ? 'Ocultar PIN' : 'Ver PIN'}
-                        >
-                          {visiblePins[b.id] ? '🙈' : '👁️'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-amber-600 dark:text-gold-400 tracking-widest text-sm bg-white dark:bg-noir-900 px-2 py-0.5 rounded-lg border border-amber-500/30 shadow-2xs">
+                            {visiblePins[b.id] ? (b.pin || '1234') : '••••'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setVisiblePins(prev => ({ ...prev, [b.id]: !prev[b.id] }))}
+                            className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white p-1 cursor-pointer transition-transform hover:scale-110"
+                            title={visiblePins[b.id] ? 'Ocultar PIN' : 'Ver PIN'}
+                          >
+                            {visiblePins[b.id] ? '🙈' : '👁️'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Acciones Rápidas: Enviar PIN por WhatsApp & Ver Vista Móvil */}
-                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {/* Botón Principal: Enviar Invitación Completa por WhatsApp */}
                       <button
                         type="button"
                         onClick={() => handleSendWhatsAppPin(b)}
-                        className="py-1.5 px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
-                        title="Enviar PIN y enlace de acceso por WhatsApp"
+                        className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
+                        title="Enviar mensaje de WhatsApp al barbero con su PIN y su enlace directo de sillón"
                       >
-                        <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Enviar PIN</span>
+                        <MessageCircle className="w-4 h-4 fill-current flex-shrink-0" />
+                        <span>Enviar Invitación WhatsApp</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handlePreviewBarberMobile(b)}
-                        className="py-1.5 px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-gold-300 border border-amber-500/30 text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
-                        title="Abrir vista que verá este barbero en su celular"
-                      >
-                        <Scissors className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Ver Sillón</span>
-                      </button>
+                      {/* Botones secundarios: Copiar Enlace Directo & Probar Vista Móvil */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyBarberLink(b)}
+                          className="py-1.5 px-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                          title="Copiar enlace de acceso directo al portapapeles"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
+                          <span>Copiar Link</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handlePreviewBarberMobile(b)}
+                          className="py-1.5 px-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                          title="Probar en pantalla cómo verá este barbero su sillón"
+                        >
+                          <Scissors className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
+                          <span>Ver Sillón</span>
+                        </button>
+                      </div>
                     </div>
 
                     {b.specialties && (
@@ -1962,6 +2011,49 @@ export const BarberPortal = ({
                 ${val / 1000}k
               </button>
             ))}
+          </div>
+
+          {/* ACCESO Y ENLACE DIRECTO AL SILLÓN (Para darle entrada fácilmente) */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 dark:border-gold-500/30 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-white text-xs font-mono uppercase">
+                <KeyRound className="w-4 h-4 text-amber-500 dark:text-gold-400" />
+                <span>Acceso al Sillón del Barbero</span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-gold-300 font-bold border border-amber-500/30">
+                PIN: {barberFormData.pin || '1234'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-600 dark:text-industrial-400 leading-relaxed">
+              El barbero <strong>no necesita correo ni contraseña</strong>. Solo le envías su enlace personal y al abrirlo en su celular digita su PIN de 4 dígitos ({barberFormData.pin || '1234'}). Su sesión queda guardada para siempre.
+            </p>
+
+            {editingBarber ? (
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleSendWhatsAppPin({ ...editingBarber, pin: barberFormData.pin, phone: barberFormData.phone, name: barberFormData.name })}
+                  className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4 fill-current" />
+                  <span>Enviar Invitación por WhatsApp</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyBarberLink({ ...editingBarber, pin: barberFormData.pin, name: barberFormData.name })}
+                  className="py-2 px-3 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                >
+                  <Copy className="w-4 h-4 text-amber-500 dark:text-gold-400" />
+                  <span>Copiar Enlace</span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-gold-300 flex items-center gap-2 font-mono">
+                <span>💡 Al guardar a este nuevo barbero, el sistema te ofrecerá enviarle la invitación por WhatsApp de inmediato.</span>
+              </div>
+            )}
           </div>
 
           {/* SERVICIOS Y ESPECIALIDADES (100% Editable, Alto Contraste y Fácil de Usar) */}
