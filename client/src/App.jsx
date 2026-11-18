@@ -62,10 +62,11 @@ const AppContent = () => {
     setShowSettingsModal(true);
   };
 
-  // Detectar si la URL trae un parámetro público (ej: ?slug=black-gold o ?view=landing o ruta /citas o ?barbero=pin)
+  // Detectar si la URL trae un parámetro público (ej: ?slug=black-gold o ?view=landing o ruta /citas o ?barbero=pin o ?unirse=barbero)
   const urlParams = new URLSearchParams(window.location.search);
   const isBarberPinUrl = urlParams.get('barbero') === 'pin' || urlParams.has('pin') || window.location.hash === '#barbero';
-  const isPublicUrl = urlParams.has('slug') || urlParams.get('view') === 'landing' || isBarberPinUrl;
+  const isBarberJoinUrl = urlParams.get('unirse') === 'barbero' || urlParams.get('join') === 'barber';
+  const isPublicUrl = urlParams.has('slug') || urlParams.get('view') === 'landing' || isBarberPinUrl || isBarberJoinUrl;
   const [isLandingMode, setIsLandingMode] = useState(isPublicUrl);
 
   // Pantalla de carga mientras se sincroniza Firebase

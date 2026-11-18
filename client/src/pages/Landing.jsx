@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { PublicBookingWizard } from '../components/PublicBookingWizard';
 import { PublicStore } from '../components/PublicStore';
 import { BarberPinModal } from '../components/BarberPinModal';
+import { BarberOnboardingModal } from '../components/BarberOnboardingModal';
 import {
   Scissors,
   Award,
@@ -33,12 +34,23 @@ export const Landing = ({ onEnterAdmin, onBarberLogin }) => {
       return false;
     }
   });
+  const [isBarberOnboardingOpen, setIsBarberOnboardingOpen] = useState(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('unirse') === 'barbero' || p.get('join') === 'barber';
+    } catch {
+      return false;
+    }
+  });
 
-  // Si la URL trae ?barbero=pin o hash #barbero abrir modal automáticamente
+  // Si la URL trae ?barbero=pin o hash #barbero o ?unirse=barbero abrir modales automáticamente
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('barbero') === 'pin' || p.has('pin') || window.location.hash === '#barbero') {
       setIsBarberPinModalOpen(true);
+    }
+    if (p.get('unirse') === 'barbero' || p.get('join') === 'barber') {
+      setIsBarberOnboardingOpen(true);
     }
   }, []);
 
@@ -220,6 +232,17 @@ export const Landing = ({ onEnterAdmin, onBarberLogin }) => {
         slug={effectiveSlug}
         barbers={barbers}
         onLoginSuccess={(session) => {
+          if (onBarberLogin) onBarberLogin(session);
+        }}
+      />
+
+      {/* Modal de Auto-Registro / Onboarding de Nuevo Barbero */}
+      <BarberOnboardingModal
+        isOpen={isBarberOnboardingOpen}
+        onClose={() => setIsBarberOnboardingOpen(false)}
+        tenantId={tenantId}
+        barbershopInfo={barbershopInfo}
+        onSuccess={(session) => {
           if (onBarberLogin) onBarberLogin(session);
         }}
       />
