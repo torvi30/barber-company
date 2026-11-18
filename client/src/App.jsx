@@ -86,8 +86,8 @@ const AppContent = () => {
   // 1. SI HAY SESIÓN DE BARBERO ACTIVA (PIN): Portal Exclusivo y Blindado del Sillón
   if (barberSession) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
-        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-32">
+      <div className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-noir-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 relative">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-7xl mx-auto w-full min-w-0 pb-32 sm:pb-36">
           <BarberPortal
             standaloneBarberMode={true}
             barberSession={barberSession}

@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Clock,
   Calendar,
+  CalendarDays,
   CheckCircle2,
   Coffee,
   PlayCircle,
@@ -152,7 +153,7 @@ export const BarberPortal = ({
   const [commissionEditInput, setCommissionEditInput] = useState(50);
   const [savingCommission, setSavingCommission] = useState(false);
 
-  // Control rápido de turnos y disponibilidad activa
+  // Control rápido de turnos, calendario y disponibilidad activa
   const [barberSlots, setBarberSlots] = useState([]);
   const [loadingBarberSlots, setLoadingBarberSlots] = useState(false);
   const [allowPastBarber, setAllowPastBarber] = useState(false);
@@ -164,17 +165,49 @@ export const BarberPortal = ({
     return `${year}-${month}-${day}`;
   };
 
-  const loadBarberSlots = async () => {
+  const formatSlotDateLabel = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const todayStr = getLocalDate(new Date());
+        const tmr = new Date();
+        tmr.setDate(tmr.getDate() + 1);
+        const tmrStr = getLocalDate(tmr);
+
+        const weekday = d.toLocaleDateString('es-CO', { weekday: 'long' });
+        const month = d.toLocaleDateString('es-CO', { month: 'short' });
+        const dayNum = d.getDate();
+        const capitalWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+        if (dateStr === todayStr) {
+          return `Hoy (${capitalWeekday} ${dayNum} ${month})`;
+        }
+        if (dateStr === tmrStr) {
+          return `Mañana (${capitalWeekday} ${dayNum} ${month})`;
+        }
+        return `${capitalWeekday}, ${dayNum} de ${d.toLocaleDateString('es-CO', { month: 'long' })}`;
+      }
+    } catch (e) {
+      // fallback
+    }
+    return dateStr;
+  };
+
+  const [selectedSlotDate, setSelectedSlotDate] = useState(() => getLocalDate(new Date()));
+
+  const loadBarberSlots = async (targetDate) => {
     if (!selectedBarberId) return;
     try {
       setLoadingBarberSlots(true);
-      const today = getLocalDate(new Date());
+      const dateToFetch = targetDate || selectedSlotDate || getLocalDate(new Date());
       const targetInterval = barbershopInfo?.slotInterval || 30;
       const targetBuffer = barbershopInfo?.bufferTime || 0;
 
       let loadedSlots = null;
       try {
-        const res = await api.getAvailableSlots(tenantId, selectedBarberId, today, allowPastBarber, targetInterval, targetBuffer);
+        const res = await api.getAvailableSlots(tenantId, selectedBarberId, dateToFetch, allowPastBarber, targetInterval, targetBuffer);
         if (res.success && Array.isArray(res.slots) && res.slots.length > 0) {
           loadedSlots = res.slots;
         }
@@ -184,7 +217,7 @@ export const BarberPortal = ({
 
       if (!loadedSlots || loadedSlots.length === 0) {
         const dynamic = generateDynamicSlots({
-          date: today,
+          date: dateToFetch,
           barber: selectedBarber,
           appointments,
           manualBlocked: [],
@@ -205,20 +238,20 @@ export const BarberPortal = ({
 
   useEffect(() => {
     if (selectedBarberId) {
-      loadBarberSlots();
+      loadBarberSlots(selectedSlotDate);
     }
-  }, [selectedBarberId, tenantId, allowPastBarber, barbershopInfo?.slotInterval, barbershopInfo?.bufferTime]);
+  }, [selectedBarberId, selectedSlotDate, tenantId, allowPastBarber, barbershopInfo?.slotInterval, barbershopInfo?.bufferTime]);
 
   const handleToggleBarberSlot = async (slotTime, isBlocked) => {
     try {
-      const today = getLocalDate(new Date());
+      const dateToUse = selectedSlotDate || getLocalDate(new Date());
       await api.toggleSlot(tenantId, {
         barberId: selectedBarberId,
-        date: today,
+        date: dateToUse,
         time: slotTime,
         blocked: !isBlocked
       });
-      loadBarberSlots();
+      loadBarberSlots(dateToUse);
     } catch (err) {
       await showErrorAlert('Gestión de Turnos', 'Error al modificar turno: ' + err.message);
     }
@@ -229,14 +262,14 @@ export const BarberPortal = ({
     if (!timesToToggle || timesToToggle.length === 0) return;
     try {
       setLoadingBarberSlots(true);
-      const today = getLocalDate(new Date());
+      const dateToUse = selectedSlotDate || getLocalDate(new Date());
       await api.toggleSlot(tenantId, {
         barberId: selectedBarberId,
-        date: today,
+        date: dateToUse,
         times: timesToToggle,
         blocked
       });
-      loadBarberSlots();
+      loadBarberSlots(dateToUse);
     } catch (err) {
       await showErrorAlert('Turnos en Lote', 'Error al modificar turnos en lote: ' + err.message);
     } finally {
@@ -890,7 +923,7 @@ export const BarberPortal = ({
     : (barber.dailyGoal || 150000);
 
   return (
-    <div className="space-y-4 animate-fadeIn max-w-6xl mx-auto w-full min-w-0">
+    <div className="space-y-4 max-w-6xl mx-auto w-full min-w-0">
       {/* Cabecera Exclusiva Modo Sillón (Aislado y Seguro para el Barbero) */}
       {standaloneBarberMode && (
         <div className="p-4 rounded-2xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1008,6 +1041,21 @@ export const BarberPortal = ({
           >
             <Scissors className="w-3.5 h-3.5" />
             <span>Jornada & Turnos</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (activeSection !== 'jornada') setActiveSection('jornada');
+              setTimeout(() => {
+                const el = document.getElementById('turnos-de-hoy-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 50);
+            }}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white"
+          >
+            <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
+            <span>Calendario</span>
           </button>
 
           <button
@@ -1328,20 +1376,84 @@ export const BarberPortal = ({
             </div>
           </div>
 
-      {/* Control Rápido de Turnos de Hoy (1 Click para Activar/Pausar) */}
-      <div id="turnos-de-hoy-section" className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-industrial-800">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-slate-700 dark:text-gold-500" />
+      {/* Control Rápido de Turnos y Calendario de Disponibilidad */}
+      <div id="turnos-de-hoy-section" className="bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3.5 scroll-mt-24">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-industrial-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-gold-500/10 flex items-center justify-center text-amber-600 dark:text-gold-400 border border-amber-500/20 flex-shrink-0">
+              <CalendarDays className="w-5 h-5" />
+            </div>
             <div>
-              <h3 className="font-display font-bold text-slate-900 dark:text-white text-base">Mis Turnos de Hoy (Activar / Pausar)</h3>
-              <p className="text-xs text-slate-500 dark:text-industrial-400">Toca cualquier hora para pausarla o activarla con 1 clic en tiempo real.</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-display font-bold text-slate-900 dark:text-white text-base">
+                  Calendario & Disponibilidad de Turnos
+                </h3>
+                <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-gold-300 border border-amber-500/30">
+                  {formatSlotDateLabel(selectedSlotDate)}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-industrial-400 mt-0.5">
+                Selecciona cualquier día en el calendario para activar o pausar horas en tiempo real.
+              </p>
             </div>
           </div>
-          <div className="text-xs font-mono text-slate-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5 bg-slate-100 dark:bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{barberSlots.filter(s => s.available).length} turnos libres hoy</span>
-            {loadingBarberSlots && <span className="text-amber-500 animate-pulse text-[10px] ml-1">Actualizando...</span>}
+
+          {/* Selector de Calendario y Fechas (Hoy, Mañana, Input Calendario) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center p-1 bg-slate-100 dark:bg-noir-950 rounded-xl border border-slate-200 dark:border-industrial-800 gap-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedSlotDate(getLocalDate(new Date()))}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  selectedSlotDate === getLocalDate(new Date())
+                    ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-xs'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Hoy
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const tmr = new Date();
+                  tmr.setDate(tmr.getDate() + 1);
+                  setSelectedSlotDate(getLocalDate(tmr));
+                }}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  (() => {
+                    const tmr = new Date();
+                    tmr.setDate(tmr.getDate() + 1);
+                    return selectedSlotDate === getLocalDate(tmr);
+                  })()
+                    ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 shadow-xs'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Mañana
+              </button>
+
+              {/* Botón e Input de Calendario */}
+              <label className="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-noir-900 rounded-lg border border-slate-200 dark:border-industrial-700 shadow-2xs cursor-pointer hover:border-amber-500 transition-colors">
+                <Calendar className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-industrial-400 hidden sm:inline">Fecha:</span>
+                <input
+                  type="date"
+                  value={selectedSlotDate}
+                  min={getLocalDate(new Date())}
+                  onChange={(e) => {
+                    if (e.target.value) setSelectedSlotDate(e.target.value);
+                  }}
+                  className="bg-transparent text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                />
+              </label>
+            </div>
+
+            <div className="text-xs font-mono text-slate-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5 bg-slate-100 dark:bg-emerald-500/10 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>{barberSlots.filter(s => s.available).length} libres</span>
+              {loadingBarberSlots && <span className="text-amber-500 animate-pulse text-[10px] ml-1">...</span>}
+            </div>
           </div>
         </div>
 
@@ -2693,11 +2805,11 @@ export const BarberPortal = ({
       </Modal>
 
       {/* Menú Inferior Fijo Exclusivo para el Barbero en Sillón (Móvil & Desktop) */}
-      {standaloneBarberMode && typeof document !== 'undefined' && createPortal(
+      {standaloneBarberMode && (
         <nav
           aria-label="Navegación del Sillón"
-          className="fixed bottom-0 left-0 right-0 z-[9999] bg-white/95 dark:bg-noir-950/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 shadow-[0_-4px_25px_rgba(0,0,0,0.15)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.7)] px-2 py-1.5 sm:py-2 select-none"
-          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}
+          className="fixed inset-x-0 bottom-0 z-[9999] bg-white/95 dark:bg-noir-950/95 backdrop-blur-md border-t border-slate-200 dark:border-industrial-800 shadow-[0_-4px_25px_rgba(0,0,0,0.2)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.8)] px-2 py-1.5 select-none transition-colors"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)' }}
         >
           <div className="max-w-lg mx-auto flex items-center justify-around gap-1">
             {/* 1. Sillón */}
@@ -2727,32 +2839,32 @@ export const BarberPortal = ({
               <span className="text-[10px] tracking-tight">Sillón</span>
             </button>
 
-            {/* 2. Turnos */}
+            {/* 2. Calendario & Turnos */}
             <button
               type="button"
               onClick={() => {
-                setActiveBottomTab('turnos');
+                setActiveBottomTab('calendario');
                 if (activeSection !== 'jornada') setActiveSection('jornada');
                 setTimeout(() => {
-                  const el = document.getElementById('seccion-proximos-turnos') || document.getElementById('turnos-de-hoy-section');
+                  const el = document.getElementById('turnos-de-hoy-section') || document.getElementById('seccion-proximos-turnos');
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 50);
               }}
               className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer relative ${
-                activeBottomTab === 'turnos' && activeSection === 'jornada'
+                activeBottomTab === 'calendario' && activeSection === 'jornada'
                   ? 'text-amber-600 dark:text-gold-400 font-bold scale-105'
                   : 'text-slate-500 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <div className="relative">
-                <Calendar className="w-5 h-5 mb-0.5" />
+                <CalendarDays className="w-5 h-5 mb-0.5" />
                 {(appointments?.upcoming?.length || 0) > 0 && (
                   <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-mono font-bold text-[9px] rounded-full">
                     {appointments.upcoming.length}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] tracking-tight">Turnos</span>
+              <span className="text-[10px] tracking-tight">Calendario</span>
             </button>
 
             {/* 3. Ganancias */}
@@ -2815,8 +2927,7 @@ export const BarberPortal = ({
               <span className="text-[10px] tracking-tight font-medium">Salir</span>
             </button>
           </div>
-        </nav>,
-        document.body
+        </nav>
       )}
     </div>
   );

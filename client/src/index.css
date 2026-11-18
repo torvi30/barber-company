@@ -166,7 +166,7 @@
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
@@ -175,7 +175,7 @@
 }
 
 .page-transition-wrapper {
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 .barber-pole-border {
