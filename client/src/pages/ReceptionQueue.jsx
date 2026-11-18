@@ -60,6 +60,7 @@ export const ReceptionQueue = () => {
     createAppointment,
     updateStatus,
     cancelAppointment,
+    editBarber,
     realtimeAppointment,
     updateCompanySettings
   } = useBarbershop();
@@ -544,15 +545,23 @@ export const ReceptionQueue = () => {
     if (!barberId || !barberScheduleForm) return;
     try {
       setSavingSchedule(true);
-      const res = await api.updateBarberSchedule(tenantId, barberId, {
+      await api.updateBarberSchedule(tenantId, barberId, {
+        schedule: barberScheduleForm
+      }).catch(err => {
+        console.warn('API updateBarberSchedule notice (usando persistencia en Firestore):', err.message);
+      });
+
+      const currentBarber = barbers.find(b => b.id === barberId) || { id: barberId };
+      await editBarber(barberId, {
+        ...currentBarber,
         schedule: barberScheduleForm
       });
-      if (res.success) {
-        setScheduleSuccess(true);
-        setTimeout(() => setScheduleSuccess(false), 3000);
-        fetchSlots();
-      }
+
+      setScheduleSuccess(true);
+      setTimeout(() => setScheduleSuccess(false), 3000);
+      fetchSlots();
     } catch (err) {
+      console.error('Error al actualizar horario semanal:', err);
       showErrorAlert('Error al actualizar horario semanal', err.message);
     } finally {
       setSavingSchedule(false);
