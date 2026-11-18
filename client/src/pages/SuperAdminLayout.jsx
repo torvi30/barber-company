@@ -196,7 +196,7 @@ const SuperAdminAnalytics = ({ tenants }) => {
 
   const stats = tenants.reduce((acc, t) => {
     const plan = t.subscriptionPlan || 'pro';
-    const price = plan === 'basic' ? 29 : 59;
+    const price = t.monthlyRate || (plan === 'basic' ? 120000 : 250000);
     const status = t.subscriptionStatus || 'active';
     const periodEnd = t.currentPeriodEnd ? new Date(t.currentPeriodEnd).getTime() : (now + 1000 * 60 * 60 * 24 * 30);
     const daysLeft = Math.round((periodEnd - now) / (1000 * 60 * 60 * 24));
@@ -215,7 +215,7 @@ const SuperAdminAnalytics = ({ tenants }) => {
   }, { mrr: 0, active: 0, trial: 0, pastDue: 0, suspended: 0, expiringSoon: 0, byMunicipality: {} });
 
   const statCards = [
-    { label: 'MRR Total', value: `$${stats.mrr} USD`, sub: `≈ $${(stats.mrr * 4200).toLocaleString('es-CO')} COP`, color: 'gold' },
+    { label: 'MRR Facturación Mes', value: `$${stats.mrr.toLocaleString('es-CO')} COP`, sub: 'Ingresos recurrentes mensuales', color: 'gold' },
     { label: 'Barberías Activas', value: stats.active, sub: `${stats.trial} en período de prueba`, color: 'emerald' },
     { label: 'Por Vencer ≤ 3 días', value: stats.expiringSoon, sub: 'Requieren recordatorio preventivo', color: 'amber' },
     { label: 'En Mora / Suspendidas', value: stats.pastDue + stats.suspended, sub: `${stats.pastDue} en mora · ${stats.suspended} suspendidas`, color: 'rose' },
@@ -354,7 +354,7 @@ const SuperAdminAnalytics = ({ tenants }) => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
-                    <div className="text-xs font-mono text-gold-400">${t.subscriptionPlan === 'basic' ? '29' : '59'} USD/mes</div>
+                    <div className="text-xs font-mono text-gold-400">${(t.subscriptionPlan === 'basic' ? 120000 : 250000).toLocaleString('es-CO')} COP/mes</div>
                     <div className="text-[11px] text-industrial-500">{daysLeft >= 0 ? `${daysLeft}d restantes` : 'Vencida'}</div>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase font-mono ${statusColor}`}>

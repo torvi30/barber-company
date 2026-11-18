@@ -10,10 +10,10 @@ export const SAAS_PLANS = {
   basic: {
     id: 'basic',
     name: 'Plan Básico Essential',
-    price: 29.00,
-    currency: 'USD',
+    price: 120000,
+    currency: 'COP',
     interval: 'month',
-    stripePriceId: process.env.STRIPE_PRICE_BASIC_MONTHLY || 'price_basic_29',
+    stripePriceId: process.env.STRIPE_PRICE_BASIC_MONTHLY || 'price_basic_120k',
     features: [
       'Hasta 2 Barberos activos en simultáneo',
       'Agenda digital y turnos Walk-In ilimitados',
@@ -32,10 +32,10 @@ export const SAAS_PLANS = {
   pro: {
     id: 'pro',
     name: 'Plan Pro Black Edition',
-    price: 59.00,
-    currency: 'USD',
+    price: 250000,
+    currency: 'COP',
     interval: 'month',
-    stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_59',
+    stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_250k',
     badge: 'MÁS POPULAR',
     features: [
       'Barberos y sillones ILIMITADOS',

@@ -80,7 +80,7 @@ export const getAllTenants = async (req, res) => {
         daysUntilCutoff,
         staffCount,
         appointmentsCount,
-        monthlyRate: t.subscriptionPlan === 'basic' ? 29 : 59,
+        monthlyRate: t.monthlyRate || (t.subscriptionPlan === 'basic' ? 120000 : 250000),
         createdAt: t.createdAt || new Date().toISOString()
       };
     });
@@ -117,7 +117,7 @@ export const getGlobalMetrics = async (req, res) => {
     }
 
     const now = Date.now();
-    let totalMRR_USD = 0;
+    let totalMRR_COP = 0;
     let activeCount = 0;
     let trialCount = 0;
     let pastDueCount = 0;
@@ -137,13 +137,13 @@ export const getGlobalMetrics = async (req, res) => {
     tenants.forEach(t => {
       const plan = t.subscriptionPlan || 'pro';
       const status = t.subscriptionStatus || 'active';
-      const price = plan === 'basic' ? 29 : 59;
+      const price = t.monthlyRate || (plan === 'basic' ? 120000 : 250000);
 
       const periodEnd = t.currentPeriodEnd ? new Date(t.currentPeriodEnd).getTime() : (now + 1000 * 60 * 60 * 24 * 30);
       const daysUntilCutoff = Math.round((periodEnd - now) / (1000 * 60 * 60 * 24));
 
       if (status === 'active') {
-        totalMRR_USD += price;
+        totalMRR_COP += price;
         activeCount++;
       } else if (status === 'trial') {
         trialCount++;
@@ -174,8 +174,8 @@ export const getGlobalMetrics = async (req, res) => {
       success: true,
       data: {
         totalTenants: tenants.length,
-        totalMRR_USD,
-        totalMRR_COP: totalMRR_USD * 4200, // Tasa referencial para display
+        totalMRR_COP,
+        totalMRR_USD: Math.round(totalMRR_COP / 4200),
         statusSummary: {
           active: activeCount,
           trial: trialCount,
@@ -288,7 +288,7 @@ export const generateWhatsAppPaymentAlert = async (req, res) => {
 
     const owner = tenant.ownerName || 'Estimado Dueño';
     const businessName = tenant.name || 'tu negocio';
-    const planName = (tenant.subscriptionPlan === 'basic' ? 'Plan Básico ($29 USD)' : 'Plan Pro ($59 USD)');
+    const planName = (tenant.subscriptionPlan === 'basic' ? 'Plan Básico ($120.000 COP/mes)' : 'Plan Pro ($250.000 COP/mes)');
 
     let message = '';
 

@@ -156,7 +156,7 @@ export const SubscriptionSettings = () => {
     );
   }
 
-  const currentPlan = subscription?.currentPlan || { id: 'pro', name: 'Plan Pro Black Edition', price: 59 };
+  const currentPlan = subscription?.currentPlan || { id: 'pro', name: 'Plan Pro Black Edition', price: 250000, priceCOP: 250000 };
   const isPastDue = subscription?.subscriptionStatus === 'past_due';
   const isCanceled = subscription?.subscriptionStatus === 'canceled';
   const isActive = subscription?.subscriptionStatus === 'active';
@@ -250,7 +250,7 @@ export const SubscriptionSettings = () => {
               <h2 className="text-2xl font-display font-black text-slate-900 dark:text-white flex items-center gap-3">
                 {currentPlan.name}
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 dark:bg-gold-500/20 text-amber-800 dark:text-gold-300 border border-amber-500/30 dark:border-gold-500/40 font-mono">
-                  ${currentPlan.price} USD / mes
+                  ${(currentPlan.priceCOP || (currentPlan.id === 'basic' ? 120000 : 250000)).toLocaleString('es-CO')} COP / mes
                 </span>
               </h2>
             </div>
@@ -378,14 +378,14 @@ export const SubscriptionSettings = () => {
           <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-xl text-xs">
             <span className="text-slate-400 dark:text-industrial-500 text-[11px] pl-2 font-mono">Pasarela:</span>
             <button
-              onClick={() => setSelectedGateway('stripe')}
+              onClick={() => setSelectedGateway('wompi')}
               className={`px-3 py-1 rounded-lg font-bold transition-colors ${
-                selectedGateway === 'stripe'
+                selectedGateway === 'wompi' || selectedGateway === 'stripe'
                   ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Stripe Global
+              🇨🇴 Wompi / Bancolombia / Nequi
             </button>
             <button
               onClick={() => setSelectedGateway('mercadopago')}
@@ -395,7 +395,7 @@ export const SubscriptionSettings = () => {
                   : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Mercado Pago LATAM
+              Mercado Pago (PSE / Tarjetas)
             </button>
           </div>
         </div>
@@ -428,8 +428,8 @@ export const SubscriptionSettings = () => {
               </div>
 
               <div className="flex items-baseline gap-1 my-6 font-mono">
-                <span className="text-3xl font-black text-slate-900 dark:text-white">$29</span>
-                <span className="text-xs text-slate-500 dark:text-industrial-400">USD / mes</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white">$120.000</span>
+                <span className="text-xs text-slate-500 dark:text-industrial-400">COP / mes</span>
               </div>
 
               <ul className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
@@ -499,8 +499,8 @@ export const SubscriptionSettings = () => {
               </div>
 
               <div className="flex items-baseline gap-1 my-6 font-mono">
-                <span className="text-3xl font-black text-amber-600 dark:text-gold-400">$59</span>
-                <span className="text-xs text-slate-500 dark:text-industrial-400">USD / mes</span>
+                <span className="text-3xl font-black text-amber-600 dark:text-gold-400">$250.000</span>
+                <span className="text-xs text-slate-500 dark:text-industrial-400">COP / mes</span>
               </div>
 
               <ul className="space-y-3 text-xs text-slate-700 dark:text-slate-200">
@@ -587,7 +587,7 @@ export const SubscriptionSettings = () => {
                   {new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </td>
                 <td className="py-3.5 px-4">{currentPlan.name} (Mensual)</td>
-                <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">${currentPlan.price}.00 USD</td>
+                <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">${(currentPlan.priceCOP || (currentPlan.id === 'basic' ? 120000 : 250000)).toLocaleString('es-CO')} COP</td>
                 <td className="py-3.5 px-4">
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
                     PAGADA
@@ -607,7 +607,7 @@ export const SubscriptionSettings = () => {
                 <td className="py-3.5 px-4 font-mono font-medium text-slate-900 dark:text-white">#INV-2026-003</td>
                 <td className="py-3.5 px-4 font-mono">10 Ene 2026</td>
                 <td className="py-3.5 px-4">Plan Pro Black Edition (Mensual)</td>
-                <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">$59.00 USD</td>
+                <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">$250.000 COP</td>
                 <td className="py-3.5 px-4">
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30 text-[10px]">
                     PAGADA

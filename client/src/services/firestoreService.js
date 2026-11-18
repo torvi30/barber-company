@@ -321,7 +321,7 @@ export function formatTenantsForSuperAdmin(rawTenants) {
       urgencyLevel,
       currentPeriodEnd: t.currentPeriodEnd || new Date(periodEnd).toISOString(),
       daysUntilCutoff,
-      monthlyRate: t.subscriptionPlan === 'basic' ? 29 : 59,
+      monthlyRate: t.monthlyRate || (t.subscriptionPlan === 'basic' ? 120000 : 250000),
       storeEnabled: t.storeEnabled !== false,
       createdAt: t.createdAt || new Date().toISOString()
     };
@@ -332,10 +332,10 @@ export function formatTenantsForSuperAdmin(rawTenants) {
 }
 
 /**
- * Calcula las métricas globales para la Consola SuperAdmin (MRR & Resumen de Estados)
+ * Calcula las métricas globales para la Consola SuperAdmin (MRR & Resumen de Estados en COP)
  */
 export function calculateSuperAdminMetrics(formattedTenants) {
-  let totalMRR_USD = 0;
+  let totalMRR_COP = 0;
   let activeCount = 0;
   let trialCount = 0;
   let pastDueCount = 0;
@@ -344,9 +344,9 @@ export function calculateSuperAdminMetrics(formattedTenants) {
   const municipalityCounts = {};
 
   (formattedTenants || []).forEach(t => {
-    const price = t.monthlyRate || (t.subscriptionPlan === 'basic' ? 29 : 59);
+    const price = t.monthlyRate || (t.subscriptionPlan === 'basic' ? 120000 : 250000);
     if (t.subscriptionStatus === 'active' && t.billingStatus !== 'SUSPENDED') {
-      totalMRR_USD += price;
+      totalMRR_COP += price;
       activeCount++;
     } else if (t.subscriptionStatus === 'trial') {
       trialCount++;
@@ -366,8 +366,8 @@ export function calculateSuperAdminMetrics(formattedTenants) {
 
   return {
     totalTenants: (formattedTenants || []).length,
-    totalMRR_USD,
-    totalMRR_COP: totalMRR_USD * 4200,
+    totalMRR_COP,
+    totalMRR_USD: Math.round(totalMRR_COP / 4200),
     statusSummary: {
       active: activeCount,
       trial: trialCount,
@@ -387,7 +387,7 @@ export function generateWhatsAppAlertTemplate(tenant, alertType = 'expiring_soon
   const cleanPhone = formatWhatsAppNumber(tenant.whatsapp || tenant.phone);
   const owner = tenant.ownerName || 'Estimado Dueño';
   const businessName = tenant.name || 'tu barbería';
-  const planName = tenant.subscriptionPlan === 'basic' ? 'Plan Básico ($29 USD)' : 'Plan Pro ($59 USD)';
+  const planName = tenant.subscriptionPlan === 'basic' ? 'Plan Básico ($120.000 COP/mes)' : 'Plan Pro ($250.000 COP/mes)';
 
   let message = '';
   switch (alertType) {

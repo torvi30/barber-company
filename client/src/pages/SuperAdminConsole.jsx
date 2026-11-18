@@ -687,11 +687,11 @@ export const SuperAdminConsole = ({
                 <DollarSign className="w-4 h-4 text-amber-600 dark:text-gold-400" />
               </div>
               <div className="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white">
-                ${metrics?.totalMRR_USD || 0}{' '}
-                <span className="text-xs font-mono text-slate-500 dark:text-industrial-400 font-normal">USD</span>
+                ${(metrics?.totalMRR_COP || 0).toLocaleString('es-CO')}{' '}
+                <span className="text-xs font-mono text-slate-500 dark:text-industrial-400 font-normal">COP</span>
               </div>
               <div className="text-[11px] text-amber-700 dark:text-gold-400 font-mono font-bold mt-1">
-                ≈ ${(metrics?.totalMRR_COP || 0).toLocaleString('es-CO')} COP / mes
+                Facturación mensual recurrente de la red
               </div>
             </div>
 
@@ -871,7 +871,7 @@ export const SuperAdminConsole = ({
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] text-slate-500 dark:text-industrial-400 block font-semibold">Plan SaaS:</span>
-                        <span className="font-bold font-mono text-amber-700 dark:text-gold-400 text-xs block">${t.monthlyRate} USD/mes</span>
+                        <span className="font-bold font-mono text-amber-700 dark:text-gold-400 text-xs block">${(t.monthlyRate || (t.subscriptionPlan === 'basic' ? 120000 : 250000)).toLocaleString('es-CO')} COP/mes</span>
                         <span className="text-[10px] text-slate-500 dark:text-industrial-400">Corte: {new Date(t.currentPeriodEnd).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}</span>
                       </div>
                     </div>
@@ -1014,7 +1014,7 @@ export const SuperAdminConsole = ({
                               {t.subscriptionPlan === 'pro' ? 'Plan Pro Black' : 'Plan Básico'}
                             </div>
                             <div className="text-xs font-mono text-amber-600 dark:text-gold-400 font-bold">
-                              ${t.monthlyRate} USD <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-normal">/ mes</span>
+                              ${(t.monthlyRate || (t.subscriptionPlan === 'basic' ? 120000 : 250000)).toLocaleString('es-CO')} COP <span className="text-[10px] text-slate-400 dark:text-industrial-500 font-normal">/ mes</span>
                             </div>
                             <div className="mt-1 flex items-center gap-1.5">
                               <button
