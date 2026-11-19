@@ -39,7 +39,20 @@ export const DEFAULT_BLANK_TENANT = {
 export const BarbershopProvider = ({ children }) => {
   const { currentUser, isSuperAdmin } = useAuth();
   const [tenantList, setTenantList] = useState([]);
-  const [tenantId, setTenantId] = useState(() => currentUser?.companyId || '');
+  const [tenantId, setTenantId] = useState(() => {
+    if (currentUser?.companyId) return currentUser.companyId;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTid = urlParams.get('tid') || urlParams.get('tenantId');
+      if (urlTid) return urlTid;
+      const saved = localStorage.getItem('barberpulse_barber_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.barbershopId) return parsed.barbershopId;
+      }
+    } catch {}
+    return '';
+  });
   const [barbershopInfo, setBarbershopInfo] = useState(DEFAULT_BLANK_TENANT);
   const [appointments, setAppointments] = useState([]);
   const [barbers, setBarbers] = useState([]);

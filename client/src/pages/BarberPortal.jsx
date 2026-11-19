@@ -75,7 +75,8 @@ export const BarberPortal = ({
   onLogoutBarber = null,
   initialSection = null
 }) => {
-  const { tenantId, barbers = [], appointments: contextAppointments = [], updateStatus, cancelAppointment, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
+  const { tenantId: contextTenantId, barbers = [], appointments: contextAppointments = [], updateStatus, cancelAppointment, addBarber, editBarber, removeBarber, barbershopInfo } = useBarbershop();
+  const tenantId = contextTenantId || barberSession?.barbershopId || '';
   const [selectedBarberId, setSelectedBarberId] = useState(
     standaloneBarberMode && (barberSession?.id || barberSession?.barberId)
       ? (barberSession.id || barberSession.barberId)
@@ -796,7 +797,7 @@ export const BarberPortal = ({
     sunday: 'Domingo'
   };
 
-  if (!barbers || barbers.length === 0) {
+  if (!standaloneBarberMode && (!barbers || barbers.length === 0)) {
     return (
       <div className="py-16 text-center space-y-4 max-w-md mx-auto p-8 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-3xl shadow-lg animate-fadeIn my-10">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-gold-600/20 to-gold-400/20 border border-gold-500/30 flex items-center justify-center mx-auto text-gold-400 shadow-glow-gold/10">
