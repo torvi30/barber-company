@@ -292,7 +292,6 @@ export const BarberPortal = ({
     avatar: AVATAR_PRESETS[0].url
   });
   const [formSaving, setFormSaving] = useState(false);
-  const [newSpecialtyInput, setNewSpecialtyInput] = useState('');
   const barberFileInputRef = React.useRef(null);
   const [barberPhotoFeedback, setBarberPhotoFeedback] = useState(null);
 
@@ -324,7 +323,6 @@ export const BarberPortal = ({
   const openNewBarberModal = () => {
     setEditingBarber(null);
     setBarberPhotoFeedback(null);
-    setNewSpecialtyInput('');
     setBarberFormData({
       name: '',
       phone: '',
@@ -342,7 +340,6 @@ export const BarberPortal = ({
   const openEditBarberModal = (b) => {
     setEditingBarber(b);
     setBarberPhotoFeedback(null);
-    setNewSpecialtyInput('');
     const hasPin = Boolean(b.hasPin !== false && b.pin && b.pin !== '' && b.pinEnabled !== false);
     setBarberFormData({
       name: b.name || '',
@@ -2164,19 +2161,6 @@ export const BarberPortal = ({
                         </div>
                       );
                     })()}
-
-                    {b.specialties && (
-                      <div className="flex flex-wrap gap-1 mt-3">
-                        {(Array.isArray(b.specialties) ? b.specialties : b.specialties.split(',')).map((spec, i) => (
-                          <span
-                            key={i}
-                            className="text-[10px] px-2 py-0.5 rounded-md bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 text-slate-700 dark:text-slate-300"
-                          >
-                            {spec.trim ? spec.trim() : spec}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   {/* Acciones del Barbero */}
@@ -2466,214 +2450,6 @@ export const BarberPortal = ({
                 <span>💡 Al guardar a este nuevo barbero, el sistema te ofrecerá enviarle la invitación por WhatsApp de inmediato.</span>
               </div>
             )}
-          </div>
-
-          {/* SERVICIOS Y ESPECIALIDADES (100% Editable, Alto Contraste y Fácil de Usar) */}
-          <div className="space-y-2.5 p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800 dark:text-white uppercase font-mono tracking-wider flex items-center gap-1.5">
-                <Scissors className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
-                <span>Servicios y Especialidades Asignadas</span>
-              </label>
-              <span className="text-[10px] text-slate-500 dark:text-industrial-400 font-mono">
-                {(() => {
-                  const specs = (typeof barberFormData.specialties === 'string'
-                    ? barberFormData.specialties.split(',')
-                    : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
-                  ).map(s => s.trim()).filter(Boolean);
-                  return `${specs.length} activas`;
-                })()}
-              </span>
-            </div>
-
-            {/* 1. Especialidades Activas del Barbero (Tags con botón de eliminar ✕) */}
-            {(() => {
-              const currentSpecs = (typeof barberFormData.specialties === 'string'
-                ? barberFormData.specialties.split(',')
-                : (Array.isArray(barberFormData.specialties) ? barberFormData.specialties : [])
-              ).map(s => s.trim()).filter(Boolean);
-
-              const handleRemoveSpec = (specToRemove) => {
-                const next = currentSpecs.filter(s => s.toLowerCase() !== specToRemove.toLowerCase());
-                setBarberFormData({ ...barberFormData, specialties: next.join(', ') });
-              };
-
-              const handleAddSpec = (specToAdd) => {
-                const trimmed = specToAdd.trim();
-                if (!trimmed) return;
-                if (!currentSpecs.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
-                  setBarberFormData({ ...barberFormData, specialties: [...currentSpecs, trimmed].join(', ') });
-                }
-              };
-
-              const handleAddMultiple = (specsToAdd) => {
-                const newSet = new Set(currentSpecs);
-                specsToAdd.forEach(s => {
-                  const t = s.trim();
-                  if (t) newSet.add(t);
-                });
-                setBarberFormData({ ...barberFormData, specialties: Array.from(newSet).join(', ') });
-              };
-
-              const handleClearAll = () => {
-                setBarberFormData({ ...barberFormData, specialties: '' });
-              };
-
-              // Catálogo de Servicios Tradicionales Normales
-              const TRADITIONAL_NORMALS = [
-                'Corte',
-                'Barba',
-                'Cejas',
-                'Cera',
-                'Corte y Barba',
-                'Corte y Cejas',
-                'Corte y Cera',
-                'Barba y Cejas',
-                'Barba con Cera',
-                'Combo Completo'
-              ];
-              const shopServices = (barbershopInfo?.services || []).map(s => s.name || s.shortName).filter(Boolean);
-              const availableCatalog = Array.from(new Set([...TRADITIONAL_NORMALS, ...shopServices]));
-
-              return (
-                <div className="space-y-3">
-                  {/* Chips Activos */}
-                  <div className="p-3 rounded-xl bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-700/80 min-h-[48px] flex flex-wrap gap-1.5 items-center">
-                    {currentSpecs.length === 0 ? (
-                      <span className="text-xs text-slate-400 dark:text-industrial-500 italic">
-                        ✨ Sin servicios asignados aún. Toca los servicios normales abajo o escribe uno nuevo.
-                      </span>
-                    ) : (
-                      currentSpecs.map((spec) => (
-                        <span
-                          key={spec}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-gold-400 text-noir-950 font-bold text-xs shadow-xs animate-fadeIn"
-                        >
-                          <span>✂️ {spec}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSpec(spec)}
-                            className="hover:bg-black/20 rounded-full p-0.5 transition-colors cursor-pointer"
-                            title={`Quitar ${spec}`}
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </span>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Acciones Rápidas de Selección */}
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleAddMultiple(['Corte', 'Barba', 'Cejas', 'Cera'])}
-                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-gold-300 border border-amber-500/30 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                      title="Asignar los 4 servicios más comunes en 1 clic"
-                    >
-                      <Sparkles className="w-3 h-3 text-amber-500 dark:text-gold-400" />
-                      <span>+ Básicos (Corte, Barba, Cejas, Cera)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddMultiple(TRADITIONAL_NORMALS)}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-noir-900 hover:bg-slate-200 dark:hover:bg-noir-800 text-slate-700 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
-                      title="Asignar todos los servicios normales"
-                    >
-                      <Plus className="w-3 h-3 text-amber-500 dark:text-gold-400" />
-                      <span>+ Todos los Normales</span>
-                    </button>
-
-                    {currentSpecs.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleClearAll}
-                        className="px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[11px] font-medium transition-all cursor-pointer ml-auto"
-                        title="Limpiar todos los servicios seleccionados"
-                      >
-                        Limpiar todo
-                      </button>
-                    )}
-                  </div>
-
-                  {/* 2. Catálogo de Cortes y Servicios Normales (Toca para activar/desactivar) */}
-                  <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300 block mb-1.5">
-                      Cortes y Servicios Normales (Toca para agregar/quitar):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-                      {availableCatalog.map((spec) => {
-                        const isAlreadyActive = currentSpecs.some(s => s.toLowerCase() === spec.toLowerCase());
-
-                        return (
-                          <button
-                            key={spec}
-                            type="button"
-                            onClick={() => isAlreadyActive ? handleRemoveSpec(spec) : handleAddSpec(spec)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
-                              isAlreadyActive
-                                ? 'bg-amber-500 text-slate-950 dark:bg-gold-500 dark:text-noir-950 font-bold border border-amber-600 shadow-sm'
-                                : 'bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-700 text-slate-800 dark:text-industrial-100 hover:border-amber-500 dark:hover:border-gold-400 hover:text-amber-700 dark:hover:text-gold-300'
-                            }`}
-                          >
-                            {isAlreadyActive ? (
-                              <>
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>{spec}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
-                                <span>{spec}</span>
-                              </>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* 3. Campo para escribir cualquier corte o servicio personalizado */}
-                  <div className="pt-1.5 border-t border-slate-200 dark:border-industrial-800">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-industrial-300 block mb-1">
-                      ¿Deseas crear otro servicio personalizado?
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={newSpecialtyInput}
-                        onChange={(e) => setNewSpecialtyInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (newSpecialtyInput.trim()) {
-                              handleAddSpec(newSpecialtyInput.trim());
-                              setNewSpecialtyInput('');
-                            }
-                          }
-                        }}
-                        placeholder="Ej: Fade Americano, Diseño Freestyle, Tintura, Mascarilla..."
-                        className="flex-1 bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-750 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-industrial-500 focus:outline-none focus:border-amber-500 dark:focus:border-gold-400 font-medium"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (newSpecialtyInput.trim()) {
-                            handleAddSpec(newSpecialtyInput.trim());
-                            setNewSpecialtyInput('');
-                          }
-                        }}
-                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-gold-600 to-gold-400 text-noir-950 font-bold text-xs flex items-center gap-1.5 shadow-glow-gold hover:opacity-95 transition-all cursor-pointer flex-shrink-0"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Crear Servicio</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
           </div>
 
           {/* Selector y Vista Previa de Foto de Perfil */}
