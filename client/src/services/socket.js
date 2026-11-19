@@ -1,16 +1,36 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const getSocketUrl = () => {
+  const envUrl = import.meta.env.VITE_SOCKET_URL;
+  if (typeof window !== 'undefined') {
+    const isHttps = window.location.protocol === 'https:';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isHttps && !isLocalhost && (!envUrl || envUrl.includes('localhost'))) {
+      return null;
+    }
+  }
+  return envUrl || 'http://localhost:5000';
+};
 
 let socket = null;
 
 export const initSocket = (tenantId = 'nodriza-global') => {
+  const socketUrl = getSocketUrl();
+  if (!socketUrl) {
+    return {
+      connected: false,
+      emit: () => {},
+      on: () => {},
+      off: () => {}
+    };
+  }
+
   if (!socket) {
-    socket = io(SOCKET_SERVER_URL, {
+    socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000
     });
 
     socket.on('connect', () => {

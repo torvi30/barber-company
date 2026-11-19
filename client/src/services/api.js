@@ -1,12 +1,32 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getEffectiveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined') {
+    const isHttps = window.location.protocol === 'https:';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // Si estamos en hosting HTTPS de producción y la URL apunta a localhost, omitir para no causar demoras de Mixed Content
+    if (isHttps && !isLocalhost && (!envUrl || envUrl.includes('localhost'))) {
+      return null;
+    }
+  }
+  return envUrl || 'http://localhost:5000/api';
+};
 
 /**
  * Cliente API HTTP para BarberPulse OS
- * Incluye inyección automática del tenant header (x-barbershop-id)
+ * Incluye inyección automática del tenant header (x-barbershop-id) y timeout de respuesta rápida
  */
 export const apiClient = async (endpoint, options = {}, tenantId = null) => {
+  const baseUrl = getEffectiveBaseUrl();
+  if (!baseUrl) {
+    throw new Error('API backend en localhost omitido en producción HTTPS (Modo Firestore Cloud Directo).');
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2500);
+
   const config = {
     ...options,
+    signal: controller.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(tenantId && { 'x-barbershop-id': tenantId }),
@@ -18,17 +38,23 @@ export const apiClient = async (endpoint, options = {}, tenantId = null) => {
     config.body = JSON.stringify(config.body);
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, config);
-  const data = await response.json();
+  try {
+    const response = await fetch(`${baseUrl}${endpoint}`, config);
+    clearTimeout(timeoutId);
+    const data = await response.json();
 
-  if (!response.ok) {
-    const error = new Error(data.message || data.error || 'Error en petición al servidor');
-    error.status = response.status;
-    error.data = data;
-    throw error;
+    if (!response.ok) {
+      const error = new Error(data.message || data.error || 'Error en petición al servidor');
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
   }
-
-  return data;
 };
 
 export const api = {

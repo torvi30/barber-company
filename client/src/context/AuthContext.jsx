@@ -89,17 +89,13 @@ export const AuthProvider = ({ children }) => {
           // 1. Obtener o inicializar perfil en Firestore
           const profile = await getOrCreateUserProfile(user);
 
-          // 2. Sincronizar en el backend multi-tenant
-          try {
-            await api.syncUser({
-              uid: user.uid,
-              email: user.email,
-              displayName: profile?.displayName || user.displayName || user.email?.split('@')[0],
-              avatarUrl: user.photoURL || profile?.avatarUrl || null
-            });
-          } catch (syncErr) {
-            console.warn('Backend user sync notice:', syncErr.message);
-          }
+          // 2. Sincronizar en el backend multi-tenant en segundo plano (no bloquea el acceso de inmediato)
+          api.syncUser({
+            uid: user.uid,
+            email: user.email,
+            displayName: profile?.displayName || user.displayName || user.email?.split('@')[0],
+            avatarUrl: user.photoURL || profile?.avatarUrl || null
+          }).catch(() => {});
 
           const userState = {
             uid: user.uid,
