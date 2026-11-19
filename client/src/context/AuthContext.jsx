@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -68,6 +70,11 @@ export const AuthProvider = ({ children }) => {
         }
       }
     } catch {}
+
+    // Capturar resultado de redirección si se usó signInWithRedirect
+    getRedirectResult(auth).catch((err) => {
+      console.warn('Redirect result notice:', err.message);
+    });
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -223,6 +230,15 @@ export const AuthProvider = ({ children }) => {
       const res = await signInWithPopup(auth, googleProvider);
       return res.user;
     } catch (err) {
+      console.warn('Popup login notice:', err.code, err.message);
+      // Si la ventana emergente es bloqueada o cerrada por el navegador en móvil/escritorio, usar redirección directa
+      if (
+        err.code === 'auth/popup-closed-by-user' ||
+        err.code === 'auth/popup-blocked' ||
+        err.code === 'auth/cancelled-popup-request'
+      ) {
+        return await signInWithRedirect(auth, googleProvider);
+      }
       setAuthError(err.message);
       throw err;
     } finally {
