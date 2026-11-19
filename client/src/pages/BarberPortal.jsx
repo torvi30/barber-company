@@ -2011,48 +2011,6 @@ export const BarberPortal = ({
             </button>
           </div>
 
-          {/* Banner de Auto-Registro / Enlace Rápido para Nuevo Barbero */}
-          <div className="bg-gradient-to-r from-amber-500/15 via-gold-500/10 to-transparent border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-xs">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-700 dark:text-gold-300 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-display font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
-                  <span>¿Llegó un nuevo barbero a tu salón?</span>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">
-                    Fácil & Rápido
-                  </span>
-                </h4>
-                <p className="text-xs text-slate-600 dark:text-industrial-300 mt-0.5 leading-relaxed">
-                  No llenes nada tú: envíale este enlace para que él mismo ingrese su nombre, cree su PIN y active su sillón desde su propio celular.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-              <button
-                type="button"
-                onClick={handleShareNewBarberLinkWhatsApp}
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer whitespace-nowrap"
-                title="Compartir link por WhatsApp para que el barbero se auto-registre"
-              >
-                <MessageCircle className="w-4 h-4 fill-current" />
-                <span>Enviar Link WhatsApp</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyNewBarberLink}
-                className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-noir-900 border border-slate-300 dark:border-industrial-700 hover:border-amber-500 text-slate-800 dark:text-industrial-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
-                title="Copiar enlace de auto-registro al portapapeles"
-              >
-                <Copy className="w-4 h-4 text-amber-500 dark:text-gold-400" />
-                <span>Copiar Link</span>
-              </button>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {barbers.map((b) => {
               const isCurrent = b.id === selectedBarberId;
@@ -2212,21 +2170,6 @@ export const BarberPortal = ({
         title={editingBarber ? `Modificar Barbero: ${editingBarber.name}` : 'Registrar Nuevo Barbero'}
       >
         <form onSubmit={handleSaveBarber} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-          {!editingBarber && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-              <span className="text-amber-900 dark:text-gold-200">
-                💡 <strong>¿Prefieres no llenar nada tú?</strong> Envíale el link para que él mismo lo haga:
-              </span>
-              <button
-                type="button"
-                onClick={handleShareNewBarberLinkWhatsApp}
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-              >
-                <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                <span>Enviar Link WhatsApp</span>
-              </button>
-            </div>
-          )}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
               Nombre Completo & Apodo Profesional *
