@@ -711,6 +711,37 @@ export const PublicBookingWizard = ({
       {/* PASO 2: Elegir Barbero */}
       {step === 2 && (
         <div className="space-y-4 animate-fadeIn">
+          {/* Barra Superior Fija de Navegación Rápida */}
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-white/95 dark:bg-noir-900/95 backdrop-blur-md border border-slate-200 dark:border-industrial-800 shadow-md flex items-center justify-between gap-2 sticky top-14 md:top-16 z-30">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-slate-700 dark:text-industrial-300 hover:bg-slate-100 dark:hover:bg-noir-800 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Volver</span>
+            </button>
+
+            <div className="text-center truncate min-w-0 flex-1 px-1">
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-industrial-400 font-semibold block">
+                Barbero Elegido
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate block">
+                {selectedBarber ? `💈 ${selectedBarber.name}` : 'Toca uno abajo'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setStep(3)}
+              disabled={!selectedBarber}
+              className="flex items-center gap-1.5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+            >
+              <span>Elegir Horario</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
           <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase tracking-wider">
             2. Elige tu Barbero Preferido
           </label>
@@ -796,6 +827,37 @@ export const PublicBookingWizard = ({
       {/* PASO 3: Selección de Fecha y Slot Anti-Colisión */}
       {step === 3 && (
         <div className="space-y-4 animate-fadeIn">
+          {/* Barra Superior Fija de Navegación Rápida */}
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-white/95 dark:bg-noir-900/95 backdrop-blur-md border border-slate-200 dark:border-industrial-800 shadow-md flex items-center justify-between gap-2 sticky top-14 md:top-16 z-30">
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-slate-700 dark:text-industrial-300 hover:bg-slate-100 dark:hover:bg-noir-800 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Volver</span>
+            </button>
+
+            <div className="text-center truncate min-w-0 flex-1 px-1">
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-industrial-400 font-semibold block">
+                Hora Elegida
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-gold-400 font-mono truncate block">
+                {selectedTime ? `⏰ ${selectedTime} hrs` : 'Toca una hora'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setStep(4)}
+              disabled={!selectedTime}
+              className="flex items-center gap-1.5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+            >
+              <span>Completar Datos</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase tracking-wider">
               3. Fecha y Hora Disponible (Sin Esperas)
