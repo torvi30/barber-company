@@ -21,14 +21,17 @@ import {
 } from 'lucide-react';
 
 function getFriendlyFirebaseErrorMessage(errorMsg = '') {
+  if (errorMsg.includes('auth/configuration-not-found')) {
+    return 'Authentication no ha sido activado en Firebase para baber-company. Ve a la consola > Authentication y haz clic en "Comenzar" y habilita Google.';
+  }
   if (errorMsg.includes('auth/popup-closed-by-user')) {
-    return 'La ventana de inicio de sesión con Google fue cerrada antes de completar la verificación.';
+    return 'La ventana de Google se cerró antes de completar. Esto suele ocurrir cuando Authentication o el proveedor de Google no están habilitados en la consola de Firebase.';
   }
   if (errorMsg.includes('auth/unauthorized-domain')) {
-    return 'Este dominio (localhost) no está autorizado en la Consola de Firebase. Ve a Firebase Console > Authentication > Settings > Authorized domains y agrégalo.';
+    return 'Este dominio no está autorizado en la Consola de Firebase. Ve a Firebase Console > Authentication > Settings > Authorized domains y agrégalo.';
   }
   if (errorMsg.includes('auth/operation-not-allowed')) {
-    return 'Este método de acceso no está habilitado en Firebase. Ve a Authentication > Sign-in method y habilítalo.';
+    return 'El proveedor de Google no está habilitado en Firebase. Ve a Authentication > Sign-in method y habilítalo.';
   }
   if (
     errorMsg.includes('auth/user-not-found') ||
