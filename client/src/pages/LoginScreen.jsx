@@ -17,8 +17,7 @@ import {
   Moon,
   Sparkles,
   ShieldCheck,
-  Scissors,
-  Crown
+  Scissors
 } from 'lucide-react';
 
 function getFriendlyFirebaseErrorMessage(errorMsg = '') {
@@ -226,37 +225,6 @@ export const LoginScreen = ({ onBarberLogin }) => {
             <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-start gap-2.5 animate-fadeIn">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div className="leading-relaxed">{resetSuccessMessage}</div>
-            </div>
-          )}
-
-          {/* Acceso Directo Inmediato para SuperAdmins (Victor y Daniel) */}
-          {mode !== 'forgot' && (
-            <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 dark:bg-gold-500/10 border border-amber-500/30 dark:border-gold-500/30">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-gold-400 mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Crown className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
-                  Acceso Directo SuperAdmin
-                </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-gold-300 font-mono font-semibold">1-Clic</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => quickSuperAdminLogin('victortamayopine@gmail.com')}
-                  className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-[11px] shadow-sm flex items-center justify-center gap-1.5 transition-all transform active:scale-95 cursor-pointer"
-                >
-                  <span>Victor Tamayo</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => quickSuperAdminLogin('danielb.alzate1@gmail.com')}
-                  className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-[11px] shadow-sm flex items-center justify-center gap-1.5 transition-all transform active:scale-95 cursor-pointer"
-                >
-                  <span>Daniel Alzate</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
             </div>
           )}
 
