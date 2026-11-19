@@ -329,7 +329,8 @@ export const BarberPortal = ({
       name: '',
       phone: '',
       email: '',
-      pin: String(Math.floor(1000 + Math.random() * 9000)),
+      hasPin: false,
+      pin: '',
       commissionRate: 50,
       dailyTarget: 150000,
       specialties: '',
@@ -342,11 +343,13 @@ export const BarberPortal = ({
     setEditingBarber(b);
     setBarberPhotoFeedback(null);
     setNewSpecialtyInput('');
+    const hasPin = Boolean(b.hasPin !== false && b.pin && b.pin !== '' && b.pinEnabled !== false);
     setBarberFormData({
       name: b.name || '',
       phone: b.phone || '',
       email: b.email || '',
-      pin: b.pin || '1234',
+      hasPin,
+      pin: b.pin || '',
       commissionRate: normalizePercent(b.commissionRate != null ? b.commissionRate : b.commissionPercent),
       dailyTarget: b.dailyTarget || b.dailyGoal || 150000,
       specialties: Array.isArray(b.specialties) ? b.specialties.join(', ') : (b.specialties || ''),
@@ -358,28 +361,39 @@ export const BarberPortal = ({
   const getBarberAccessUrl = (b) => {
     const shopSlug = barbershopInfo?.slug || barbershopInfo?.id || tenantId || '';
     const tid = tenantId || barbershopInfo?.id || '';
-    return `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}${tid ? `&tid=${tid}` : ''}`;
+    const hasPin = Boolean(b?.hasPin !== false && b?.pin && b?.pin !== '' && b?.pinEnabled !== false);
+    if (hasPin) {
+      return `${window.location.origin}?barbero=pin&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}${tid ? `&tid=${tid}` : ''}`;
+    }
+    return `${window.location.origin}?barbero=directo&b=${b.id}${shopSlug ? `&slug=${shopSlug}` : ''}${tid ? `&tid=${tid}` : ''}`;
   };
 
   const handleCopyBarberLink = async (b) => {
     const url = getBarberAccessUrl(b);
+    const hasPin = Boolean(b?.hasPin !== false && b?.pin && b?.pin !== '' && b?.pinEnabled !== false);
+    const pinInfo = hasPin ? `\n\n🔑 PIN de Terminal: ${b.pin}` : '\n\n✨ Acceso personal con cuenta de Google o correo.';
     try {
       await navigator.clipboard.writeText(url);
       await showSuccessAlert(
         '¡Enlace Copiado!',
-        `Enlace copiado para ${b.name}.\n\nPIN Personal: ${b.pin || '1234'}\n\nEnvíaselo a ${b.name} por WhatsApp o mensaje. Al abrirlo en su celular, solo ingresa su PIN y entra directo a su sillón.`
+        `Enlace copiado para ${b.name}.${pinInfo}\n\nEnvíaselo a ${b.name} por WhatsApp. Al abrirlo, ingresará de inmediato a su sillón.`
       );
     } catch {
-      prompt(`Enlace de acceso para ${b.name} (PIN: ${b.pin || '1234'}):`, url);
+      prompt(`Enlace de acceso para ${b.name}:`, url);
     }
   };
 
   const handleSendWhatsAppPin = (b) => {
-    const pin = b.pin || '1234';
+    const hasPin = Boolean(b?.hasPin !== false && b?.pin && b?.pin !== '' && b?.pinEnabled !== false);
     const phone = b.phone || b.whatsapp || '';
     const shopName = barbershopInfo?.name || 'Imperio Barbershop';
     const accessUrl = getBarberAccessUrl(b);
-    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Bienvenido a tu panel de barbero.\n\n🔑 *Tu PIN personal de acceso es:* *${pin}*\n\n👉 *Toca este enlace para abrir tu sillón:* \n${accessUrl}\n\n💡 _Solo debes ingresar tu PIN de 4 dígitos. Tu sesión quedará guardada en tu celular para que veas tus citas del día, comisiones y manejes tus clientes en tiempo real._`;
+
+    const pinSection = hasPin
+      ? `🔑 *Tu PIN para la tableta del salón es:* *${b.pin}*\n\n`
+      : `✨ *Acceso personal:* Conéctate directamente con tu cuenta de Google o correo.\n\n`;
+
+    const text = `💈 *${shopName}*\n\n¡Hola ${b.name}! Bienvenido a tu panel de barbero.\n\n${pinSection}👉 *Toca este enlace para abrir tu sillón:* \n${accessUrl}\n\n💡 _Tu sesión quedará guardada en tu celular para ver tus citas del día, comisiones y manejar tus turnos en tiempo real._`;
     const link = buildWhatsAppLink(phone, text);
     window.open(link, '_blank');
   };
@@ -476,11 +490,14 @@ export const BarberPortal = ({
     try {
       setFormSaving(true);
       const cleanPercent = normalizePercent(barberFormData.commissionRate);
+      const hasPin = Boolean(barberFormData.hasPin && barberFormData.pin && String(barberFormData.pin).trim());
       const payload = {
         name: barberFormData.name.trim(),
         phone: barberFormData.phone.trim(),
         email: barberFormData.email.trim(),
-        pin: barberFormData.pin ? String(barberFormData.pin).trim() : '1234',
+        hasPin,
+        pin: hasPin ? String(barberFormData.pin).trim() : null,
+        pinEnabled: hasPin,
         commissionRate: cleanPercent / 100,
         commissionPercent: cleanPercent,
         dailyTarget: Number(barberFormData.dailyTarget) || 150000,
@@ -520,7 +537,9 @@ export const BarberPortal = ({
       if (wasNew && payload.phone) {
         const inviteConfirm = await showConfirmDialog({
           title: '¡Barbero Registrado!',
-          text: `¿Deseas enviar ahora mismo la invitación por WhatsApp a "${payload.name}" con su PIN (${payload.pin}) y su enlace directo de sillón?`,
+          text: hasPin
+            ? `¿Deseas enviar ahora mismo la invitación por WhatsApp a "${payload.name}" con su PIN (${payload.pin}) y su enlace directo de sillón?`
+            : `¿Deseas enviar ahora mismo la invitación por WhatsApp a "${payload.name}" con su enlace directo para ingresar con Google/Correo?`,
           confirmText: '📲 Sí, Enviar por WhatsApp',
           cancelText: 'Hacerlo más tarde',
           icon: 'success'
@@ -2078,62 +2097,73 @@ export const BarberPortal = ({
                       </div>
                     </div>
 
-                    {/* Tarjeta de Acceso al Sillón con PIN & Invitación Directa */}
-                    <div className="mt-3 p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 dark:border-gold-500/30 space-y-2.5">
-                      <div className="flex items-center justify-between text-xs font-mono">
-                        <span className="text-[10px] uppercase font-bold text-slate-600 dark:text-industrial-300 flex items-center gap-1">
-                          <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-                          PIN de Acceso:
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-amber-600 dark:text-gold-400 tracking-widest text-sm bg-white dark:bg-noir-900 px-2 py-0.5 rounded-lg border border-amber-500/30 shadow-2xs">
-                            {visiblePins[b.id] ? (b.pin || '1234') : '••••'}
-                          </span>
+                    {/* Tarjeta de Acceso al Sillón con PIN o Google/Correo */}
+                    {(() => {
+                      const hasPin = Boolean(b.hasPin !== false && b.pin && String(b.pin).trim() !== '' && b.pinEnabled !== false);
+                      return (
+                        <div className="mt-3 p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 dark:border-gold-500/30 space-y-2.5">
+                          <div className="flex items-center justify-between text-xs font-mono">
+                            <span className="text-[10px] uppercase font-bold text-slate-600 dark:text-industrial-300 flex items-center gap-1">
+                              <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                              {hasPin ? 'PIN Tableta Salón:' : 'Modo de Acceso:'}
+                            </span>
+                            {hasPin ? (
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-amber-600 dark:text-gold-400 tracking-widest text-sm bg-white dark:bg-noir-900 px-2 py-0.5 rounded-lg border border-amber-500/30 shadow-2xs">
+                                  {visiblePins[b.id] ? b.pin : '••••'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setVisiblePins(prev => ({ ...prev, [b.id]: !prev[b.id] }))}
+                                  className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white p-1 cursor-pointer transition-transform hover:scale-110"
+                                  title={visiblePins[b.id] ? 'Ocultar PIN' : 'Ver PIN'}
+                                >
+                                  {visiblePins[b.id] ? '🙈' : '👁️'}
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                Google / Correo
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Botón Principal: Enviar Invitación Completa por WhatsApp */}
                           <button
                             type="button"
-                            onClick={() => setVisiblePins(prev => ({ ...prev, [b.id]: !prev[b.id] }))}
-                            className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white p-1 cursor-pointer transition-transform hover:scale-110"
-                            title={visiblePins[b.id] ? 'Ocultar PIN' : 'Ver PIN'}
+                            onClick={() => handleSendWhatsAppPin(b)}
+                            className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
+                            title={hasPin ? "Enviar mensaje de WhatsApp al barbero con su PIN y su enlace directo de sillón" : "Enviar mensaje de WhatsApp al barbero con su enlace de acceso"}
                           >
-                            {visiblePins[b.id] ? '🙈' : '👁️'}
+                            <MessageCircle className="w-4 h-4 fill-current flex-shrink-0" />
+                            <span>{hasPin ? 'Enviar Invitación con PIN' : 'Enviar Invitación de Sillón'}</span>
                           </button>
+
+                          {/* Botones secundarios: Copiar Enlace Directo & Probar Vista Móvil */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyBarberLink(b)}
+                              className="py-1.5 px-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                              title="Copiar enlace de acceso directo al portapapeles"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
+                              <span>Copiar Link</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewBarberMobile(b)}
+                              className="py-1.5 px-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                              title="Probar en pantalla cómo verá este barbero su sillón"
+                            >
+                              <Scissors className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
+                              <span>Ver Sillón</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Botón Principal: Enviar Invitación Completa por WhatsApp */}
-                      <button
-                        type="button"
-                        onClick={() => handleSendWhatsAppPin(b)}
-                        className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
-                        title="Enviar mensaje de WhatsApp al barbero con su PIN y su enlace directo de sillón"
-                      >
-                        <MessageCircle className="w-4 h-4 fill-current flex-shrink-0" />
-                        <span>Enviar Invitación WhatsApp</span>
-                      </button>
-
-                      {/* Botones secundarios: Copiar Enlace Directo & Probar Vista Móvil */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyBarberLink(b)}
-                          className="py-1.5 px-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                          title="Copiar enlace de acceso directo al portapapeles"
-                        >
-                          <Copy className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
-                          <span>Copiar Link</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handlePreviewBarberMobile(b)}
-                          className="py-1.5 px-2 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                          title="Probar en pantalla cómo verá este barbero su sillón"
-                        >
-                          <Scissors className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400 flex-shrink-0" />
-                          <span>Ver Sillón</span>
-                        </button>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {b.specialties && (
                       <div className="flex flex-wrap gap-1 mt-3">
@@ -2262,37 +2292,7 @@ export const BarberPortal = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase">
-                  PIN (4 Dígitos) *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const rnd = String(Math.floor(1000 + Math.random() * 9000));
-                    setBarberFormData({ ...barberFormData, pin: rnd });
-                  }}
-                  className="text-[10px] text-amber-600 dark:text-gold-400 font-bold hover:underline cursor-pointer"
-                >
-                  ⚡ Generar
-                </button>
-              </div>
-              <input
-                type="text"
-                maxLength={4}
-                required
-                placeholder="1234"
-                value={barberFormData.pin || ''}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setBarberFormData({ ...barberFormData, pin: val });
-                }}
-                className="w-full bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono font-bold tracking-widest text-center focus:outline-none focus:border-amber-500 dark:focus:border-gold-500"
-              />
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-industrial-400 uppercase mb-1">
                 % Comisión
@@ -2344,6 +2344,85 @@ export const BarberPortal = ({
             ))}
           </div>
 
+          {/* OPCIÓN: PIN PARA TABLETA DEL SALÓN (OPCIONAL) */}
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-noir-950 border border-slate-200 dark:border-industrial-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <KeyRound className="w-3.5 h-3.5 text-amber-500 dark:text-gold-400" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-white">
+                    PIN para Tableta del Salón
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-industrial-400">
+                    Opcional: Permite acceso rápido de 4 dígitos en la tableta compartida del local
+                  </p>
+                </div>
+              </div>
+
+              {/* Switch Toggle */}
+              <label className="relative inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={Boolean(barberFormData.hasPin)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    const nextPin = checked ? (barberFormData.pin || String(Math.floor(1000 + Math.random() * 9000))) : '';
+                    setBarberFormData({
+                      ...barberFormData,
+                      hasPin: checked,
+                      pin: nextPin
+                    });
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 dark:bg-noir-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+
+            {barberFormData.hasPin ? (
+              <div className="pt-2 border-t border-slate-200 dark:border-industrial-800 space-y-2 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-industrial-300">
+                    PIN Asignado (4 Dígitos):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const rnd = String(Math.floor(1000 + Math.random() * 9000));
+                      setBarberFormData({ ...barberFormData, pin: rnd });
+                    }}
+                    className="text-[10px] text-amber-600 dark:text-gold-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    ⚡ Generar Otro PIN
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    maxLength={4}
+                    required={barberFormData.hasPin}
+                    placeholder="1234"
+                    value={barberFormData.pin || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setBarberFormData({ ...barberFormData, pin: val });
+                    }}
+                    className="w-32 bg-white dark:bg-noir-900 border border-slate-200 dark:border-industrial-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white font-mono font-black tracking-widest text-center focus:outline-none focus:border-amber-500 dark:focus:border-gold-500 shadow-2xs"
+                  />
+                  <p className="text-[10px] text-slate-500 dark:text-industrial-400 leading-tight">
+                    El barbero podrá digitar este código de 4 dígitos en la tableta del salón para abrir su sillón sin contraseñas.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-noir-900 border border-slate-200 dark:border-industrial-800/60 text-[11px] text-slate-600 dark:text-industrial-400 flex items-center gap-2">
+                <span>✨ <strong>Sin PIN:</strong> El barbero ingresa directamente desde su celular o computador con su cuenta de Google o correo electrónico.</span>
+              </div>
+            )}
+          </div>
+
           {/* ACCESO Y ENLACE DIRECTO AL SILLÓN (Para darle entrada fácilmente) */}
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 dark:border-gold-500/30 space-y-2.5">
             <div className="flex items-center justify-between">
@@ -2352,19 +2431,21 @@ export const BarberPortal = ({
                 <span>Acceso al Sillón del Barbero</span>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-gold-300 font-bold border border-amber-500/30">
-                PIN: {barberFormData.pin || '1234'}
+                {barberFormData.hasPin && barberFormData.pin ? `PIN: ${barberFormData.pin}` : 'Google / Correo'}
               </span>
             </div>
 
             <p className="text-[11px] text-slate-600 dark:text-industrial-400 leading-relaxed">
-              El barbero <strong>no necesita correo ni contraseña</strong>. Solo le envías su enlace personal y al abrirlo en su celular digita su PIN de 4 dígitos ({barberFormData.pin || '1234'}). Su sesión queda guardada para siempre.
+              {barberFormData.hasPin && barberFormData.pin
+                ? `El barbero puede entrar en la tableta del salón con su PIN (${barberFormData.pin}) o abrir su enlace personal en su celular.`
+                : 'El barbero entra de forma segura con su cuenta personal de Google o correo asignado. No necesita recordar ningún PIN.'}
             </p>
 
             {editingBarber ? (
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => handleSendWhatsAppPin({ ...editingBarber, pin: barberFormData.pin, phone: barberFormData.phone, name: barberFormData.name })}
+                  onClick={() => handleSendWhatsAppPin({ ...editingBarber, hasPin: barberFormData.hasPin, pin: barberFormData.pin, phone: barberFormData.phone, name: barberFormData.name })}
                   className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                 >
                   <MessageCircle className="w-4 h-4 fill-current" />
@@ -2373,7 +2454,7 @@ export const BarberPortal = ({
 
                 <button
                   type="button"
-                  onClick={() => handleCopyBarberLink({ ...editingBarber, pin: barberFormData.pin, name: barberFormData.name })}
+                  onClick={() => handleCopyBarberLink({ ...editingBarber, hasPin: barberFormData.hasPin, pin: barberFormData.pin, name: barberFormData.name })}
                   className="py-2 px-3 rounded-xl bg-white dark:bg-noir-900 hover:bg-slate-100 dark:hover:bg-noir-800 text-slate-800 dark:text-industrial-200 border border-slate-300 dark:border-industrial-700 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                 >
                   <Copy className="w-4 h-4 text-amber-500 dark:text-gold-400" />

@@ -294,6 +294,46 @@ export const BarberPinModal = ({
               Conectando a tu sillón de barbero...
             </p>
           </div>
+        ) : selectedBarber && (selectedBarber.hasPin === false || !selectedBarber.pin || selectedBarber.pinEnabled === false) ? (
+          /* Estado especial: El barbero no tiene PIN activo, ingresa por Google/Correo */
+          <div className="py-8 text-center space-y-4 animate-fadeIn">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-500 text-2xl shadow-sm">
+              ✨
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Acceso Personal Directo
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-industrial-400 max-w-xs mx-auto mt-1">
+                <strong>{selectedBarber.name}</strong> no requiere PIN. Ingresa de forma segura con tu cuenta personal de Google o correo.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col gap-2 max-w-xs mx-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  window.location.href = window.location.origin;
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer"
+              >
+                Continuar con Google / Correo
+              </button>
+              {!isLockedToBarber && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedBarber(null);
+                    setPin('');
+                    setErrorMsg(null);
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 dark:text-industrial-400 dark:hover:text-white py-1 underline cursor-pointer"
+                >
+                  Seleccionar otro barbero
+                </button>
+              )}
+            </div>
+          </div>
         ) : !selectedBarber ? (
           /* Estado 2: Selección de Barbero (Solo visible si el enlace NO traía un barbero asignado) */
           <div className="space-y-3 animate-fadeIn">
@@ -301,7 +341,7 @@ export const BarberPinModal = ({
               Selecciona tu perfil de especialista:
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
-              {barbers.map((b) => (
+              {(barbers || []).filter(b => b.hasPin !== false && b.pin && String(b.pin).trim() !== '' && b.pinEnabled !== false).map((b) => (
                 <button
                   key={b.id}
                   type="button"
